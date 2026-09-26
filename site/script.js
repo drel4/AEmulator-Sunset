@@ -13,7 +13,6 @@
   const finePointer = matchMedia('(pointer: fine)').matches;
   const root = document.documentElement;
   const LINKS = { ...C.links, releases: C.links.repo + '/releases' };
-  const STATUS = ['ok', 'partial', 'wip', 'no'];
   const FEAT_ICONS = ['folder_zip', 'palette', 'sports_esports', 'sd_card', 'translate', 'volunteer_activism'];
 
   /* ---------- Язык: сохранённый → ?lang → язык системы → английский ---------- */
@@ -42,21 +41,6 @@
     $('#feats').innerHTML = t.feats.map((f, i) =>
       `<div class="skill reveal tilt"><div class="skill__icon"><span class="material-symbols-rounded">${FEAT_ICONS[i % FEAT_ICONS.length]}</span></div><p>${f}</p></div>`).join('');
 
-    const used = STATUS.filter(s => C.firmware.some(f => f.status === s));
-    $('#legend').innerHTML = used.map(s => `<span><i class="dot" style="background:var(--${s})"></i>${t['st_' + s]}</span>`).join('');
-
-    $('#fw').innerHTML = C.firmware.map(f => `
-      <article class="project reveal tilt">
-        <div class="project__top">
-          <div class="project__ver">${esc(f.android)}</div>
-          <div><h3>${esc(f.device)}</h3><div class="project__skin">${esc(f.skin)}</div></div>
-        </div>
-        <div class="project__status"><i class="dot" style="background:var(--${f.status})"></i>${t['st_' + f.status] || f.status}
-          ${f.note ? `<small>· ${t['n_' + f.note] || esc(f.note)}</small>` : ''}</div>
-        <a class="m3-btn m3-btn--tonal m3-btn--small ripple" href="${esc(f.url)}" target="_blank" rel="noopener">
-          <span class="material-symbols-rounded">download</span>${t['dl_' + f.kind] || t.c_download}</a>
-      </article>`).join('');
-
     $('#steps').innerHTML = t.steps.map(s => `<li class="reveal"><span>${s}</span></li>`).join('');
     $('#reqs').innerHTML = t.reqs.map(s => `<li>${s}</li>`).join('');
 
@@ -73,10 +57,9 @@
   /* ---------- Статичные ссылки и значения из конфига ---------- */
   $$('[data-link]').forEach(a => { a.href = LINKS[a.dataset.link]; a.target = '_blank'; a.rel = 'noopener'; });
   $$('[data-cfg]').forEach(e => { e.textContent = e.dataset.cfg === 'version' ? C.version : C.links[e.dataset.cfg]; });
-  $('#statFw').dataset.count = String(C.firmware.filter(f => f.status === 'ok' || f.status === 'partial').length);
 
   /* ---------- Бегущая строка из конфига ---------- */
-  const names = [...new Set(C.firmware.flatMap(f => [f.device.replace(/\s*\(.*\)$/, ''), f.skin]))];
+  const names = ['HTC Sense', 'Samsung TouchWiz', 'MIUI', 'AOSP', 'HTC Desire HD', 'HTC One M7', 'Galaxy S II', 'Galaxy S III', 'Nexus 4', 'Galaxy Nexus', 'Redmi 1S'];
   $('#marquee').innerHTML = names.map(n => `<span>${esc(n)}</span><i>✦</i>`).join('');
 
   /* ---------- Тема ---------- */

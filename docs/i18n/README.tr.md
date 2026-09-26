@@ -6,7 +6,7 @@
 
 **Klasik Android yazılımları — HTC Sense, TouchWiz, MIUI, AOSP — modern bir telefonda. Root ve PC gerekmez.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · **🇹🇷 Türkçe** · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,27 +25,20 @@ AEmulator gerçek bir Android 2.3–4.4 sistemini doğrudan yazılım dosyasınd
 - 18 dilde Material 3 Expressive arayüz
 - Ücretsiz ve açık kaynak (GPL-3.0)
 
-## 📱 Desteklenen yazılımlar
+## 📱 Yazılım listesi
 
-Xiaomi 15 (Snapdragon 8 Elite, Android 16) üzerinde test edildi. Android 2.3–4.4 için her 32 bit ARM yazılımı denemeye değer; listede yalnızca doğrulanan imajlar var.
+Test edilen yazılımların listesi — durumlar, notlar ve indirme bağlantılarıyla — forumumuzda. Orada sonuçlarını paylaşabilir, soru sorabilir ve yeni imajlar bulabilirsin.
 
-| Cihaz | Android | Arayüz | Durum | İndir |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 Çalışıyor | [içe aktarmaya hazır arşiv](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 Çalışıyor | [içe aktarmaya hazır arşiv](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 Çalışıyor — ses çalışıyor | [Google fabrika imajı](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 Çalışıyor — ses çalışıyor | [Google fabrika imajı](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 Çalışıyor — Bluetooth hata penceresi | [Odin paketi](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 Kısmen — henüz ses yok | [Odin paketi](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 Üzerinde çalışılıyor — kurulum sihirbazına kadar açılıyor, kararlı hâle getiriliyor | [recovery ZIP](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 Henüz değil — resmî olmayan port çöküyor | [recovery ZIP](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> Yazılım dosyaları üreticilerine aittir. Bağlantılar üretici sunucularına veya herkese açık arşivlere gider; AEmulator hiçbir yazılım içermez.
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/Forumu%20a%C3%A7-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="Forum"/></a>
+
+</div>
 
 ## 🚀 Hızlı başlangıç
 
 1. APK’yı [Releases](https://github.com/uxazu/aemulator/releases) sayfasından indirip kurun.
-2. Yukarıdaki tablodan bir yazılımı telefona indirin.
+2. [Forumda](https://aeforum.uxazuu.space/) bir yazılım bul ve telefonuna indir.
 3. AEmulator’ı açın → **Yazılım ekle** ve dosyayı seçin. İçe aktarma birkaç dakika sürer.
 4. **Başlat**’a basın. İlk açılış daha uzundur: sistem uygulamaları optimize eder.
 5. ⋮ menüsü: ses, güç düğmesi ve günlük; ⚙️ ayarları ve dili açar.
@@ -85,6 +78,7 @@ AEmulator sevdiğiniz bir telefonu geri getirdiyse geliştirmeyi destekleyebilir
 ## 🔗 Bağlantılar
 
 - 🌐 Web sitesi: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 Forum: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram kanalı: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Geliştirici: [uxazu](https://github.com/uxazu)
 - 🧬 İlk geliştirici: [t.me/istratii_tech](https://t.me/istratii_tech)

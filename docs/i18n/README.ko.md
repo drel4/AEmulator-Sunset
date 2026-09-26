@@ -6,7 +6,7 @@
 
 **클래식 Android 펌웨어 — HTC Sense, TouchWiz, MIUI, AOSP — 를 최신 휴대폰에서. 루팅도 PC도 필요 없습니다.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · **🇰🇷 한국어**
 
@@ -25,27 +25,20 @@ AEmulator는 펌웨어 파일에서 진짜 Android 2.3–4.4 시스템을 바로
 - 18개 언어의 Material 3 Expressive 인터페이스
 - 무료 오픈 소스(GPL-3.0)
 
-## 📱 지원 펌웨어
+## 📱 펌웨어 목록
 
-Xiaomi 15(Snapdragon 8 Elite, Android 16)에서 테스트했습니다. Android 2.3–4.4용 32비트 ARM 펌웨어라면 시도해 볼 만합니다. 목록은 확인된 이미지만 담고 있습니다.
+검증된 펌웨어 목록(상태, 메모, 다운로드 링크 포함)은 포럼에 있습니다. 결과를 공유하고 질문하고 새 이미지를 찾아보세요.
 
-| 기기 | Android | UI | 상태 | 다운로드 |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 동작 | [바로 가져올 수 있는 아카이브](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 동작 | [바로 가져올 수 있는 아카이브](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 동작 — 소리 동작 | [Google 팩토리 이미지](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 동작 — 소리 동작 | [Google 팩토리 이미지](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 동작 — Bluetooth 오류 창 | [Odin 패키지](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 일부 — 아직 소리 없음 | [Odin 패키지](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 작업 중 — 설정 마법사까지 부팅, 안정화 중 | [리커버리 ZIP](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 아직 — 비공식 포팅은 충돌 | [리커버리 ZIP](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> 펌웨어 파일은 각 제조사의 것입니다. 링크는 제조사 서버나 공개 아카이브로 연결되며 AEmulator에는 펌웨어가 포함되지 않습니다.
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%ED%8F%AC%EB%9F%BC%20%EC%97%B4%EA%B8%B0-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="포럼"/></a>
+
+</div>
 
 ## 🚀 빠른 시작
 
 1. [Releases](https://github.com/uxazu/aemulator/releases)에서 APK를 받아 설치합니다.
-2. 위 표에서 펌웨어를 휴대폰으로 받습니다.
+2. [포럼](https://aeforum.uxazuu.space/)에서 펌웨어를 찾아 휴대폰에 내려받으세요.
 3. AEmulator → **펌웨어 추가**에서 파일을 고릅니다. 가져오기는 몇 분 걸립니다.
 4. **시작**을 누릅니다. 첫 부팅은 앱 최적화로 더 오래 걸립니다.
 5. ⋮ 메뉴에서 볼륨·전원 버튼·로그, ⚙️에서 설정과 언어.
@@ -85,6 +78,7 @@ AEmulator로 추억의 휴대폰을 되살렸다면 개발을 후원할 수 있�
 ## 🔗 링크
 
 - 🌐 웹사이트: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 포럼: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 텔레그램 채널: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 제작자: [uxazu](https://github.com/uxazu)
 - 🧬 원작자: [t.me/istratii_tech](https://t.me/istratii_tech)

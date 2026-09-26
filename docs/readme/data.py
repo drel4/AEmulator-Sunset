@@ -8,11 +8,8 @@ _cfg = json.loads(_src[_src.index("window.AEMU_CONFIG =") + len("window.AEMU_CON
 
 VERSION = _cfg["version"]
 _L = _cfg["links"]
-REPO, SITE, CHANNEL, AUTHOR, ORIGINAL = _L["repo"], _L["site"], _L["channel"], _L["author"], _L["original"]
+REPO, SITE, FORUM, CHANNEL, AUTHOR, ORIGINAL = _L["repo"], _L["site"], _L["forum"], _L["channel"], _L["author"], _L["original"]
 DONATE, USDT, TON = _L["donate"], _L["usdt"], _L["ton"]
-FIRMWARE = [(f["device"], f["android"], f["skin"], f["status"], f.get("note"), f["url"], f["kind"]) for f in _cfg["firmware"]]
-
-STATUS_ICON = {"ok": "🟢", "partial": "🟡", "wip": "🟠", "no": "🔴"}
 
 LANGS = [  # код, самоназвание, флаг
     ("en", "English", "🇬🇧"), ("ru", "Русский", "🇷🇺"), ("uk", "Українська", "🇺🇦"), ("de", "Deutsch", "🇩🇪"),

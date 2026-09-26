@@ -113,8 +113,8 @@ window.AEMU_I18N = {
     "Material 3 Expressive interface in 18 languages",
     "Free and open source (GPL-3.0)"
    ],
-   "fw_title": "Supported firmware",
-   "fw_intro": "Tested on a Xiaomi 15 (Snapdragon 8 Elite, Android 16). Any 32-bit ARM firmware for Android 2.3–4.4 is worth trying — this list only covers images we have checked.",
+   "fw_title": "Firmware list",
+   "fw_intro": "The list of firmware that has been checked — with statuses, notes and download links — lives on our forum. Share your results there, ask questions and find new images.",
    "c_device": "Device",
    "c_android": "Android",
    "c_skin": "Skin",
@@ -141,7 +141,7 @@ window.AEMU_I18N = {
    "start_title": "Quick start",
    "steps": [
     "Download the APK from <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> and install it.",
-    "Download a firmware from the table above to your phone.",
+    "Find a firmware on the <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">forum</a> and download it to your phone.",
     "Open AEmulator → <b>Add firmware</b> and pick the file. Import takes a few minutes.",
     "Press <b>Start</b>. The first boot is slower: the system optimises its apps.",
     "Use the ⋮ menu for volume, power button and logs; the ⚙️ button opens app settings and language."
@@ -166,7 +166,9 @@ window.AEMU_I18N = {
    "l_author": "Author",
    "l_orig": "Original author",
    "license_title": "License",
-   "license_text": "GPL-3.0. Android, trademarks and firmware belong to their owners."
+   "license_text": "GPL-3.0. Android, trademarks and firmware belong to their owners.",
+   "forum": "Forum",
+   "forum_open": "Open the forum"
   },
   "ru": {
    "s_fw": "проверенных прошивок",
@@ -184,8 +186,8 @@ window.AEMU_I18N = {
     "Интерфейс Material 3 Expressive на 18 языках",
     "Бесплатно и с открытым кодом (GPL-3.0)"
    ],
-   "fw_title": "Поддерживаемые прошивки",
-   "fw_intro": "Проверено на Xiaomi 15 (Snapdragon 8 Elite, Android 16). Пробовать стоит любую 32-битную ARM-прошивку Android 2.3–4.4 — в списке только проверенные нами.",
+   "fw_title": "Список прошивок",
+   "fw_intro": "Список проверенных прошивок — со статусами, заметками и ссылками на скачивание — теперь на нашем форуме. Там же можно делиться результатами, задавать вопросы и находить новые образы.",
    "c_device": "Устройство",
    "c_android": "Android",
    "c_skin": "Оболочка",
@@ -212,7 +214,7 @@ window.AEMU_I18N = {
    "start_title": "Быстрый старт",
    "steps": [
     "Скачайте APK из <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> и установите.",
-    "Скачайте прошивку из таблицы выше на телефон.",
+    "Найдите прошивку на <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">форуме</a> и скачайте её на телефон.",
     "Откройте AEmulator → <b>Добавить прошивку</b> и выберите файл. Импорт занимает несколько минут.",
     "Нажмите <b>Запустить</b>. Первая загрузка дольше: система оптимизирует приложения.",
     "Меню ⋮ — громкость, кнопка питания и журнал; кнопка ⚙️ — настройки приложения и язык."
@@ -237,7 +239,9 @@ window.AEMU_I18N = {
    "l_author": "Автор",
    "l_orig": "Первый автор",
    "license_title": "Лицензия",
-   "license_text": "GPL-3.0. Android, товарные знаки и прошивки принадлежат их владельцам."
+   "license_text": "GPL-3.0. Android, товарные знаки и прошивки принадлежат их владельцам.",
+   "forum": "Форум",
+   "forum_open": "Открыть форум"
   },
   "uk": {
    "s_fw": "перевірених прошивок",
@@ -255,8 +259,8 @@ window.AEMU_I18N = {
     "Інтерфейс Material 3 Expressive 18 мовами",
     "Безкоштовно й з відкритим кодом (GPL-3.0)"
    ],
-   "fw_title": "Підтримувані прошивки",
-   "fw_intro": "Перевірено на Xiaomi 15 (Snapdragon 8 Elite, Android 16). Варто пробувати будь-яку 32-бітну ARM-прошивку Android 2.3–4.4 — у списку лише перевірені нами.",
+   "fw_title": "Список прошивок",
+   "fw_intro": "Список перевірених прошивок — зі статусами, нотатками й посиланнями на завантаження — тепер на нашому форумі. Там можна ділитися результатами, ставити запитання й знаходити нові образи.",
    "c_device": "Пристрій",
    "c_android": "Android",
    "c_skin": "Оболонка",
@@ -283,7 +287,7 @@ window.AEMU_I18N = {
    "start_title": "Швидкий старт",
    "steps": [
     "Завантажте APK з <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> і встановіть.",
-    "Завантажте прошивку з таблиці вище на телефон.",
+    "Знайдіть прошивку на <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">форумі</a> і завантажте її на телефон.",
     "Відкрийте AEmulator → <b>Додати прошивку</b> й виберіть файл. Імпорт триває кілька хвилин.",
     "Натисніть <b>Запустити</b>. Перше завантаження довше: система оптимізує застосунки.",
     "Меню ⋮ — гучність, кнопка живлення й журнал; кнопка ⚙️ — налаштування й мова."
@@ -308,7 +312,9 @@ window.AEMU_I18N = {
    "l_author": "Автор",
    "l_orig": "Перший автор",
    "license_title": "Ліцензія",
-   "license_text": "GPL-3.0. Android, торговельні марки й прошивки належать їхнім власникам."
+   "license_text": "GPL-3.0. Android, торговельні марки й прошивки належать їхнім власникам.",
+   "forum": "Форум",
+   "forum_open": "Відкрити форум"
   },
   "de": {
    "s_fw": "getestete Firmwares",
@@ -326,8 +332,8 @@ window.AEMU_I18N = {
     "Material-3-Expressive-Oberfläche in 18 Sprachen",
     "Kostenlos und quelloffen (GPL-3.0)"
    ],
-   "fw_title": "Unterstützte Firmware",
-   "fw_intro": "Getestet auf einem Xiaomi 15 (Snapdragon 8 Elite, Android 16). Jede 32-Bit-ARM-Firmware für Android 2.3–4.4 ist einen Versuch wert — die Liste enthält nur von uns geprüfte Images.",
+   "fw_title": "Firmware-Liste",
+   "fw_intro": "Die Liste geprüfter Firmwares — mit Status, Hinweisen und Download-Links — findest du in unserem Forum. Dort kannst du Ergebnisse teilen, Fragen stellen und neue Images entdecken.",
    "c_device": "Gerät",
    "c_android": "Android",
    "c_skin": "Oberfläche",
@@ -354,7 +360,7 @@ window.AEMU_I18N = {
    "start_title": "Schnellstart",
    "steps": [
     "APK unter <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> herunterladen und installieren.",
-    "Eine Firmware aus der Tabelle oben aufs Handy laden.",
+    "Such dir im <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">Forum</a> eine Firmware aus und lade sie aufs Handy.",
     "AEmulator öffnen → <b>Firmware hinzufügen</b> und die Datei wählen. Der Import dauert einige Minuten.",
     "<b>Starten</b> drücken. Der erste Start dauert länger: Das System optimiert Apps.",
     "Menü ⋮ für Lautstärke, Ein/Aus und Protokoll; ⚙️ öffnet Einstellungen und Sprache."
@@ -379,7 +385,9 @@ window.AEMU_I18N = {
    "l_author": "Autor",
    "l_orig": "Originalautor",
    "license_title": "Lizenz",
-   "license_text": "GPL-3.0. Android, Marken und Firmware gehören ihren Inhabern."
+   "license_text": "GPL-3.0. Android, Marken und Firmware gehören ihren Inhabern.",
+   "forum": "Forum",
+   "forum_open": "Forum öffnen"
   },
   "fr": {
    "s_fw": "ROM testées",
@@ -397,8 +405,8 @@ window.AEMU_I18N = {
     "Interface Material 3 Expressive en 18 langues",
     "Gratuit et open source (GPL-3.0)"
    ],
-   "fw_title": "ROM prises en charge",
-   "fw_intro": "Testé sur un Xiaomi 15 (Snapdragon 8 Elite, Android 16). Toute ROM ARM 32 bits pour Android 2.3–4.4 mérite un essai — la liste ne contient que les images vérifiées.",
+   "fw_title": "Liste des ROM",
+   "fw_intro": "La liste des ROM vérifiées — avec états, notes et liens de téléchargement — se trouve sur notre forum. Partagez-y vos résultats, posez vos questions et trouvez de nouvelles images.",
    "c_device": "Appareil",
    "c_android": "Android",
    "c_skin": "Surcouche",
@@ -425,7 +433,7 @@ window.AEMU_I18N = {
    "start_title": "Démarrage rapide",
    "steps": [
     "Téléchargez l’APK depuis <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> et installez-le.",
-    "Téléchargez une ROM du tableau ci-dessus sur le téléphone.",
+    "Trouvez une ROM sur le <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">forum</a> et téléchargez-la sur le téléphone.",
     "Ouvrez AEmulator → <b>Ajouter une ROM</b> et choisissez le fichier. L’import prend quelques minutes.",
     "Appuyez sur <b>Démarrer</b>. Le premier démarrage est plus long : le système optimise les applis.",
     "Menu ⋮ pour le volume, le bouton marche et le journal ; ⚙️ ouvre les paramètres et la langue."
@@ -450,7 +458,9 @@ window.AEMU_I18N = {
    "l_author": "Auteur",
    "l_orig": "Auteur d’origine",
    "license_title": "Licence",
-   "license_text": "GPL-3.0. Android, les marques et les ROM appartiennent à leurs propriétaires."
+   "license_text": "GPL-3.0. Android, les marques et les ROM appartiennent à leurs propriétaires.",
+   "forum": "Forum",
+   "forum_open": "Ouvrir le forum"
   },
   "es": {
    "s_fw": "firmwares probados",
@@ -468,8 +478,8 @@ window.AEMU_I18N = {
     "Interfaz Material 3 Expressive en 18 idiomas",
     "Gratis y de código abierto (GPL-3.0)"
    ],
-   "fw_title": "Firmware compatible",
-   "fw_intro": "Probado en un Xiaomi 15 (Snapdragon 8 Elite, Android 16). Vale la pena probar cualquier firmware ARM de 32 bits para Android 2.3–4.4; la lista solo incluye imágenes comprobadas.",
+   "fw_title": "Lista de firmwares",
+   "fw_intro": "La lista de firmwares comprobados — con estados, notas y enlaces de descarga — está en nuestro foro. Allí puedes compartir resultados, preguntar y encontrar nuevas imágenes.",
    "c_device": "Dispositivo",
    "c_android": "Android",
    "c_skin": "Capa",
@@ -496,7 +506,7 @@ window.AEMU_I18N = {
    "start_title": "Inicio rápido",
    "steps": [
     "Descarga el APK desde <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> e instálalo.",
-    "Descarga un firmware de la tabla anterior en el teléfono.",
+    "Busca un firmware en el <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">foro</a> y descárgalo en el teléfono.",
     "Abre AEmulator → <b>Añadir firmware</b> y elige el archivo. La importación tarda unos minutos.",
     "Pulsa <b>Iniciar</b>. El primer arranque es más lento: el sistema optimiza las apps.",
     "Menú ⋮ para volumen, botón de encendido y registro; ⚙️ abre ajustes e idioma."
@@ -521,7 +531,9 @@ window.AEMU_I18N = {
    "l_author": "Autor",
    "l_orig": "Autor original",
    "license_title": "Licencia",
-   "license_text": "GPL-3.0. Android, las marcas y el firmware pertenecen a sus dueños."
+   "license_text": "GPL-3.0. Android, las marcas y el firmware pertenecen a sus dueños.",
+   "forum": "Foro",
+   "forum_open": "Abrir el foro"
   },
   "pt-BR": {
    "s_fw": "firmwares testados",
@@ -539,8 +551,8 @@ window.AEMU_I18N = {
     "Interface Material 3 Expressive em 18 idiomas",
     "Gratuito e de código aberto (GPL-3.0)"
    ],
-   "fw_title": "Firmwares compatíveis",
-   "fw_intro": "Testado em um Xiaomi 15 (Snapdragon 8 Elite, Android 16). Vale tentar qualquer firmware ARM de 32 bits do Android 2.3–4.4; a lista traz só imagens verificadas.",
+   "fw_title": "Lista de firmwares",
+   "fw_intro": "A lista de firmwares verificados — com status, notas e links de download — fica no nosso fórum. Lá você compartilha resultados, tira dúvidas e encontra novas imagens.",
    "c_device": "Aparelho",
    "c_android": "Android",
    "c_skin": "Interface",
@@ -567,7 +579,7 @@ window.AEMU_I18N = {
    "start_title": "Início rápido",
    "steps": [
     "Baixe o APK em <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> e instale.",
-    "Baixe um firmware da tabela acima no celular.",
+    "Encontre um firmware no <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">fórum</a> e baixe no celular.",
     "Abra o AEmulator → <b>Adicionar firmware</b> e escolha o arquivo. A importação leva alguns minutos.",
     "Toque em <b>Iniciar</b>. A primeira inicialização é mais lenta: o sistema otimiza os apps.",
     "Menu ⋮ para volume, botão liga/desliga e registro; ⚙️ abre configurações e idioma."
@@ -592,7 +604,9 @@ window.AEMU_I18N = {
    "l_author": "Autor",
    "l_orig": "Autor original",
    "license_title": "Licença",
-   "license_text": "GPL-3.0. Android, marcas e firmwares pertencem aos seus donos."
+   "license_text": "GPL-3.0. Android, marcas e firmwares pertencem aos seus donos.",
+   "forum": "Fórum",
+   "forum_open": "Abrir o fórum"
   },
   "it": {
    "s_fw": "firmware testati",
@@ -610,8 +624,8 @@ window.AEMU_I18N = {
     "Interfaccia Material 3 Expressive in 18 lingue",
     "Gratuito e open source (GPL-3.0)"
    ],
-   "fw_title": "Firmware supportati",
-   "fw_intro": "Testato su Xiaomi 15 (Snapdragon 8 Elite, Android 16). Vale la pena provare qualsiasi firmware ARM a 32 bit per Android 2.3–4.4; l’elenco contiene solo immagini verificate.",
+   "fw_title": "Elenco firmware",
+   "fw_intro": "L’elenco dei firmware verificati — con stato, note e link per il download — è sul nostro forum. Lì puoi condividere i risultati, fare domande e trovare nuove immagini.",
    "c_device": "Dispositivo",
    "c_android": "Android",
    "c_skin": "Interfaccia",
@@ -638,7 +652,7 @@ window.AEMU_I18N = {
    "start_title": "Avvio rapido",
    "steps": [
     "Scarica l’APK da <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> e installalo.",
-    "Scarica sul telefono un firmware dalla tabella sopra.",
+    "Trova un firmware sul <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">forum</a> e scaricalo sul telefono.",
     "Apri AEmulator → <b>Aggiungi firmware</b> e scegli il file. L’importazione richiede qualche minuto.",
     "Premi <b>Avvia</b>. Il primo avvio è più lento: il sistema ottimizza le app.",
     "Menu ⋮ per volume, tasto di accensione e registro; ⚙️ apre impostazioni e lingua."
@@ -663,7 +677,9 @@ window.AEMU_I18N = {
    "l_author": "Autore",
    "l_orig": "Autore originale",
    "license_title": "Licenza",
-   "license_text": "GPL-3.0. Android, i marchi e i firmware appartengono ai rispettivi proprietari."
+   "license_text": "GPL-3.0. Android, i marchi e i firmware appartengono ai rispettivi proprietari.",
+   "forum": "Forum",
+   "forum_open": "Apri il forum"
   },
   "pl": {
    "s_fw": "przetestowanych firmware",
@@ -681,8 +697,8 @@ window.AEMU_I18N = {
     "Interfejs Material 3 Expressive w 18 językach",
     "Za darmo i open source (GPL-3.0)"
    ],
-   "fw_title": "Obsługiwane firmware",
-   "fw_intro": "Testowane na Xiaomi 15 (Snapdragon 8 Elite, Android 16). Warto spróbować dowolnego 32-bitowego firmware ARM dla Androida 2.3–4.4; lista zawiera tylko sprawdzone obrazy.",
+   "fw_title": "Lista firmware",
+   "fw_intro": "Lista sprawdzonych firmware — ze statusami, uwagami i linkami do pobrania — jest na naszym forum. Możesz tam dzielić się wynikami, zadawać pytania i znajdować nowe obrazy.",
    "c_device": "Urządzenie",
    "c_android": "Android",
    "c_skin": "Nakładka",
@@ -709,7 +725,7 @@ window.AEMU_I18N = {
    "start_title": "Szybki start",
    "steps": [
     "Pobierz APK z <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> i zainstaluj.",
-    "Pobierz na telefon firmware z tabeli powyżej.",
+    "Znajdź firmware na <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">forum</a> i pobierz je na telefon.",
     "Otwórz AEmulator → <b>Dodaj firmware</b> i wybierz plik. Import trwa kilka minut.",
     "Naciśnij <b>Uruchom</b>. Pierwszy start trwa dłużej: system optymalizuje aplikacje.",
     "Menu ⋮ — głośność, przycisk zasilania i dziennik; ⚙️ — ustawienia i język."
@@ -734,7 +750,9 @@ window.AEMU_I18N = {
    "l_author": "Autor",
    "l_orig": "Pierwotny autor",
    "license_title": "Licencja",
-   "license_text": "GPL-3.0. Android, znaki towarowe i firmware należą do ich właścicieli."
+   "license_text": "GPL-3.0. Android, znaki towarowe i firmware należą do ich właścicieli.",
+   "forum": "Forum",
+   "forum_open": "Otwórz forum"
   },
   "tr": {
    "s_fw": "test edilen yazılım",
@@ -752,8 +770,8 @@ window.AEMU_I18N = {
     "18 dilde Material 3 Expressive arayüz",
     "Ücretsiz ve açık kaynak (GPL-3.0)"
    ],
-   "fw_title": "Desteklenen yazılımlar",
-   "fw_intro": "Xiaomi 15 (Snapdragon 8 Elite, Android 16) üzerinde test edildi. Android 2.3–4.4 için her 32 bit ARM yazılımı denemeye değer; listede yalnızca doğrulanan imajlar var.",
+   "fw_title": "Yazılım listesi",
+   "fw_intro": "Test edilen yazılımların listesi — durumlar, notlar ve indirme bağlantılarıyla — forumumuzda. Orada sonuçlarını paylaşabilir, soru sorabilir ve yeni imajlar bulabilirsin.",
    "c_device": "Cihaz",
    "c_android": "Android",
    "c_skin": "Arayüz",
@@ -780,7 +798,7 @@ window.AEMU_I18N = {
    "start_title": "Hızlı başlangıç",
    "steps": [
     "APK’yı <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> sayfasından indirip kurun.",
-    "Yukarıdaki tablodan bir yazılımı telefona indirin.",
+    "<a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">Forumda</a> bir yazılım bul ve telefonuna indir.",
     "AEmulator’ı açın → <b>Yazılım ekle</b> ve dosyayı seçin. İçe aktarma birkaç dakika sürer.",
     "<b>Başlat</b>’a basın. İlk açılış daha uzundur: sistem uygulamaları optimize eder.",
     "⋮ menüsü: ses, güç düğmesi ve günlük; ⚙️ ayarları ve dili açar."
@@ -805,7 +823,9 @@ window.AEMU_I18N = {
    "l_author": "Geliştirici",
    "l_orig": "İlk geliştirici",
    "license_title": "Lisans",
-   "license_text": "GPL-3.0. Android, markalar ve yazılımlar sahiplerine aittir."
+   "license_text": "GPL-3.0. Android, markalar ve yazılımlar sahiplerine aittir.",
+   "forum": "Forum",
+   "forum_open": "Forumu aç"
   },
   "ar": {
    "s_fw": "برامج ثابتة مُختبرة",
@@ -823,8 +843,8 @@ window.AEMU_I18N = {
     "واجهة Material 3 Expressive بـ 18 لغة",
     "مجاني ومفتوح المصدر (GPL-3.0)"
    ],
-   "fw_title": "البرامج الثابتة المدعومة",
-   "fw_intro": "اختُبر على Xiaomi 15 ‏(Snapdragon 8 Elite، أندرويد 16). تستحق أي برامج ARM بمعمارية 32 بت لأندرويد 2.3–4.4 التجربة؛ القائمة تضم ما تحققنا منه فقط.",
+   "fw_title": "قائمة البرامج الثابتة",
+   "fw_intro": "قائمة البرامج الثابتة المُختبرة — مع الحالة والملاحظات وروابط التنزيل — موجودة في منتدانا. شارك نتائجك هناك واطرح أسئلتك واعثر على صور جديدة.",
    "c_device": "الجهاز",
    "c_android": "أندرويد",
    "c_skin": "الواجهة",
@@ -851,7 +871,7 @@ window.AEMU_I18N = {
    "start_title": "البدء السريع",
    "steps": [
     "نزّل ملف APK من <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> وثبّته.",
-    "نزّل برنامجًا ثابتًا من الجدول أعلاه إلى هاتفك.",
+    "ابحث عن برنامج ثابت في <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">المنتدى</a> ونزّله إلى هاتفك.",
     "افتح AEmulator ← <b>إضافة برنامج ثابت</b> واختر الملف. يستغرق الاستيراد بضع دقائق.",
     "اضغط <b>تشغيل</b>. الإقلاع الأول أبطأ: النظام يحسّن التطبيقات.",
     "القائمة ⋮ للصوت وزر التشغيل والسجل؛ وزر ⚙️ للإعدادات واللغة."
@@ -876,7 +896,9 @@ window.AEMU_I18N = {
    "l_author": "المطوّر",
    "l_orig": "المطوّر الأصلي",
    "license_title": "الترخيص",
-   "license_text": "GPL-3.0. أندرويد والعلامات التجارية والبرامج الثابتة ملك لأصحابها."
+   "license_text": "GPL-3.0. أندرويد والعلامات التجارية والبرامج الثابتة ملك لأصحابها.",
+   "forum": "المنتدى",
+   "forum_open": "افتح المنتدى"
   },
   "fa": {
    "s_fw": "فرم‌ویر آزموده",
@@ -894,8 +916,8 @@ window.AEMU_I18N = {
     "رابط Material 3 Expressive به 18 زبان",
     "رایگان و متن‌باز (GPL-3.0)"
    ],
-   "fw_title": "فرم‌ویرهای پشتیبانی‌شده",
-   "fw_intro": "روی Xiaomi 15 ‏(Snapdragon 8 Elite، اندروید 16) آزمایش شده است. هر فرم‌ویر ARM ‏32 بیتی اندروید 2.3 تا 4.4 ارزش امتحان دارد؛ فهرست فقط ایمیج‌های بررسی‌شده را دارد.",
+   "fw_title": "فهرست فرم‌ویرها",
+   "fw_intro": "فهرست فرم‌ویرهای آزموده — با وضعیت، یادداشت و پیوند دانلود — در انجمن ما است. آنجا نتایج خود را به اشتراک بگذارید، بپرسید و ایمیج‌های تازه پیدا کنید.",
    "c_device": "دستگاه",
    "c_android": "اندروید",
    "c_skin": "رابط",
@@ -922,7 +944,7 @@ window.AEMU_I18N = {
    "start_title": "شروع سریع",
    "steps": [
     "فایل APK را از <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> دانلود و نصب کنید.",
-    "یک فرم‌ویر از جدول بالا روی گوشی دانلود کنید.",
+    "فرم‌ویری را در <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">انجمن</a> پیدا کنید و روی گوشی دانلود کنید.",
     "AEmulator را باز کنید ← <b>افزودن فرم‌ویر</b> و فایل را انتخاب کنید. درون‌ریزی چند دقیقه طول می‌کشد.",
     "<b>اجرا</b> را بزنید. بوت اول کندتر است: سیستم برنامه‌ها را بهینه می‌کند.",
     "منوی ⋮ برای صدا، دکمهٔ پاور و گزارش؛ دکمهٔ ⚙️ برای تنظیمات و زبان."
@@ -947,7 +969,9 @@ window.AEMU_I18N = {
    "l_author": "سازنده",
    "l_orig": "سازندهٔ نخست",
    "license_title": "مجوز",
-   "license_text": "GPL-3.0. اندروید، نشان‌های تجاری و فرم‌ویرها متعلق به صاحبانشان‌اند."
+   "license_text": "GPL-3.0. اندروید، نشان‌های تجاری و فرم‌ویرها متعلق به صاحبانشان‌اند.",
+   "forum": "انجمن",
+   "forum_open": "باز کردن انجمن"
   },
   "hi": {
    "s_fw": "परखे गए फ़र्मवेयर",
@@ -965,8 +989,8 @@ window.AEMU_I18N = {
     "18 भाषाओं में Material 3 Expressive इंटरफ़ेस",
     "मुफ़्त और ओपन सोर्स (GPL-3.0)"
    ],
-   "fw_title": "समर्थित फ़र्मवेयर",
-   "fw_intro": "Xiaomi 15 (Snapdragon 8 Elite, Android 16) पर परखा गया। Android 2.3–4.4 का कोई भी 32-बिट ARM फ़र्मवेयर आज़माने लायक है; सूची में केवल जाँची गई इमेज हैं।",
+   "fw_title": "फ़र्मवेयर सूची",
+   "fw_intro": "परखे गए फ़र्मवेयर की सूची — स्थिति, नोट्स और डाउनलोड लिंक के साथ — हमारे फ़ोरम पर है। वहाँ अपने नतीजे साझा करें, सवाल पूछें और नई इमेज खोजें।",
    "c_device": "डिवाइस",
    "c_android": "Android",
    "c_skin": "स्किन",
@@ -993,7 +1017,7 @@ window.AEMU_I18N = {
    "start_title": "जल्दी शुरुआत",
    "steps": [
     "<a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> से APK डाउनलोड करके इंस्टॉल करें।",
-    "ऊपर की तालिका से कोई फ़र्मवेयर फ़ोन पर डाउनलोड करें।",
+    "<a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">फ़ोरम</a> पर फ़र्मवेयर खोजें और फ़ोन पर डाउनलोड करें।",
     "AEmulator खोलें → <b>फ़र्मवेयर जोड़ें</b> और फ़ाइल चुनें। आयात में कुछ मिनट लगते हैं।",
     "<b>चलाएँ</b> दबाएँ। पहला बूट धीमा होता है: सिस्टम ऐप्स ऑप्टिमाइज़ करता है।",
     "⋮ मेनू में वॉल्यूम, पावर बटन और लॉग; ⚙️ से सेटिंग्स और भाषा।"
@@ -1018,7 +1042,9 @@ window.AEMU_I18N = {
    "l_author": "लेखक",
    "l_orig": "मूल लेखक",
    "license_title": "लाइसेंस",
-   "license_text": "GPL-3.0। Android, ट्रेडमार्क और फ़र्मवेयर उनके स्वामियों के हैं।"
+   "license_text": "GPL-3.0। Android, ट्रेडमार्क और फ़र्मवेयर उनके स्वामियों के हैं।",
+   "forum": "फ़ोरम",
+   "forum_open": "फ़ोरम खोलें"
   },
   "id": {
    "s_fw": "firmware teruji",
@@ -1036,8 +1062,8 @@ window.AEMU_I18N = {
     "Antarmuka Material 3 Expressive dalam 18 bahasa",
     "Gratis dan sumber terbuka (GPL-3.0)"
    ],
-   "fw_title": "Firmware yang didukung",
-   "fw_intro": "Diuji di Xiaomi 15 (Snapdragon 8 Elite, Android 16). Firmware ARM 32-bit apa pun untuk Android 2.3–4.4 layak dicoba; daftar ini hanya memuat image yang sudah kami periksa.",
+   "fw_title": "Daftar firmware",
+   "fw_intro": "Daftar firmware yang sudah diperiksa — lengkap dengan status, catatan, dan tautan unduhan — ada di forum kami. Bagikan hasilmu, bertanya, dan temukan image baru di sana.",
    "c_device": "Perangkat",
    "c_android": "Android",
    "c_skin": "Tampilan",
@@ -1064,7 +1090,7 @@ window.AEMU_I18N = {
    "start_title": "Mulai cepat",
    "steps": [
     "Unduh APK dari <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> lalu pasang.",
-    "Unduh firmware dari tabel di atas ke ponsel.",
+    "Cari firmware di <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">forum</a> lalu unduh ke ponsel.",
     "Buka AEmulator → <b>Tambah firmware</b> lalu pilih file. Impor butuh beberapa menit.",
     "Tekan <b>Mulai</b>. Boot pertama lebih lambat: sistem mengoptimalkan aplikasi.",
     "Menu ⋮ untuk volume, tombol daya, dan log; ⚙️ membuka setelan dan bahasa."
@@ -1089,7 +1115,9 @@ window.AEMU_I18N = {
    "l_author": "Pembuat",
    "l_orig": "Pembuat asli",
    "license_title": "Lisensi",
-   "license_text": "GPL-3.0. Android, merek dagang, dan firmware milik pemiliknya."
+   "license_text": "GPL-3.0. Android, merek dagang, dan firmware milik pemiliknya.",
+   "forum": "Forum",
+   "forum_open": "Buka forum"
   },
   "vi": {
    "s_fw": "firmware đã thử",
@@ -1107,8 +1135,8 @@ window.AEMU_I18N = {
     "Giao diện Material 3 Expressive với 18 ngôn ngữ",
     "Miễn phí và mã nguồn mở (GPL-3.0)"
    ],
-   "fw_title": "Firmware được hỗ trợ",
-   "fw_intro": "Đã thử trên Xiaomi 15 (Snapdragon 8 Elite, Android 16). Mọi firmware ARM 32-bit cho Android 2.3–4.4 đều đáng thử; danh sách chỉ gồm các image đã kiểm tra.",
+   "fw_title": "Danh sách firmware",
+   "fw_intro": "Danh sách firmware đã kiểm tra — kèm trạng thái, ghi chú và liên kết tải — nằm trên diễn đàn của chúng tôi. Tại đó bạn có thể chia sẻ kết quả, đặt câu hỏi và tìm image mới.",
    "c_device": "Thiết bị",
    "c_android": "Android",
    "c_skin": "Giao diện",
@@ -1135,7 +1163,7 @@ window.AEMU_I18N = {
    "start_title": "Bắt đầu nhanh",
    "steps": [
     "Tải APK từ <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> và cài đặt.",
-    "Tải một firmware trong bảng trên về điện thoại.",
+    "Tìm firmware trên <a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">diễn đàn</a> và tải về điện thoại.",
     "Mở AEmulator → <b>Thêm firmware</b> và chọn tệp. Việc nhập mất vài phút.",
     "Nhấn <b>Chạy</b>. Lần khởi động đầu chậm hơn: hệ thống tối ưu ứng dụng.",
     "Menu ⋮ để chỉnh âm lượng, nút nguồn và nhật ký; ⚙️ mở cài đặt và ngôn ngữ."
@@ -1160,7 +1188,9 @@ window.AEMU_I18N = {
    "l_author": "Tác giả",
    "l_orig": "Tác giả gốc",
    "license_title": "Giấy phép",
-   "license_text": "GPL-3.0. Android, nhãn hiệu và firmware thuộc về chủ sở hữu."
+   "license_text": "GPL-3.0. Android, nhãn hiệu và firmware thuộc về chủ sở hữu.",
+   "forum": "Diễn đàn",
+   "forum_open": "Mở diễn đàn"
   },
   "zh-CN": {
    "s_fw": "已测试固件",
@@ -1178,8 +1208,8 @@ window.AEMU_I18N = {
     "Material 3 Expressive 界面，支持 18 种语言",
     "免费开源（GPL-3.0）"
    ],
-   "fw_title": "支持的固件",
-   "fw_intro": "在 Xiaomi 15（骁龙 8 Elite，Android 16）上测试。任何适用于 Android 2.3–4.4 的 32 位 ARM 固件都值得一试；列表仅包含我们验证过的镜像。",
+   "fw_title": "固件列表",
+   "fw_intro": "已验证固件的列表（含状态、备注和下载链接）现已移至我们的论坛。你可以在那里分享结果、提问并发现新的镜像。",
    "c_device": "设备",
    "c_android": "Android",
    "c_skin": "系统界面",
@@ -1206,7 +1236,7 @@ window.AEMU_I18N = {
    "start_title": "快速开始",
    "steps": [
     "从 <a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> 下载并安装 APK。",
-    "把上表中的固件下载到手机。",
+    "在<a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">论坛</a>找到固件并下载到手机。",
     "打开 AEmulator →<b>添加固件</b>并选择文件。导入需要几分钟。",
     "点击<b>启动</b>。首次启动较慢：系统正在优化应用。",
     "⋮ 菜单可调音量、电源键和日志；⚙️ 打开设置与语言。"
@@ -1231,7 +1261,9 @@ window.AEMU_I18N = {
    "l_author": "作者",
    "l_orig": "原作者",
    "license_title": "许可证",
-   "license_text": "GPL-3.0。Android、商标及固件归其所有者所有。"
+   "license_text": "GPL-3.0。Android、商标及固件归其所有者所有。",
+   "forum": "论坛",
+   "forum_open": "打开论坛"
   },
   "ja": {
    "s_fw": "検証済みファームウェア",
@@ -1249,8 +1281,8 @@ window.AEMU_I18N = {
     "18 言語対応の Material 3 Expressive UI",
     "無料・オープンソース（GPL-3.0）"
    ],
-   "fw_title": "対応ファームウェア",
-   "fw_intro": "Xiaomi 15（Snapdragon 8 Elite、Android 16）で検証。Android 2.3〜4.4 の 32 ビット ARM ファームウェアなら試す価値があります。一覧は検証済みのイメージのみです。",
+   "fw_title": "ファームウェア一覧",
+   "fw_intro": "動作確認済みファームウェアの一覧（状態・メモ・ダウンロードリンク付き）はフォーラムにあります。結果の共有や質問、新しいイメージ探しもそちらでどうぞ。",
    "c_device": "端末",
    "c_android": "Android",
    "c_skin": "UI",
@@ -1277,7 +1309,7 @@ window.AEMU_I18N = {
    "start_title": "クイックスタート",
    "steps": [
     "<a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a> から APK をダウンロードしてインストール。",
-    "上の表からファームウェアをスマホにダウンロード。",
+    "<a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">フォーラム</a>でファームウェアを探し、スマホにダウンロードします。",
     "AEmulator を開き →<b>ファームウェアを追加</b>でファイルを選択。インポートには数分かかります。",
     "<b>起動</b>をタップ。初回はアプリ最適化のため時間がかかります。",
     "⋮ メニューで音量・電源ボタン・ログ、⚙️ で設定と言語。"
@@ -1302,7 +1334,9 @@ window.AEMU_I18N = {
    "l_author": "作者",
    "l_orig": "オリジナル作者",
    "license_title": "ライセンス",
-   "license_text": "GPL-3.0。Android、商標、ファームウェアは各所有者に帰属します。"
+   "license_text": "GPL-3.0。Android、商標、ファームウェアは各所有者に帰属します。",
+   "forum": "フォーラム",
+   "forum_open": "フォーラムを開く"
   },
   "ko": {
    "s_fw": "테스트된 펌웨어",
@@ -1320,8 +1354,8 @@ window.AEMU_I18N = {
     "18개 언어의 Material 3 Expressive 인터페이스",
     "무료 오픈 소스(GPL-3.0)"
    ],
-   "fw_title": "지원 펌웨어",
-   "fw_intro": "Xiaomi 15(Snapdragon 8 Elite, Android 16)에서 테스트했습니다. Android 2.3–4.4용 32비트 ARM 펌웨어라면 시도해 볼 만합니다. 목록은 확인된 이미지만 담고 있습니다.",
+   "fw_title": "펌웨어 목록",
+   "fw_intro": "검증된 펌웨어 목록(상태, 메모, 다운로드 링크 포함)은 포럼에 있습니다. 결과를 공유하고 질문하고 새 이미지를 찾아보세요.",
    "c_device": "기기",
    "c_android": "Android",
    "c_skin": "UI",
@@ -1348,7 +1382,7 @@ window.AEMU_I18N = {
    "start_title": "빠른 시작",
    "steps": [
     "<a href=\"https://github.com/uxazu/aemulator/releases\" target=\"_blank\" rel=\"noopener\">Releases</a>에서 APK를 받아 설치합니다.",
-    "위 표에서 펌웨어를 휴대폰으로 받습니다.",
+    "<a href=\"https://aeforum.uxazuu.space/\" target=\"_blank\" rel=\"noopener\">포럼</a>에서 펌웨어를 찾아 휴대폰에 내려받으세요.",
     "AEmulator → <b>펌웨어 추가</b>에서 파일을 고릅니다. 가져오기는 몇 분 걸립니다.",
     "<b>시작</b>을 누릅니다. 첫 부팅은 앱 최적화로 더 오래 걸립니다.",
     "⋮ 메뉴에서 볼륨·전원 버튼·로그, ⚙️에서 설정과 언어."
@@ -1373,7 +1407,9 @@ window.AEMU_I18N = {
    "l_author": "제작자",
    "l_orig": "원작자",
    "license_title": "라이선스",
-   "license_text": "GPL-3.0. Android, 상표, 펌웨어는 각 소유자에게 있습니다."
+   "license_text": "GPL-3.0. Android, 상표, 펌웨어는 각 소유자에게 있습니다.",
+   "forum": "포럼",
+   "forum_open": "포럼 열기"
   }
  }
 };
