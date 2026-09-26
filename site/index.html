@@ -73,9 +73,9 @@
         <a class="m3-btn m3-btn--filled ripple tilt" data-link="releases"><span class="material-symbols-rounded">download</span><span data-t="c_download"></span> APK</a>
         <a class="m3-btn m3-btn--tonal ripple tilt" data-link="repo"><svg class="gh-mark" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
         <a class="m3-btn m3-btn--outlined ripple tilt" data-link="channel"><span class="material-symbols-rounded">send</span>Telegram</a>
+        <a class="m3-btn m3-btn--forum ripple tilt" data-link="forum"><span class="material-symbols-rounded">forum</span><span data-t="forum"></span></a>
       </div>
       <div class="hero__stats">
-        <div class="stat tilt"><span class="stat__num" id="statFw">0</span><span class="stat__label" data-t="s_fw"></span></div>
         <div class="stat tilt"><span class="stat__num" data-count="18">0</span><span class="stat__label" data-t="s_langs"></span></div>
         <div class="stat tilt"><span class="stat__num">2.3<small>–</small>4.4</span><span class="stat__label">Android</span></div>
       </div>
@@ -117,12 +117,16 @@
   <section class="section" id="firmware">
     <div class="section__head reveal">
       <span class="section__chip section__chip--tert"><span class="material-symbols-rounded">deployed_code</span><span data-t="fw_title"></span></span>
-      <h2 data-t="fw_title"></h2>
-      <p class="section__lead" data-t="fw_intro"></p>
-      <div class="legend" id="legend"></div>
     </div>
-    <div class="projects-grid" id="fw"></div>
-    <p class="note reveal"><span class="material-symbols-rounded">info</span><span data-t="fw_legal"></span></p>
+    <a class="forum-card reveal tilt" data-link="forum">
+      <span class="forum-card__icon"><span class="material-symbols-rounded">forum</span></span>
+      <span class="forum-card__body">
+        <h2 data-t="fw_title"></h2>
+        <p data-t="fw_intro"></p>
+        <span class="m3-btn m3-btn--light forum-card__btn"><span class="material-symbols-rounded">open_in_new</span><span data-t="forum_open"></span></span>
+        <small class="forum-card__url">aeforum.uxazuu.space</small>
+      </span>
+    </a>
   </section>
 
   <!-- СТАРТ -->
@@ -179,6 +183,11 @@
       <a class="contact-card glass reveal tilt" data-link="repo">
         <span class="contact-card__icon contact-card__gh"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></span>
         <span class="contact-card__body"><h3>GitHub</h3><p>uxazu/aemulator</p></span>
+        <span class="material-symbols-rounded contact-card__arrow">arrow_outward</span>
+      </a>
+      <a class="contact-card glass reveal tilt" data-link="forum">
+        <span class="contact-card__icon contact-card--forum"><span class="material-symbols-rounded">forum</span></span>
+        <span class="contact-card__body"><h3 data-t="forum"></h3><p>aeforum.uxazuu.space</p></span>
         <span class="material-symbols-rounded contact-card__arrow">arrow_outward</span>
       </a>
       <a class="contact-card glass reveal tilt" data-link="channel">

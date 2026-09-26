@@ -6,7 +6,7 @@
 
 **पुराने Android फ़र्मवेयर — HTC Sense, TouchWiz, MIUI, AOSP — आधुनिक फ़ोन पर। बिना root, बिना PC।**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · **🇮🇳 हिन्दी** · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,27 +25,20 @@ AEmulator सीधे फ़र्मवेयर फ़ाइल से अस
 - 18 भाषाओं में Material 3 Expressive इंटरफ़ेस
 - मुफ़्त और ओपन सोर्स (GPL-3.0)
 
-## 📱 समर्थित फ़र्मवेयर
+## 📱 फ़र्मवेयर सूची
 
-Xiaomi 15 (Snapdragon 8 Elite, Android 16) पर परखा गया। Android 2.3–4.4 का कोई भी 32-बिट ARM फ़र्मवेयर आज़माने लायक है; सूची में केवल जाँची गई इमेज हैं।
+परखे गए फ़र्मवेयर की सूची — स्थिति, नोट्स और डाउनलोड लिंक के साथ — हमारे फ़ोरम पर है। वहाँ अपने नतीजे साझा करें, सवाल पूछें और नई इमेज खोजें।
 
-| डिवाइस | Android | स्किन | स्थिति | डाउनलोड |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 चलता है | [आयात के लिए तैयार आर्काइव](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 चलता है | [आयात के लिए तैयार आर्काइव](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 चलता है — आवाज़ काम करती है | [Google फ़ैक्टरी इमेज](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 चलता है — आवाज़ काम करती है | [Google फ़ैक्टरी इमेज](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 चलता है — Bluetooth त्रुटि संवाद | [Odin पैकेज](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 आंशिक — अभी आवाज़ नहीं | [Odin पैकेज](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 काम जारी — सेटअप तक बूट होता है, स्थिर किया जा रहा है | [रिकवरी ZIP](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 अभी नहीं — अनौपचारिक पोर्ट क्रैश होता है | [रिकवरी ZIP](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> फ़र्मवेयर फ़ाइलें उनके निर्माताओं की हैं। लिंक निर्माताओं के सर्वर या सार्वजनिक आर्काइव पर जाते हैं; AEmulator में कोई फ़र्मवेयर नहीं है।
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%E0%A4%AB%E0%A4%BC%E0%A5%8B%E0%A4%B0%E0%A4%AE%20%E0%A4%96%E0%A5%8B%E0%A4%B2%E0%A5%87%E0%A4%82-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="फ़ोरम"/></a>
+
+</div>
 
 ## 🚀 जल्दी शुरुआत
 
 1. [Releases](https://github.com/uxazu/aemulator/releases) से APK डाउनलोड करके इंस्टॉल करें।
-2. ऊपर की तालिका से कोई फ़र्मवेयर फ़ोन पर डाउनलोड करें।
+2. [फ़ोरम](https://aeforum.uxazuu.space/) पर फ़र्मवेयर खोजें और फ़ोन पर डाउनलोड करें।
 3. AEmulator खोलें → **फ़र्मवेयर जोड़ें** और फ़ाइल चुनें। आयात में कुछ मिनट लगते हैं।
 4. **चलाएँ** दबाएँ। पहला बूट धीमा होता है: सिस्टम ऐप्स ऑप्टिमाइज़ करता है।
 5. ⋮ मेनू में वॉल्यूम, पावर बटन और लॉग; ⚙️ से सेटिंग्स और भाषा।
@@ -85,6 +78,7 @@ AEmulator [मूल लेखक](https://t.me/istratii_tech) के HTC Desire
 ## 🔗 लिंक
 
 - 🌐 वेबसाइट: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 फ़ोरम: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram चैनल: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 लेखक: [uxazu](https://github.com/uxazu)
 - 🧬 मूल लेखक: [t.me/istratii_tech](https://t.me/istratii_tech)

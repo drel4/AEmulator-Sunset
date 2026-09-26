@@ -6,7 +6,7 @@
 
 **Klassische Android-Firmware — HTC Sense, TouchWiz, MIUI, AOSP — auf einem modernen Handy. Ohne Root, ohne PC.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · **🇩🇪 Deutsch** · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,27 +25,20 @@ AEmulator startet ein echtes Android-2.3–4.4-System direkt aus einer Firmware-
 - Material-3-Expressive-Oberfläche in 18 Sprachen
 - Kostenlos und quelloffen (GPL-3.0)
 
-## 📱 Unterstützte Firmware
+## 📱 Firmware-Liste
 
-Getestet auf einem Xiaomi 15 (Snapdragon 8 Elite, Android 16). Jede 32-Bit-ARM-Firmware für Android 2.3–4.4 ist einen Versuch wert — die Liste enthält nur von uns geprüfte Images.
+Die Liste geprüfter Firmwares — mit Status, Hinweisen und Download-Links — findest du in unserem Forum. Dort kannst du Ergebnisse teilen, Fragen stellen und neue Images entdecken.
 
-| Gerät | Android | Oberfläche | Status | Download |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 Läuft | [importfertiges Archiv](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 Läuft | [importfertiges Archiv](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 Läuft — Ton funktioniert | [Google-Factory-Image](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 Läuft — Ton funktioniert | [Google-Factory-Image](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 Läuft — Bluetooth-Fehlerdialog | [Odin-Paket](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 Teilweise — noch kein Ton | [Odin-Paket](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 In Arbeit — startet bis zur Einrichtung, wird stabilisiert | [Recovery-ZIP](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 Noch nicht — inoffizieller Port stürzt ab | [Recovery-ZIP](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> Firmware-Dateien gehören ihren Herstellern. Links führen zu Herstellerservern oder öffentlichen Archiven; AEmulator enthält keine Firmware.
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/Forum%20%C3%B6ffnen-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="Forum"/></a>
+
+</div>
 
 ## 🚀 Schnellstart
 
 1. APK unter [Releases](https://github.com/uxazu/aemulator/releases) herunterladen und installieren.
-2. Eine Firmware aus der Tabelle oben aufs Handy laden.
+2. Such dir im [Forum](https://aeforum.uxazuu.space/) eine Firmware aus und lade sie aufs Handy.
 3. AEmulator öffnen → **Firmware hinzufügen** und die Datei wählen. Der Import dauert einige Minuten.
 4. **Starten** drücken. Der erste Start dauert länger: Das System optimiert Apps.
 5. Menü ⋮ für Lautstärke, Ein/Aus und Protokoll; ⚙️ öffnet Einstellungen und Sprache.
@@ -85,6 +78,7 @@ Wenn AEmulator dir ein geliebtes Handy zurückgebracht hat, kannst du die Entwic
 ## 🔗 Links
 
 - 🌐 Website: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 Forum: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram-Kanal: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Autor: [uxazu](https://github.com/uxazu)
 - 🧬 Originalautor: [t.me/istratii_tech](https://t.me/istratii_tech)

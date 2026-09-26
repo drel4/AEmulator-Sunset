@@ -6,7 +6,7 @@
 
 **在现代手机上运行经典 Android 固件——HTC Sense、TouchWiz、MIUI、AOSP。无需 root，无需电脑。**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · **🇨🇳 简体中文** · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,27 +25,20 @@ AEmulator 直接从固件文件启动真实的 Android 2.3–4.4 系统：Recove
 - Material 3 Expressive 界面，支持 18 种语言
 - 免费开源（GPL-3.0）
 
-## 📱 支持的固件
+## 📱 固件列表
 
-在 Xiaomi 15（骁龙 8 Elite，Android 16）上测试。任何适用于 Android 2.3–4.4 的 32 位 ARM 固件都值得一试；列表仅包含我们验证过的镜像。
+已验证固件的列表（含状态、备注和下载链接）现已移至我们的论坛。你可以在那里分享结果、提问并发现新的镜像。
 
-| 设备 | Android | 系统界面 | 状态 | 下载 |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 可用 | [可直接导入的压缩包](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 可用 | [可直接导入的压缩包](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 可用 — 声音正常 | [Google 出厂镜像](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 可用 — 声音正常 | [Google 出厂镜像](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 可用 — 蓝牙错误弹窗 | [Odin 包](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 部分可用 — 暂无声音 | [Odin 包](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 进行中 — 可进入开机向导，正在完善 | [卡刷 ZIP](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 暂不支持 — 非官方移植会崩溃 | [卡刷 ZIP](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> 固件归各厂商所有。链接指向厂商服务器或公共存档；AEmulator 不附带任何固件。
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%E6%89%93%E5%BC%80%E8%AE%BA%E5%9D%9B-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="论坛"/></a>
+
+</div>
 
 ## 🚀 快速开始
 
 1. 从 [Releases](https://github.com/uxazu/aemulator/releases) 下载并安装 APK。
-2. 把上表中的固件下载到手机。
+2. 在[论坛](https://aeforum.uxazuu.space/)找到固件并下载到手机。
 3. 打开 AEmulator →**添加固件**并选择文件。导入需要几分钟。
 4. 点击**启动**。首次启动较慢：系统正在优化应用。
 5. ⋮ 菜单可调音量、电源键和日志；⚙️ 打开设置与语言。
@@ -85,6 +78,7 @@ AEmulator 源自[原作者](https://t.me/istratii_tech)的 HTC Desire HD 与 HTC
 ## 🔗 链接
 
 - 🌐 网站: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 论坛: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram 频道: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 作者: [uxazu](https://github.com/uxazu)
 - 🧬 原作者: [t.me/istratii_tech](https://t.me/istratii_tech)

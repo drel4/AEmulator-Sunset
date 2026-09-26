@@ -6,7 +6,7 @@
 
 **Старые прошивки Android — HTC Sense, TouchWiz, MIUI, AOSP — на современном телефоне. Без root и без ПК.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.1-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
 
 [🇬🇧 English](../../README.md) · **🇷🇺 Русский** · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,27 +25,20 @@ AEmulator загружает настоящую систему Android 2.3–4.4
 - Интерфейс Material 3 Expressive на 18 языках
 - Бесплатно и с открытым кодом (GPL-3.0)
 
-## 📱 Поддерживаемые прошивки
+## 📱 Список прошивок
 
-Проверено на Xiaomi 15 (Snapdragon 8 Elite, Android 16). Пробовать стоит любую 32-битную ARM-прошивку Android 2.3–4.4 — в списке только проверенные нами.
+Список проверенных прошивок — со статусами, заметками и ссылками на скачивание — теперь на нашем форуме. Там же можно делиться результатами, задавать вопросы и находить новые образы.
 
-| Устройство | Android | Оболочка | Статус | Скачать |
-|---|:---:|---|---|---|
-| HTC Desire HD | 2.3.3 | HTC Sense | 🟢 Работает | [готовый архив для импорта](https://drive.google.com/file/d/1GGOOw60JLXXA5yFbWu9SubTZ_1W1vxjE/view?usp=sharing) |
-| HTC One M7 | 4.4.2 | Sense 5.5 | 🟢 Работает | [готовый архив для импорта](https://drive.google.com/file/d/1Gcz8uD6fAXNt93kqorGHA38TW_bQ12_d/view?usp=drive_link) |
-| Google Galaxy Nexus (takju) | 4.3 | AOSP | 🟢 Работает — звук работает | [factory-образ Google](https://dl.google.com/dl/android/aosp/takju-jwr66y-factory-5104ab1d.tgz) |
-| Google Nexus 4 (occam) | 4.4.4 | AOSP | 🟢 Работает — звук работает | [factory-образ Google](https://dl.google.com/dl/android/aosp/occam-ktu84p-factory-b6ac3ad6.tgz) |
-| Samsung Galaxy S II (GT-I9100) | 2.3.3 | TouchWiz | 🟢 Работает — окно ошибки Bluetooth | [пакет Odin](https://archive.org/download/i9100xexe/I9100XEKE1.zip) |
-| Samsung Galaxy S III (GT-I9300) | 4.3 | TouchWiz | 🟡 Частично — пока без звука | [пакет Odin](https://archive.org/download/i-9300-xxugnj-2-i-9300-oxxgnj-1-xef/I9300XXUGNJ2_I9300OXXGNJ1_XEF.zip) |
-| Xiaomi Redmi 1S (HM2014011) | 4.4.2 | MIUI 8 | 🟠 В работе — доходит до мастера настройки, дорабатывается | [ZIP для рекавери](https://archive.org/download/HM2014011/multirom_HM1STD_V8.5.1.0.KHFCNED_v4.4.2_b10_3f73d79027.zip) |
-| Samsung Galaxy S II (port) | 4.4 | MIUI 7 | 🔴 Пока нет — неофициальный порт падает | [ZIP для рекавери](https://archive.org/download/FullotaMiui7I9100Initial.release/Fullota_Miui7-I9100-Initial.release.zip) |
+<div align="center">
 
-> Файлы прошивок принадлежат производителям. Ссылки ведут на серверы производителей или публичные архивы; AEmulator не содержит прошивок.
+<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%D0%9E%D1%82%D0%BA%D1%80%D1%8B%D1%82%D1%8C%20%D1%84%D0%BE%D1%80%D1%83%D0%BC-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="Форум"/></a>
+
+</div>
 
 ## 🚀 Быстрый старт
 
 1. Скачайте APK из [Releases](https://github.com/uxazu/aemulator/releases) и установите.
-2. Скачайте прошивку из таблицы выше на телефон.
+2. Найдите прошивку на [форуме](https://aeforum.uxazuu.space/) и скачайте её на телефон.
 3. Откройте AEmulator → **Добавить прошивку** и выберите файл. Импорт занимает несколько минут.
 4. Нажмите **Запустить**. Первая загрузка дольше: система оптимизирует приложения.
 5. Меню ⋮ — громкость, кнопка питания и журнал; кнопка ⚙️ — настройки приложения и язык.
@@ -85,6 +78,7 @@ AEmulator вырос из эмуляторов HTC Desire HD и HTC One M7 [пе
 ## 🔗 Ссылки
 
 - 🌐 Сайт: [aemulator.gt.tc](https://aemulator.gt.tc)
+- 💬 Форум: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram-канал: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Автор: [uxazu](https://github.com/uxazu)
 - 🧬 Первый автор: [t.me/istratii_tech](https://t.me/istratii_tech)

@@ -738,3 +738,29 @@ T["ko"] = dict(
     license_title="라이선스",
     license_text="GPL-3.0. Android, 상표, 펌웨어는 각 소유자에게 있습니다.",
 )
+
+# Список прошивок переехал на форум: заголовок, текст, кнопка и шаг 2 «Быстрого старта».
+_FORUM = {
+    "en": ("Firmware list", "The list of firmware that has been checked — with statuses, notes and download links — lives on our forum. Share your results there, ask questions and find new images.", "Forum", "Open the forum", "Find a firmware on the [forum](https://aeforum.uxazuu.space/) and download it to your phone."),
+    "ru": ("Список прошивок", "Список проверенных прошивок — со статусами, заметками и ссылками на скачивание — теперь на нашем форуме. Там же можно делиться результатами, задавать вопросы и находить новые образы.", "Форум", "Открыть форум", "Найдите прошивку на [форуме](https://aeforum.uxazuu.space/) и скачайте её на телефон."),
+    "uk": ("Список прошивок", "Список перевірених прошивок — зі статусами, нотатками й посиланнями на завантаження — тепер на нашому форумі. Там можна ділитися результатами, ставити запитання й знаходити нові образи.", "Форум", "Відкрити форум", "Знайдіть прошивку на [форумі](https://aeforum.uxazuu.space/) і завантажте її на телефон."),
+    "de": ("Firmware-Liste", "Die Liste geprüfter Firmwares — mit Status, Hinweisen und Download-Links — findest du in unserem Forum. Dort kannst du Ergebnisse teilen, Fragen stellen und neue Images entdecken.", "Forum", "Forum öffnen", "Such dir im [Forum](https://aeforum.uxazuu.space/) eine Firmware aus und lade sie aufs Handy."),
+    "fr": ("Liste des ROM", "La liste des ROM vérifiées — avec états, notes et liens de téléchargement — se trouve sur notre forum. Partagez-y vos résultats, posez vos questions et trouvez de nouvelles images.", "Forum", "Ouvrir le forum", "Trouvez une ROM sur le [forum](https://aeforum.uxazuu.space/) et téléchargez-la sur le téléphone."),
+    "es": ("Lista de firmwares", "La lista de firmwares comprobados — con estados, notas y enlaces de descarga — está en nuestro foro. Allí puedes compartir resultados, preguntar y encontrar nuevas imágenes.", "Foro", "Abrir el foro", "Busca un firmware en el [foro](https://aeforum.uxazuu.space/) y descárgalo en el teléfono."),
+    "pt-BR": ("Lista de firmwares", "A lista de firmwares verificados — com status, notas e links de download — fica no nosso fórum. Lá você compartilha resultados, tira dúvidas e encontra novas imagens.", "Fórum", "Abrir o fórum", "Encontre um firmware no [fórum](https://aeforum.uxazuu.space/) e baixe no celular."),
+    "it": ("Elenco firmware", "L’elenco dei firmware verificati — con stato, note e link per il download — è sul nostro forum. Lì puoi condividere i risultati, fare domande e trovare nuove immagini.", "Forum", "Apri il forum", "Trova un firmware sul [forum](https://aeforum.uxazuu.space/) e scaricalo sul telefono."),
+    "pl": ("Lista firmware", "Lista sprawdzonych firmware — ze statusami, uwagami i linkami do pobrania — jest na naszym forum. Możesz tam dzielić się wynikami, zadawać pytania i znajdować nowe obrazy.", "Forum", "Otwórz forum", "Znajdź firmware na [forum](https://aeforum.uxazuu.space/) i pobierz je na telefon."),
+    "tr": ("Yazılım listesi", "Test edilen yazılımların listesi — durumlar, notlar ve indirme bağlantılarıyla — forumumuzda. Orada sonuçlarını paylaşabilir, soru sorabilir ve yeni imajlar bulabilirsin.", "Forum", "Forumu aç", "[Forumda](https://aeforum.uxazuu.space/) bir yazılım bul ve telefonuna indir."),
+    "ar": ("قائمة البرامج الثابتة", "قائمة البرامج الثابتة المُختبرة — مع الحالة والملاحظات وروابط التنزيل — موجودة في منتدانا. شارك نتائجك هناك واطرح أسئلتك واعثر على صور جديدة.", "المنتدى", "افتح المنتدى", "ابحث عن برنامج ثابت في [المنتدى](https://aeforum.uxazuu.space/) ونزّله إلى هاتفك."),
+    "fa": ("فهرست فرم‌ویرها", "فهرست فرم‌ویرهای آزموده — با وضعیت، یادداشت و پیوند دانلود — در انجمن ما است. آنجا نتایج خود را به اشتراک بگذارید، بپرسید و ایمیج‌های تازه پیدا کنید.", "انجمن", "باز کردن انجمن", "فرم‌ویری را در [انجمن](https://aeforum.uxazuu.space/) پیدا کنید و روی گوشی دانلود کنید."),
+    "hi": ("फ़र्मवेयर सूची", "परखे गए फ़र्मवेयर की सूची — स्थिति, नोट्स और डाउनलोड लिंक के साथ — हमारे फ़ोरम पर है। वहाँ अपने नतीजे साझा करें, सवाल पूछें और नई इमेज खोजें।", "फ़ोरम", "फ़ोरम खोलें", "[फ़ोरम](https://aeforum.uxazuu.space/) पर फ़र्मवेयर खोजें और फ़ोन पर डाउनलोड करें।"),
+    "id": ("Daftar firmware", "Daftar firmware yang sudah diperiksa — lengkap dengan status, catatan, dan tautan unduhan — ada di forum kami. Bagikan hasilmu, bertanya, dan temukan image baru di sana.", "Forum", "Buka forum", "Cari firmware di [forum](https://aeforum.uxazuu.space/) lalu unduh ke ponsel."),
+    "vi": ("Danh sách firmware", "Danh sách firmware đã kiểm tra — kèm trạng thái, ghi chú và liên kết tải — nằm trên diễn đàn của chúng tôi. Tại đó bạn có thể chia sẻ kết quả, đặt câu hỏi và tìm image mới.", "Diễn đàn", "Mở diễn đàn", "Tìm firmware trên [diễn đàn](https://aeforum.uxazuu.space/) và tải về điện thoại."),
+    "zh-CN": ("固件列表", "已验证固件的列表（含状态、备注和下载链接）现已移至我们的论坛。你可以在那里分享结果、提问并发现新的镜像。", "论坛", "打开论坛", "在[论坛](https://aeforum.uxazuu.space/)找到固件并下载到手机。"),
+    "ja": ("ファームウェア一覧", "動作確認済みファームウェアの一覧（状態・メモ・ダウンロードリンク付き）はフォーラムにあります。結果の共有や質問、新しいイメージ探しもそちらでどうぞ。", "フォーラム", "フォーラムを開く", "[フォーラム](https://aeforum.uxazuu.space/)でファームウェアを探し、スマホにダウンロードします。"),
+    "ko": ("펌웨어 목록", "검증된 펌웨어 목록(상태, 메모, 다운로드 링크 포함)은 포럼에 있습니다. 결과를 공유하고 질문하고 새 이미지를 찾아보세요.", "포럼", "포럼 열기", "[포럼](https://aeforum.uxazuu.space/)에서 펌웨어를 찾아 휴대폰에 내려받으세요."),
+}
+for _c, (_title, _intro, _btn, _open, _step) in _FORUM.items():
+    T[_c].update(fw_title=_title, fw_intro=_intro, forum=_btn, forum_open=_open)
+    T[_c]["steps"] = list(T[_c]["steps"])
+    T[_c]["steps"][1] = _step
