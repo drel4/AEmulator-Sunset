@@ -182,7 +182,10 @@ class TreeFixer(
             // звуковой HAL стенда разложен под AudioFlinger HTC; остальным 4.2+ — вариант с раскладкой AOSP.
             // У Samsung свой audio_stream_out (лишние слоты) — с ним AOSP-вариант роняет mediaserver,
             // поэтому там остаётся исходный: выход не открывается, система работает без звука.
-            val htcLike = img.skin.contains("HTC", true) || img.skin.contains("TouchWiz", true) || img.skin.contains("Samsung", true)
+            // Samsung 4.3 AudioFlinger uses the KitKat slots (verified on I9300 XXUGNJ2: init_check 0x44,
+            // open_output_stream 0x6c, stream write 0x40), so only 4.1–4.2 TouchWiz keeps the stand HAL
+            val samsung = img.skin.contains("TouchWiz", true) || img.skin.contains("Samsung", true)
+            val htcLike = img.skin.contains("HTC", true) || (samsung && img.api < 18)
             val name = when {
                 from != "audio.primary.default.so" || htcLike -> from
                 // 4.0 has its own audio_hw_device layout; Qualcomm CAF builds add set_fm_volume/open_output_session
