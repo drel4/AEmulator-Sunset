@@ -144,6 +144,7 @@ class VmActivity : ComponentActivity() {
             return
         }
         vm = if (cur != null && cur.img.id == img.id) cur else GuestVm(applicationContext, img).also { VmHost.vm = it }
+        vm.onPower = { reboot, _ -> runOnUiThread { if (reboot) rebootVm() else stopVm() } }
         val s = vm.settings
         if (s.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 

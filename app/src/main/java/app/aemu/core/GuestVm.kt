@@ -339,7 +339,22 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
     // ------------------------------------------------------------------ присмотр
 
+    /** Guest asked to reboot / power off ("reboot", "reboot,recovery", "shutdown"); the UI restarts or stops the VM. */
+    @Volatile var onPower: ((reboot: Boolean, reason: String) -> Unit)? = null
+    @Volatile private var powerHandled = false
+
+    private fun powerRequest(v: String) {
+        if (powerHandled || v.isEmpty()) return
+        powerHandled = true
+        val reboot = v.startsWith("reboot")
+        val reason = v.substringAfter(',', "")
+        log("guest requested ${if (reboot) "reboot" else "power off"}${if (reason.isNotEmpty()) " ($reason)" else ""}")
+        if (reason == "recovery") log("recovery mode is not emulated, booting the system again")
+        onPower?.invoke(reboot, reason)
+    }
+
     private fun onProp(k: String, v: String) {
+        if (k == "sys.powerctl") { powerRequest(v); return }
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
             bootDoneAt = System.currentTimeMillis()
             log("★ system booted in ${(bootDoneAt - bootAt) / 1000} s")
@@ -373,11 +388,16 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         ImageStore.save(ctx, img2)
     }
 
+    /** qemu maps a guest path into the tree only if the file exists there, so the shim's request file is pre-made */
+    private val power: File get() = File(paths.root, "dev/aemu_power")
+
     private fun watchdog() {
+        runCatching { power.writeText(""); power.setWritable(true, false) }
         Thread({
             var restarts = HashMap<String, Int>()
             while (!stopping) {
                 Thread.sleep(3000)
+                if (power.length() > 0) { val v = runCatching { power.readText().trim() }.getOrDefault("reboot"); power.writeText(""); powerRequest(v) }
                 val dead = synchronized(procs) { procs.filter { !it.value.isAlive }.keys.toList() }
                 for (name in dead) {
                     if (stopping) break

@@ -39,10 +39,31 @@ EXPORT int settimeofday(const struct timeval_s *tv, const void *tz) { (void)tv; 
 EXPORT int clock_settime(int clk, const struct timespec_s *tp) { (void)clk; (void)tp; return 0; }
 EXPORT int stime(const long *t) { (void)t; return 0; }
 
-/* перезагрузку и выключение гостя обрабатывает хост (кнопка «Выключить») */
-EXPORT int reboot(int cmd) { (void)cmd; return 0; }
-EXPORT int __reboot(int m1, int m2, int cmd, void *arg) { (void)m1; (void)m2; (void)cmd; (void)arg; return 0; }
-EXPORT int android_reboot(int cmd, int flags, char *arg) { (void)cmd; (void)flags; (void)arg; return 0; }
+/* Reboot / power off: the host restarts or stops the VM. The request goes to /dev/aemu_power
+ * ("reboot", "reboot,recovery", "shutdown"), which the host watches. */
+static long sys3(long n, long a, long b, long c);
+static void power_request(const char *what, const char *arg) {
+    char buf[96]; int n = 0;
+    while (*what && n < 40) buf[n++] = *what++;
+    if (arg && *arg) { buf[n++] = ','; while (*arg && n < 90) buf[n++] = *arg++; }
+    long fd = sys3(5 /* open */, (long)"/dev/aemu_power", 0x241 /* O_WRONLY|O_CREAT|O_TRUNC */, 0666);
+    if (fd >= 0) { sys3(4 /* write */, fd, (long)buf, n); sys3(6 /* close */, fd, 0, 0); }
+}
+EXPORT int reboot(int cmd) {
+    power_request(cmd == 0x4321FEDC /* POWER_OFF */ || cmd == (int)0xCDEF0123 /* HALT */ ? "shutdown" : "reboot", 0);
+    return 0;
+}
+EXPORT int __reboot(int m1, int m2, int cmd, void *arg) {
+    (void)m1; (void)m2;
+    if (cmd == (int)0xA1B2C3D4 /* RESTART2 */) power_request("reboot", (const char *)arg);
+    else reboot(cmd);
+    return 0;
+}
+EXPORT int android_reboot(int cmd, int flags, char *arg) {
+    (void)flags;
+    power_request(cmd == (int)0xDEAD0002 ? "shutdown" : "reboot", cmd == (int)0xDEAD0003 ? arg : 0);
+    return 0;
+}
 
 /* модули ядра */
 EXPORT int init_module(void *img, ulong len, const char *params) { (void)img; (void)len; (void)params; return 0; }
