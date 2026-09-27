@@ -367,7 +367,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val plan = img.services.ifEmpty { InitPlan.fallback(img, paths.root) }
         if (svc == "bootanim" || svc == "bootanimation") {
             if (!start) { synchronized(procs) { procs.remove("bootanim") }?.destroyForcibly(); return }
-            if (bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
+            // 2.3 has no service.bootanim.exit: it is killed, and the GL bridge keeps showing its last frame
+            if (img.api < 14 || bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
             InitPlan.optional("bootanim", img, paths.root)?.let { def ->
                 Thread { runCatching { startService(def) } }.start()
                 log("boot animation started")
