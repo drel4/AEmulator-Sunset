@@ -133,4 +133,6 @@
     <string name="m_charging">Charging</string>
     <string name="m_apply">Apply</string>
     <string name="m_reset">Reset</string>
+    <string name="m_call">Chamada recebida</string>
+    <string name="m_call_ring">Ligar</string>
 </resources>

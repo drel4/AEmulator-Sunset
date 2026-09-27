@@ -133,4 +133,6 @@
     <string name="m_charging">Зарядка</string>
     <string name="m_apply">Применить</string>
     <string name="m_reset">Сбросить</string>
+    <string name="m_call">Входящий звонок</string>
+    <string name="m_call_ring">Позвонить</string>
 </resources>

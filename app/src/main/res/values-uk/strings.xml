@@ -133,4 +133,6 @@
     <string name="m_charging">Заряджання</string>
     <string name="m_apply">Застосувати</string>
     <string name="m_reset">Скинути</string>
+    <string name="m_call">Вхідний дзвінок</string>
+    <string name="m_call_ring">Подзвонити</string>
 </resources>

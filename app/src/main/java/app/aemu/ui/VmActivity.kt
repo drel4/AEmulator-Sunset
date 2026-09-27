@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Sms
+import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
@@ -264,7 +265,7 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private enum class Dlg { NONE, SMS, BATTERY }
+    private enum class Dlg { NONE, SMS, CALL, BATTERY }
 
     // position of the floating menu button, kept across launches
     private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
@@ -316,6 +317,19 @@ class VmActivity : ComponentActivity() {
                 }
             },
             confirmButton = { Button(onClick = { sendSms(from, body); onDone() }) { Text(stringResource(R.string.m_send)) } },
+            dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun CallDialog(onDone: () -> Unit) {
+        var from by remember { mutableStateOf("+10000000000") }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_call)) },
+            text = { OutlinedTextField(from, { from = it }, label = { Text(stringResource(R.string.m_sms_from)) }, singleLine = true) },
+            confirmButton = { Button(onClick = {
+                if (!vm.ril.ring(from.trim())) toast(getString(R.string.m_failed))
+                onDone()
+            }) { Text(stringResource(R.string.m_call_ring)) } },
             dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
     }
 
@@ -425,6 +439,8 @@ class VmActivity : ComponentActivity() {
                         enabled = running, onClick = { menu = false; pasteToGuest() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_sms)) }, leadingIcon = { Icon(Icons.Rounded.Sms, null) },
                         enabled = running, onClick = { menu = false; dialog = Dlg.SMS })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_call)) }, leadingIcon = { Icon(Icons.Rounded.Call, null) },
+                        enabled = running, onClick = { menu = false; dialog = Dlg.CALL })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_battery)) }, leadingIcon = { Icon(Icons.Rounded.BatteryStd, null) },
                         enabled = running && vm.img.api >= 19, onClick = { menu = false; dialog = Dlg.BATTERY })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_screenshot)) }, leadingIcon = { Icon(Icons.Rounded.Screenshot, null) },
@@ -441,6 +457,7 @@ class VmActivity : ComponentActivity() {
 
             when (dialog) {
                 Dlg.SMS -> SmsDialog { dialog = Dlg.NONE }
+                Dlg.CALL -> CallDialog { dialog = Dlg.NONE }
                 Dlg.BATTERY -> BatteryDialog { dialog = Dlg.NONE }
                 Dlg.NONE -> {}
             }

@@ -31,9 +31,27 @@ class RilStub(
 
     private val server = UnixServer(paths.socket("rild"), "rild") { c -> serveOne(c) }
     private val operator: Pair<String, String> by lazy { pickOperator() }   // mcc to mnc
+    /** Samsung's 4.3 RIL.java reads a call type (CallDetails) after isVoicePrivacy */
+    private val samsung: Boolean by lazy {
+        runCatching { File(paths.root, "system/build.prop").readText().lowercase().contains("ro.product.manufacturer=samsung") }
+            .getOrDefault(false)
+    }
 
     fun serve() = server.start(log)
     fun stop() = server.stop()
+
+    @Volatile private var out: OutputStream? = null
+    /** fake call: number and CallState (4 incoming, 0 active); null when idle */
+    @Volatile private var call: Pair<String, Int>? = null
+
+    /** Incoming call from [number], like "gsm call" in the SDK emulator console. False when telephony is not up. */
+    fun ring(number: String): Boolean {
+        val o = out ?: return false
+        call = number to CALL_INCOMING
+        unsol(o, UNSOL_RESPONSE_CALL_STATE_CHANGED, ByteArray(0))
+        unsol(o, UNSOL_CALL_RING, ByteArray(0))
+        return true
+    }
 
     private val connects = ArrayDeque<Long>()
     /** set when telephony keeps crashing against the fake modem: fall back to "radio unavailable" */
@@ -51,6 +69,7 @@ class RilStub(
             }
         }
         if (safeMode) { serveUnavailable(c); return }
+        out = o
         if (api >= 14) unsol(o, UNSOL_RIL_CONNECTED, ints(RIL_VERSION))
         unsol(o, UNSOL_RADIO_STATE_CHANGED, le(0))
         log("radio: telephony connected, operator ${operator.first}${operator.second}")
@@ -70,6 +89,7 @@ class RilStub(
             frame(o, resp.toByteArray())
             answered++
             if (request == RIL_REQUEST_RADIO_POWER) afterPower(o, b)
+            if (request == RIL_REQUEST_ANSWER || request in HANGUPS) unsol(o, UNSOL_RESPONSE_CALL_STATE_CHANGED, ByteArray(0))
         }
     }
 
@@ -103,7 +123,10 @@ class RilStub(
         val (mcc, mnc) = operator
         return when (req) {
             RIL_REQUEST_GET_SIM_STATUS -> 0 to simStatus()
-            RIL_REQUEST_GET_CURRENT_CALLS -> 0 to le(0)
+            RIL_REQUEST_GET_CURRENT_CALLS -> 0 to callList()
+            RIL_REQUEST_ANSWER -> { call = call?.let { it.first to CALL_ACTIVE }; 0 to ByteArray(0) }
+            in HANGUPS -> { call = null; 0 to ByteArray(0) }
+            RIL_REQUEST_LAST_CALL_FAIL_CAUSE -> 0 to ints(16)   // normal clearing
             RIL_REQUEST_GET_IMSI -> 0 to str(mcc + mnc + "0123456789".take(15 - mcc.length - mnc.length))
             RIL_REQUEST_SIGNAL_STRENGTH -> 0 to ints(20, 99, -1, -1, -1, -1, -1, 99, -1, -1, -1, -1, -1)
             RIL_REQUEST_VOICE_REGISTRATION_STATE -> 0 to strs("1", "0001", "00000001", "3")
@@ -138,6 +161,21 @@ class RilStub(
             unsol(o, UNSOL_RESPONSE_SIM_STATUS_CHANGED, ByteArray(0))
             unsol(o, UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, ByteArray(0))
         }
+    }
+
+    private fun callList(): ByteArray {
+        val (number, state) = call ?: return le(0)
+        val b = ByteArrayOutputStream()
+        b.write(le(1))
+        b.write(le(state)); b.write(le(1)); b.write(le(129))   // state, index, type of address
+        b.write(le(0)); b.write(le(1)); b.write(le(0))         // not multiparty, mobile terminated, als
+        b.write(le(1))                                         // voice
+        b.write(le(0))                                         // no voice privacy
+        if (samsung && api >= 18) b.write(le(0))               // Samsung 4.3: CallDetails call type (voice)
+        b.write(str(number)); b.write(le(0))                   // number, presentation allowed
+        b.write(str(null)); b.write(le(2))                     // no name, presentation unknown
+        b.write(le(0))                                         // no UUS info
+        return b.toByteArray()
     }
 
     private fun simStatus(): ByteArray {
@@ -210,6 +248,13 @@ class RilStub(
         private const val IFACE = "rmnet0"
         private const val OPERATOR_NAME = "AEmulator"
         private const val UNSOL_RADIO_STATE_CHANGED = 1000
+        private const val UNSOL_RESPONSE_CALL_STATE_CHANGED = 1001
+        private const val UNSOL_CALL_RING = 1018
+        private const val CALL_ACTIVE = 0
+        private const val CALL_INCOMING = 4
+        private const val RIL_REQUEST_LAST_CALL_FAIL_CAUSE = 18
+        private const val RIL_REQUEST_ANSWER = 40
+        private val HANGUPS = setOf(12, 13, 14, 17)   // hangup, waiting, foreground, reject (UDUB)
         private const val UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED = 1002
         private const val UNSOL_RESPONSE_SIM_STATUS_CHANGED = 1019
         private const val UNSOL_RIL_CONNECTED = 1034
