@@ -253,3 +253,31 @@ EXPORT int __open_2(const char *path, int flags) { return open(path, flags); }
 #define RESERVED(n) EXPORT void _ZN7android10VectorImpl19reservedVectorImpl##n##Ev(void *self) { (void)self; } \
     EXPORT void _ZN7android16SortedVectorImpl25reservedSortedVectorImpl##n##Ev(void *self) { (void)self; }
 RESERVED(1) RESERVED(2) RESERVED(3) RESERVED(4) RESERVED(5) RESERVED(6) RESERVED(7) RESERVED(8)
+
+/* ------------------------------------------------------------------ sigsuspend
+ *
+ * qemu of the stand mis-emulates rt_sigsuspend: the call returns at once without delivering the
+ * pending (host-blocked) signal. A shell waiting for its child blocks SIGCHLD, calls sigsuspend
+ * and spins at 100% CPU forever — every `sh -c` that runs a program never returns (MIUI firewall,
+ * am/pm from the emulator menu). Here the mask is lifted with rt_sigprocmask (qemu delivers
+ * pending signals after that syscall), we sleep briefly, restore the mask and report EINTR, which
+ * is what a real sigsuspend returns once a handler has run.
+ */
+__attribute__((naked, noinline)) static long sys4(long n, long a, long b, long c, long d) {
+    __asm__ volatile(
+        "push {r7}; mov r7, r0; mov r0, r1; mov r1, r2; mov r2, r3; ldr r3, [sp, #4]; svc #0; pop {r7}; bx lr");
+}
+#define SYS_nanosleep 162
+#define SYS_rt_sigprocmask 175
+#define SIG_SETMASK 2
+#define EINTR 4
+
+EXPORT int sigsuspend(const unsigned long *mask) {
+    unsigned long want[2] = { mask ? mask[0] : 0, 0 }, old[2] = { 0, 0 };
+    sys4(SYS_rt_sigprocmask, SIG_SETMASK, (long)want, (long)old, 8);
+    struct timespec_s ts = { 0, 5 * 1000 * 1000 };
+    sys3(SYS_nanosleep, (long)&ts, 0, 0);
+    sys4(SYS_rt_sigprocmask, SIG_SETMASK, (long)old, 0, 8);
+    *__errno() = EINTR;
+    return -1;
+}
