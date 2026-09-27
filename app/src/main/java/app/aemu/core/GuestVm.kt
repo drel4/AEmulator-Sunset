@@ -351,7 +351,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private fun onCtl(start: Boolean, svc: String) {
         val plan = img.services.ifEmpty { InitPlan.fallback(img, paths.root) }
         if (svc == "bootanim" || svc == "bootanimation") {
-            if (!start) synchronized(procs) { procs.remove("bootanim")?.destroyForcibly() }
+            if (!start) { synchronized(procs) { procs.remove("bootanim") }?.destroyForcibly(); return }
+            if (bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
+            InitPlan.optional("bootanim", img, paths.root)?.let { def ->
+                Thread { runCatching { startService(def) } }.start()
+                log("boot animation started")
+            }
             return
         }
         val def = plan.firstOrNull { it.name == svc } ?: InitPlan.optional(svc, img, paths.root)
