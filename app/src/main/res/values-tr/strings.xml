@@ -137,4 +137,6 @@
     <string name="m_call_ring">Ara</string>
     <string name="fw_folder_title">Klasördeki yazılımlar</string>
     <string name="fw_folder_import">İçe aktar</string>
+    <string name="m_reboot_recovery">Kurtarma moduna yeniden başlat</string>
+    <string name="m_reboot_system">Sisteme yeniden başlat</string>
 </resources>

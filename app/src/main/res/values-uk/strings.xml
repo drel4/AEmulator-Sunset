@@ -137,4 +137,6 @@
     <string name="m_call_ring">Подзвонити</string>
     <string name="fw_folder_title">Прошивки в теці</string>
     <string name="fw_folder_import">Імпорт</string>
+    <string name="m_reboot_recovery">Перезавантаження в recovery</string>
+    <string name="m_reboot_system">Перезавантаження в систему</string>
 </resources>

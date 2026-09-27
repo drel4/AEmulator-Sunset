@@ -143,8 +143,9 @@ class VmActivity : ComponentActivity() {
             restartProcess(img.id)
             return
         }
-        vm = if (cur != null && cur.img.id == img.id) cur else GuestVm(applicationContext, img).also { VmHost.vm = it }
-        vm.onPower = { reboot, _ -> runOnUiThread { if (reboot) rebootVm() else stopVm() } }
+        vm = if (cur != null && cur.img.id == img.id) cur
+            else GuestVm(applicationContext, img).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
+        vm.onPower = { reboot, reason -> runOnUiThread { if (reboot) rebootVm(reason == "recovery") else stopVm() } }
         val s = vm.settings
         if (s.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -159,9 +160,9 @@ class VmActivity : ComponentActivity() {
         })
         guest = GuestScreen(this, gw, gh).apply {
             input = vm.input
-            fb = vm.paths.fb
+            fb = if (vm.recoveryMode) app.aemu.core.RecoveryImage.fb(vm.paths) else vm.paths.fb
         }
-        val useBridge = vm.engine == Engine.KK && s.gpu
+        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode
         surfaceView.visibility = if (useBridge) View.VISIBLE else View.GONE
         guest.passthrough = useBridge
         box.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
@@ -356,18 +357,19 @@ class VmActivity : ComponentActivity() {
             dismissButton = { OutlinedButton(onClick = { guestAsync("dumpsys battery reset"); onDone() }) { Text(stringResource(R.string.m_reset)) } })
     }
 
-    private fun rebootVm() {
+    private fun rebootVm(recovery: Boolean = false) {
         val id = vm.img.id
         thread {
             vm.stop()
             VmHost.vm = null
             // the GL bridge cannot come up twice in one process, so a reboot restarts the :vm process
-            runOnUiThread { restartProcess(id) }
+            runOnUiThread { restartProcess(id, recovery) }
         }
     }
 
-    private fun restartProcess(id: String) {
-        val i = Intent(this, VmActivity::class.java).putExtra(EXTRA_ID, id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private fun restartProcess(id: String, recovery: Boolean = false) {
+        val i = Intent(this, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val pi = android.app.PendingIntent.getActivity(this, 1, i, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_CANCEL_CURRENT)
         (getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 400, pi)
         finishAndRemoveTask()
@@ -451,6 +453,10 @@ class VmActivity : ComponentActivity() {
                     HorizontalDivider()
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_reboot)) }, leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
                         onClick = { menu = false; rebootVm() })
+                    DropdownMenuItem(text = { Text(stringResource(if (vm.recoveryMode) R.string.m_reboot_system else R.string.m_reboot_recovery)) },
+                        leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
+                        enabled = vm.recoveryMode || app.aemu.core.RecoveryImage.installed(vm.paths),
+                        onClick = { menu = false; rebootVm(!vm.recoveryMode) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.shutdown)) }, leadingIcon = { Icon(Icons.Rounded.Close, null) },
                         onClick = { menu = false; stopVm() })
                 }
@@ -584,8 +590,10 @@ class VmActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_ID = "id"
-        fun start(ctx: Context, id: String) {
-            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        const val EXTRA_RECOVERY = "recovery"
+        fun start(ctx: Context, id: String, recovery: Boolean = false) {
+            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 }

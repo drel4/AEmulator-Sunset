@@ -137,4 +137,6 @@
     <string name="m_call_ring">اتصال</string>
     <string name="fw_folder_title">البرامج الثابتة في المجلد</string>
     <string name="fw_folder_import">استيراد</string>
+    <string name="m_reboot_recovery">إعادة التشغيل إلى الاسترداد</string>
+    <string name="m_reboot_system">إعادة التشغيل إلى النظام</string>
 </resources>

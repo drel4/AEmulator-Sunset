@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
     private fun handleView(i: Intent?) {
         if (i?.action == Intent.ACTION_VIEW) i.data?.let { model.import(it) }
         // ярлыки и автоматизация: am start -a app.aemu.BOOT --es id <образ>
-        if (i?.action == ACTION_BOOT) i.getStringExtra("id")?.let { VmActivity.start(this, it) }
+        if (i?.action == ACTION_BOOT) i.getStringExtra("id")?.let { VmActivity.start(this, it, i.getBooleanExtra("recovery", false)) }
     }
 
     private fun askPermissions() {

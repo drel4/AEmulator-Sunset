@@ -137,4 +137,6 @@
     <string name="m_call_ring">전화 걸기</string>
     <string name="fw_folder_title">폴더의 펌웨어</string>
     <string name="fw_folder_import">가져오기</string>
+    <string name="m_reboot_recovery">복구 모드로 재부팅</string>
+    <string name="m_reboot_system">시스템으로 재부팅</string>
 </resources>

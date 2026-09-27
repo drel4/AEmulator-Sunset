@@ -137,4 +137,6 @@
     <string name="m_call_ring">Gọi</string>
     <string name="fw_folder_title">Firmware trong thư mục</string>
     <string name="fw_folder_import">Nhập</string>
+    <string name="m_reboot_recovery">Khởi động lại vào recovery</string>
+    <string name="m_reboot_system">Khởi động lại vào hệ thống</string>
 </resources>

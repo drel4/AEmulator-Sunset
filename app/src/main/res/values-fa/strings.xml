@@ -137,4 +137,6 @@
     <string name="m_call_ring">تماس</string>
     <string name="fw_folder_title">فریمور در پوشه</string>
     <string name="fw_folder_import">وارد کردن</string>
+    <string name="m_reboot_recovery">راه‌اندازی مجدد به ریکاوری</string>
+    <string name="m_reboot_system">راه‌اندازی مجدد به سیستم</string>
 </resources>

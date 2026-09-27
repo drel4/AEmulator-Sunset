@@ -137,4 +137,6 @@
     <string name="m_call_ring">Anrufen</string>
     <string name="fw_folder_title">Firmware im Ordner</string>
     <string name="fw_folder_import">Importieren</string>
+    <string name="m_reboot_recovery">Neustart in Recovery</string>
+    <string name="m_reboot_system">Neustart ins System</string>
 </resources>

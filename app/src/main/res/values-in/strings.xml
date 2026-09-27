@@ -137,4 +137,6 @@
     <string name="m_call_ring">Panggil</string>
     <string name="fw_folder_title">Firmware di folder</string>
     <string name="fw_folder_import">Impor</string>
+    <string name="m_reboot_recovery">Mulai ulang ke recovery</string>
+    <string name="m_reboot_system">Mulai ulang ke sistem</string>
 </resources>

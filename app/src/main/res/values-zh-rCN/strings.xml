@@ -137,4 +137,6 @@
     <string name="m_call_ring">呼叫</string>
     <string name="fw_folder_title">文件夹中的固件</string>
     <string name="fw_folder_import">导入</string>
+    <string name="m_reboot_recovery">重启到 Recovery</string>
+    <string name="m_reboot_system">重启到系统</string>
 </resources>

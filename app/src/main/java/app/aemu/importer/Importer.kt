@@ -7,6 +7,7 @@ import app.aemu.core.GuestImage
 import app.aemu.core.ImageStore
 import app.aemu.core.TreeFixer
 import app.aemu.core.VmPaths
+import app.aemu.core.RecoveryImage
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
@@ -43,6 +44,7 @@ class Importer(
     private lateinit var root: File
     private val tmp = File(ctx.cacheDir, "import").apply { mkdirs() }
     private var ramdisk: List<BootImage.CpioEntry>? = null
+    private var recovery: ByteArray? = null
     private val symlinks = ArrayList<Pair<String, String>>() // (цель, путь ссылки в госте)
     private val perms = ArrayList<Triple<String, Int, Boolean>>() // (путь, режим, рекурсивно-файлы)
     private var files = 0
@@ -72,6 +74,7 @@ class Importer(
             if (!File(root, "system/framework").isDirectory && !File(root, "system/build.prop").isFile)
                 throw IOException("no Android system partition found in file")
             finishTree()
+            recovery?.let { runCatching { RecoveryImage.install(paths, it, log) } }
             onProgress("Analyzing firmware", 0.97f)
             val img = Analyzer(ctx, paths, ramdisk).analyze(id, name)
             TreeFixer(ctx, paths, img, log).sanitize()
@@ -164,6 +167,7 @@ class Importer(
                     gotSystem = true
                 }
                 base.equals("boot.img", true) -> zip.getInputStream(e).use { takeBoot(it.readBytes()) }
+                base.equals("recovery.img", true) && e.size < 64_000_000 -> zip.getInputStream(e).use { recovery = it.readBytes() }
                 base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
                     withEntrySource(zip, e) { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "system") }
                 base.matches(Regex("(?i)vendor(\\.ext4)?\\.img")) ->
@@ -247,6 +251,7 @@ class Importer(
                     t.delete()
                 }
                 base.matches(Regex("(?i)(boot\\.img|zImage|kernel)(\\.lz4)?")) && e.isFile -> takeBoot(maybeLz4(tar, base).readBytes())
+                base.matches(Regex("(?i)recovery\\.img(\\.lz4)?")) && e.isFile && e.size < 64_000_000 -> recovery = maybeLz4(tar, base).readBytes()
                 base.matches(Regex("(?i).*\\.(tar|tar\\.md5)")) && e.isFile && e.size > 20_000_000 -> importTarStream(tar.nonClosing(), base, depth + 1)
                 // factory-образы Google: tgz → image-*.zip → system.img/boot.img; Samsung: zip внутри tar
                 base.lowercase().endsWith(".zip") && e.isFile && e.size > 20_000_000 -> {

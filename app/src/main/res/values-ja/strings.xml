@@ -137,4 +137,6 @@
     <string name="m_call_ring">発信</string>
     <string name="fw_folder_title">フォルダー内のファームウェア</string>
     <string name="fw_folder_import">インポート</string>
+    <string name="m_reboot_recovery">リカバリーで再起動</string>
+    <string name="m_reboot_system">システムで再起動</string>
 </resources>

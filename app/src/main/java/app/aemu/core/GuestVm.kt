@@ -84,12 +84,53 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         failure = null
         setState(State.PREPARING)
         try {
-            doBoot()
+            if (recoveryMode) doRecovery() else doBoot()
         } catch (t: Throwable) {
             failure = t.message ?: t.toString()
             log("✖ boot aborted: $failure")
             setState(State.FAILED)
         }
+    }
+
+    /** Boot the firmware's recovery (RecoveryImage) instead of Android. */
+    @Volatile var recoveryMode = false
+
+    private fun doRecovery() {
+        paths.bin.mkdirs()
+        runCatching { logFile.writeText("") }
+        log("image \"${img.name}\": recovery mode")
+        if (!RecoveryImage.installed(paths)) error("this firmware has no recovery installed")
+        val qemu = paths.nativeBin(Engine.KK.qemu)
+        if (!qemu.canExecute()) error("translator ${Engine.KK.qemu} is not executable")
+        killLeftovers()
+        TreeFixer(ctx, paths, img, ::log).fixup()   // framebuffer, input node
+        val sd = Sdcard.setup(ctx, paths, img, ::log)
+        RecoveryImage.prepare(paths, sd)
+        input.rateHz = settings.touchHz
+        input.mtMode = settings.mtMode
+        input.serve()
+        val (w, h) = runCatching { File(paths.root, "dhd.fbgeom").readText().trim().split(Regex("\\s+")).map { it.toInt() } }
+            .getOrNull()?.takeIf { it.size >= 2 }?.let { it[0] to it[1] } ?: (settings.width to settings.height)
+        val r = RecoveryImage.dir(paths)
+        val pb = ProcessBuilder(qemu.absolutePath, "-L", r.absolutePath, "-0", "/sbin/recovery", File(r, "sbin/recovery").absolutePath)
+            .directory(r).redirectErrorStream(true).redirectOutput(File(paths.bin, "recovery.out"))
+        pb.environment().clear()
+        pb.environment().putAll(mapOf(
+            "PATH" to "/sbin:/system/bin", "ANDROID_ROOT" to "/system", "ANDROID_DATA" to "/data", "TZ" to "UTC",
+            "DHD_FB_W" to "$w", "DHD_FB_H" to "$h", "DHD_IN_W" to "$w", "DHD_IN_H" to "$h",
+            "DHD_INPUT" to paths.inputSock.absolutePath,
+        ))
+        bootAt = System.currentTimeMillis()
+        val p = pb.start()
+        synchronized(procs) { procs["recovery"] = p }
+        setState(State.RUNNING)
+        log("recovery started (${w}x$h)")
+        Thread {
+            val code = runCatching { p.waitFor() }.getOrDefault(-1)
+            if (stopping) return@Thread
+            log("recovery exited (code $code), booting the system")
+            onPower?.invoke(true, "")
+        }.start()
     }
 
     private fun doBoot() {
@@ -349,7 +390,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val reboot = v.startsWith("reboot")
         val reason = v.substringAfter(',', "")
         log("guest requested ${if (reboot) "reboot" else "power off"}${if (reason.isNotEmpty()) " ($reason)" else ""}")
-        if (reason == "recovery") log("recovery mode is not emulated, booting the system again")
+        if (reason == "recovery" && !RecoveryImage.installed(paths)) log("no recovery installed, booting the system again")
         onPower?.invoke(reboot, reason)
     }
 

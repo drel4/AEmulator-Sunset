@@ -137,4 +137,6 @@
     <string name="m_call_ring">कॉल करें</string>
     <string name="fw_folder_title">फ़ोल्डर में फ़र्मवेयर</string>
     <string name="fw_folder_import">आयात करें</string>
+    <string name="m_reboot_recovery">रिकवरी में रीबूट करें</string>
+    <string name="m_reboot_system">सिस्टम में रीबूट करें</string>
 </resources>

@@ -138,4 +138,6 @@
     <string name="m_call_ring">Call</string>
     <string name="fw_folder_title">Firmware in the folder</string>
     <string name="fw_folder_import">Import</string>
+    <string name="m_reboot_recovery">Reboot to recovery</string>
+    <string name="m_reboot_system">Reboot to system</string>
 </resources>
