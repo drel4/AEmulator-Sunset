@@ -418,6 +418,8 @@ static const char *const kNames[] = {
     "glWaitSync",
 };
 #define IDX_eglCreateContext 5
+#define IDX_eglCreatePbufferSurface 8
+#define IDX_eglCreateWindowSurface 11
 #define IDX_eglMakeCurrent 30
 #define IDX_eglSwapBuffers 39
 #define IDX_glBindBuffer 53

@@ -102,16 +102,6 @@ eglCreateSyncKHR:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global eglCreateWindowSurface
-    .type eglCreateWindowSurface,%function
-    .align 2
-eglCreateWindowSurface:
-    push {r0-r3, lr}
-    movw r0, #11
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global eglDestroyContext
     .type eglDestroyContext,%function
     .align 2

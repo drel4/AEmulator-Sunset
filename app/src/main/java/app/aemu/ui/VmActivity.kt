@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Settings
@@ -416,6 +417,9 @@ class VmActivity : ComponentActivity() {
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_power_menu)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER, 1500) })
+                    // long-press Menu makes 2.x–4.x call InputMethodManager.toggleSoftInput: the firmware's own keyboard
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_keyboard)) }, leadingIcon = { Icon(Icons.Rounded.Keyboard, null) },
+                        enabled = running, onClick = { menu = false; vm.input.press(InputService.KEY_MENU, 1000) })
                     HorizontalDivider()
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_paste)) }, leadingIcon = { Icon(Icons.Rounded.ContentPaste, null) },
                         enabled = running, onClick = { menu = false; pasteToGuest() })

@@ -116,6 +116,7 @@
     <string name="vs_qemu_args">Доп. параметры qemu</string>
     <string name="vs_qemu_args_sub">Пример: -d unimp DHD_TBFLUSH=2 (ИМЯ=значение становится переменной окружения)</string>
     <string name="m_power_menu">Меню питания</string>
+    <string name="m_keyboard">Показать/скрыть клавиатуру</string>
     <string name="m_paste">Вставить текст из буфера</string>
     <string name="m_sms">Фейковое SMS</string>
     <string name="m_battery">Батарея</string>

@@ -116,6 +116,7 @@
     <string name="vs_qemu_args">Extra qemu options</string>
     <string name="vs_qemu_args_sub">Example: -d unimp DHD_TBFLUSH=2 (NAME=value becomes an environment variable)</string>
     <string name="m_power_menu">Power menu</string>
+    <string name="m_keyboard">키보드 표시/숨기기</string>
     <string name="m_paste">Paste text from clipboard</string>
     <string name="m_sms">Fake SMS</string>
     <string name="m_battery">Battery</string>

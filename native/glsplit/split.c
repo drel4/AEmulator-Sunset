@@ -347,7 +347,9 @@ static int type_size(GLenum t) {
 
 /* uploads client arrays for vertices [0, nverts); returns the scratch buffer name or 0 if nothing to do */
 static unsigned va_upload(struct va_state *v, long nverts) {
-    if (nverts <= 0 || es1_current()) return 0;
+    static int on = -1;
+    if (on < 0) { const char *e = getenv("AEMU_GL_CLIENT_ARRAYS"); on = !(e && e[0] == '0'); }
+    if (!on || nverts <= 0 || es1_current()) return 0;
     long total = 0, off[MAXATTR];
     for (int i = 0; i < MAXATTR; i++) {
         struct va_attr *a = &v->a[i];
@@ -359,20 +361,27 @@ static unsigned va_upload(struct va_state *v, long nverts) {
         total += ((stride * (nverts - 1) + esz) + 3) & ~3L;
     }
     if (!total) return 0;
-    unsigned buf = 0;
-    ((GenBuffersFn)aemu_split_resolve(IDX_glGenBuffers))(1, &buf);
-    if (!buf) return 0;
-    BindBufferFn bind = (BindBufferFn)aemu_split_resolve(IDX_glBindBuffer);
-    AttribPtrFn ap = (AttribPtrFn)aemu_split_resolve(IDX_glVertexAttribPointer);
-    BufferSubDataFn sub = (BufferSubDataFn)aemu_split_resolve(IDX_glBufferSubData);
-    bind(GL_ARRAY_BUFFER, buf);
-    ((BufferDataFn)aemu_split_resolve(IDX_glBufferData))(GL_ARRAY_BUFFER, total, 0, GL_STREAM_DRAW);
+    /* one glBufferData with the data: the bridge drops glBufferSubData payloads on large buffers */
+    unsigned char *blob = (unsigned char *)malloc((unsigned)total);
+    if (!blob) return 0;
     for (int i = 0; i < MAXATTR; i++) {
         if (off[i] < 0) continue;
         struct va_attr *a = &v->a[i];
         long esz = (long)a->size * type_size(a->type);
         long stride = a->stride ? a->stride : esz;
-        sub(GL_ARRAY_BUFFER, off[i], stride * (nverts - 1) + esz, a->ptr);
+        copy_bytes(blob + off[i], (const unsigned char *)a->ptr, (unsigned long)(stride * (nverts - 1) + esz));
+    }
+    unsigned buf = 0;
+    ((GenBuffersFn)aemu_split_resolve(IDX_glGenBuffers))(1, &buf);
+    if (!buf) { free(blob); return 0; }
+    BindBufferFn bind = (BindBufferFn)aemu_split_resolve(IDX_glBindBuffer);
+    AttribPtrFn ap = (AttribPtrFn)aemu_split_resolve(IDX_glVertexAttribPointer);
+    bind(GL_ARRAY_BUFFER, buf);
+    ((BufferDataFn)aemu_split_resolve(IDX_glBufferData))(GL_ARRAY_BUFFER, total, blob, GL_STREAM_DRAW);
+    free(blob);
+    for (int i = 0; i < MAXATTR; i++) {
+        if (off[i] < 0) continue;
+        struct va_attr *a = &v->a[i];
         ap((unsigned)i, a->size, a->type, a->norm, a->stride, (const void *)off[i]);
     }
     return buf;
@@ -478,4 +487,31 @@ __attribute__((visibility("default"))) void glDeleteTextures(GLsizei n, const un
 __attribute__((visibility("default"))) unsigned eglSwapBuffers(void *dpy, void *surface) {
     g_frame++;
     return ((SwapFn)aemu_split_resolve(IDX_eglSwapBuffers))(dpy, surface);
+}
+
+/* ------------------------------------------------------------ extra SurfaceFlinger windows (4.3+)
+ *
+ * The bridge treats every window surface SurfaceFlinger creates as "the screen" and moves the phone's
+ * display onto it. 4.3 SurfaceFlinger also creates window surfaces for virtual displays / screenshots
+ * (pressing Home in TouchWiz does it): the bridge switches to that 1x1 window, fails to attach it and never
+ * switches back — the emulator shows an empty screen. In surfaceflinger only the first window (the primary
+ * display) gets a real window surface; any other window gets an off-screen pbuffer of the same size.
+ */
+typedef void *(*CreateWinFn)(void *dpy, void *config, void *win, const GLint *attribs);
+typedef void *(*CreatePbufFn)(void *dpy, void *config, const GLint *attribs);
+typedef int (*WinQueryFn)(const void *win, int what, int *value);
+static void *g_primary_win;
+
+__attribute__((visibility("default"))) void *eglCreateWindowSurface(void *dpy, void *config, void *win, const GLint *attribs) {
+    CreateWinFn f = (CreateWinFn)aemu_split_resolve(IDX_eglCreateWindowSurface);
+    if (!is_surfaceflinger() || !win) return f(dpy, config, win, attribs);
+    if (!g_primary_win) g_primary_win = win;
+    if (win == g_primary_win) return f(dpy, config, win, attribs);
+    int w = 1, h = 1;
+    WinQueryFn q = *(WinQueryFn *)((char *)win + 84);   /* ANativeWindow::query (32-bit layout) */
+    if (q) { q(win, 0 /* NATIVE_WINDOW_WIDTH */, &w); q(win, 1 /* NATIVE_WINDOW_HEIGHT */, &h); }
+    if (w <= 0 || w > 4096) w = 1;
+    if (h <= 0 || h > 4096) h = 1;
+    GLint pa[] = { 0x3057 /* EGL_WIDTH */, w, 0x3056 /* EGL_HEIGHT */, h, EGL_NONE };
+    return ((CreatePbufFn)aemu_split_resolve(IDX_eglCreatePbufferSurface))(dpy, config, pa);
 }
