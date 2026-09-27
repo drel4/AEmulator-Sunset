@@ -25,3 +25,9 @@ for v in ics; do
     -o "$(dirname "$OUT")/audio.primary.$v-qcom.so" audio_hal.c -lc
   "$BIN/llvm-strip" "$(dirname "$OUT")/audio.primary.$v-qcom.so" 2>/dev/null || true
 done
+# MediaTek: replaces /system/lib/libaudio.primary.default.so (HMI + DcRemove forwarders), own PCM channel
+"$BIN/clang" --target=armv7a-linux-androideabi21 -march=armv7-a -mthumb -mfloat-abi=softfp -Os -fPIC -shared \
+  -nostdlib -ffreestanding -fno-builtin -fvisibility=hidden -fno-stack-protector -DAEMU_MTK -DAEMU_PCM_DEV='"/dev/aemu_pcm"' \
+  -Wl,--hash-style=sysv -Wl,-z,norelro -Wl,--build-id=none -Wl,-soname,libaudio.primary.default.so \
+  -o "$(dirname "$OUT")/audio.primary.mtk.so" audio_hal.c -ldl -lc
+"$BIN/llvm-strip" "$(dirname "$OUT")/audio.primary.mtk.so" 2>/dev/null || true

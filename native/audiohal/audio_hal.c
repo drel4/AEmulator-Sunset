@@ -27,6 +27,9 @@ extern int usleep(unsigned long us);
 #define ENOSYS 38
 #define EINVAL 22
 
+#ifndef AEMU_PCM_DEV
+#define AEMU_PCM_DEV "/dev/eac"
+#endif
 #define RATE 48000
 #define CHANNELS_STEREO 3        /* AUDIO_CHANNEL_OUT_STEREO */
 #define FORMAT_PCM16 1           /* AUDIO_FORMAT_PCM_16_BIT */
@@ -175,7 +178,7 @@ static long o_write(struct audio_stream_out *st, const void *buf, size_t bytes) 
     struct out *o = (struct out *)st;
     /* O_RDWR: открытие FIFO не ждёт читателя (O_WRONLY ждал бы — и микшер AudioFlinger вставал бы,
        а за ним system_server в AudioSystem.setParameters); O_NONBLOCK: полный канал не вешает микшер */
-    if (o->fd < 0) o->fd = open("/dev/eac", O_RDWR | O_NONBLOCK);
+    if (o->fd < 0) o->fd = open(AEMU_PCM_DEV, O_RDWR | O_NONBLOCK);
     unsigned long frame_us = (unsigned long)(bytes / 4) * 1000000UL / RATE;
     int played = 0;
     if (o->fd >= 0) {
@@ -359,3 +362,36 @@ __attribute__((visibility("default"))) struct hw_module HMI = {
     .author = "AEmulator",
     .methods = &g_methods,
 };
+
+#ifdef AEMU_MTK
+/*
+ * MediaTek: libaudioflinger takes the primary HAL straight from /system/lib/libaudio.primary.default.so
+ * (its HMI) and also links the DcRemove filter from it. This build replaces that library: HMI is our HAL,
+ * DcRemove calls go to the vendor original, renamed to libaudio.mtk.so by the emulator.
+ */
+extern void *dlopen(const char *name, int flags);
+extern void *dlsym(void *h, const char *name);
+static const char *const k_dc[] = {
+    "_ZN7android8DcRemoveC1Ev", "_ZN7android8DcRemoveD1Ev", "_ZN7android8DcRemove4initEjjj",
+    "_ZN7android8DcRemove7processEPKvjPv", "_ZN7android8DcRemove5closeEv",
+};
+static void *g_dc[5];
+static void dc_trap(void) { __builtin_trap(); }
+__attribute__((used)) static void *dc_resolve(unsigned i) {
+    if (!g_dc[i]) {
+        static void *h;
+        if (!h) h = dlopen("/system/lib/libaudio.mtk.so", 0);
+        g_dc[i] = h ? dlsym(h, k_dc[i]) : 0;
+        if (!g_dc[i]) g_dc[i] = (void *)dc_trap;
+    }
+    return g_dc[i];
+}
+#define DC_STUB(sym, idx) \
+    __asm__(".text\n.global " sym "\n.type " sym ",%function\n.thumb_func\n" sym ":\n" \
+            "push {r0-r3, lr}\nmovs r0, #" #idx "\nbl dc_resolve\nmov r12, r0\npop {r0-r3, lr}\nbx r12\n");
+DC_STUB("_ZN7android8DcRemoveC1Ev", 0)
+DC_STUB("_ZN7android8DcRemoveD1Ev", 1)
+DC_STUB("_ZN7android8DcRemove4initEjjj", 2)
+DC_STUB("_ZN7android8DcRemove7processEPKvjPv", 3)
+DC_STUB("_ZN7android8DcRemove5closeEv", 4)
+#endif

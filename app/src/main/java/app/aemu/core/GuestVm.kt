@@ -56,7 +56,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     val props = PropService(paths, ::log)
     val input = InputService(paths, ::log)
     // 2.x пишет в /dev/eac через AudioHardwareGeneric на 44,1 кГц, HAL 4.x движка — на 48 кГц
-    val audio = AudioOut(paths, ::log, if (img.api < 14) 44100 else AudioOut.RATE)
+    val audio = AudioOut(paths, ::log, if (img.api < 14) 44100 else AudioOut.RATE,
+        if (TreeFixer.isMtkAudio(paths.root)) "dev/aemu_pcm" else "dev/eac")
     val ril = RilStub(paths, ::log, img.settings.imei.ifBlank { VmSettings.DEFAULT_IMEI }, img.api)
     val vold = VoldStub(paths, img.sdcardPath, ::log, others = img.volumes)
     var onFrame: (() -> Unit)? = null
@@ -181,7 +182,9 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (!isLinkTo(f, "/dev/null")) { f.delete(); android.system.Os.symlink("/dev/null", f.absolutePath) }
                 }
             }
-            log("audio: MediaTek has its own audio driver, emulator audio disabled")
+            // our HAL replaces the MTK one (TreeFixer) and plays through its own channel
+            audio.makeFifo(); audio.start()
+            log("audio: MediaTek, emulator HAL via /dev/aemu_pcm")
         } else { audio.makeFifo(); audio.start() }
         events.start()
         lmk = GuestLmk(paths.root, s.lowRam, ::log, s.ramMb).also { it.start() }

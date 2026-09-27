@@ -88,6 +88,7 @@ class TreeFixer(
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        swapMtkAudioHal()
         eglConfig(img.settings.gpu)
         makeDataDirs()
         makeUserZeroLink()
@@ -137,6 +138,29 @@ class TreeFixer(
         val af = File(root, "system/lib/libaudioflinger.so")
         af.isFile && String(af.readBytes(), Charsets.ISO_8859_1).contains("setFmVolume")
     }.getOrDefault(false)
+
+    /**
+     * MediaTek 4.x: libaudioflinger loads the primary HAL from /system/lib/libaudio.primary.default.so
+     * (AudioMTKHardware, which needs the MTK sound driver — silent here). Park it as libaudio.mtk.so and put
+     * our HAL there; it forwards the DcRemove filter AudioFlinger links from that library to the original.
+     */
+    private fun swapMtkAudioHal() {
+        if (engine != Engine.KK || img.api < 17) return
+        val lib = File(root, "system/lib/libaudio.primary.default.so")
+        val orig = File(root, "system/lib/libaudio.mtk.so")
+        if (!orig.isFile) {
+            if (!lib.isFile || !isMtkAudio(root)) return
+            if (!lib.renameTo(orig)) return
+        }
+        val asset = "engines/kk/audio.primary.mtk.so"
+        val size = runCatching { ctx.assets.openFd(asset).use { it.length } }.getOrDefault(-1L)
+        if (lib.isFile && lib.length() == size && sameContent(asset, lib)) return
+        runCatching {
+            ctx.assets.open(asset).use { i -> lib.outputStream().use { o -> i.copyTo(o) } }
+            lib.setReadable(true, false)
+            log("audio: MediaTek HAL replaced with the emulator HAL")
+        }.onFailure { log("audio: MediaTek HAL swap failed: ${it.message}") }
+    }
 
     private fun installEngineFiles() {
         val copies = when (engine) {
@@ -651,6 +675,7 @@ class TreeFixer(
         )
         /** Прошивка MediaTek, где AudioFlinger связан с собственной звуковой библиотекой MTK (/dev/eac). */
         fun isMtkAudio(root: File): Boolean {
+            if (File(root, "system/lib/libaudio.mtk.so").isFile) return true   // already swapped for our HAL
             val f = File(root, "system/lib/libaudio.primary.default.so")
             if (!f.isFile || f.length() > 20_000_000) return false
             return runCatching { String(f.readBytes(), Charsets.ISO_8859_1).contains("AudioMTKHardware") }.getOrDefault(false)

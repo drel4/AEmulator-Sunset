@@ -13,14 +13,20 @@ import java.io.FileInputStream
  * Звук гостя. Гостевой HAL (audio.primary.default.so из набора движка) пишет PCM
  * 48 кГц/стерео/16 бит в FIFO /dev/eac, а мы отдаём его в AudioTrack телефона.
  */
-class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, private val rate: Int = RATE) {
+class AudioOut(
+    private val paths: VmPaths,
+    private val log: (String) -> Unit,
+    private val rate: Int = RATE,
+    /** guest PCM channel; MediaTek keeps /dev/eac for its own driver, so ours is /dev/aemu_pcm there */
+    private val dev: String = "dev/eac",
+) {
     @Volatile private var thread: Thread? = null
     @Volatile private var stop = false
     @Volatile var played = 0L
         private set
     @Volatile var muted = false
 
-    val fifo: File get() = File(paths.root, "dev/eac")
+    val fifo: File get() = File(paths.root, dev)
 
     fun makeFifo() {
         val f = fifo
