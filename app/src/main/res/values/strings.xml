@@ -136,4 +136,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Fake incoming call</string>
     <string name="m_call_ring">Call</string>
+    <string name="fw_folder_title">Firmware in the folder</string>
+    <string name="fw_folder_import">Import</string>
 </resources>

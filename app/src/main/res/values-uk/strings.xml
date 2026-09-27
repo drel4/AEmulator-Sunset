@@ -135,4 +135,6 @@
     <string name="m_reset">Скинути</string>
     <string name="m_call">Вхідний дзвінок</string>
     <string name="m_call_ring">Подзвонити</string>
+    <string name="fw_folder_title">Прошивки в теці</string>
+    <string name="fw_folder_import">Імпорт</string>
 </resources>

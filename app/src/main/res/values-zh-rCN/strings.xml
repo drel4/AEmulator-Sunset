@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">来电</string>
     <string name="m_call_ring">呼叫</string>
+    <string name="fw_folder_title">文件夹中的固件</string>
+    <string name="fw_folder_import">导入</string>
 </resources>

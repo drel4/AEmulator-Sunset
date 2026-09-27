@@ -156,6 +156,7 @@ fun Library(model: LibraryModel) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item { StorageAccessCard() }
+                item { if (!imp.active) FirmwareFolderCard(onImport = { f -> model.import(android.net.Uri.fromFile(f)) }) }
                 item {
                     AnimatedVisibility(imp.active || imp.error != null || imp.done != null) {
                         ImportCard(imp, onCancel = model::cancelImport, onDismiss = model::dismissImport)
@@ -199,6 +200,38 @@ fun Library(model: LibraryModel) {
         )
     }
     if (help) HelpDialog(onDismiss = { help = false })
+}
+
+/** Firmware found in Internal storage/aemulator/firmware, rescanned whenever the screen comes back. */
+@Composable
+private fun FirmwareFolderCard(onImport: (java.io.File) -> Unit) {
+    var files by remember { mutableStateOf(emptyList<java.io.File>()) }
+    val life = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(life) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) Thread { files = app.aemu.core.FirmwareFolder.list() }.start()
+        }
+        life.lifecycle.addObserver(obs)
+        onDispose { life.lifecycle.removeObserver(obs) }
+    }
+    if (files.isEmpty()) return
+    Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.fw_folder_title), style = MaterialTheme.typography.titleMedium)
+            Text("aemulator/firmware", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            for (f in files.take(8)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(f.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text("${f.length() / 1_048_576} MB", style = MaterialTheme.typography.bodySmall)
+                    }
+                    androidx.compose.material3.FilledTonalButton(onClick = { onImport(f) }) { Text(stringResource(R.string.fw_folder_import)) }
+                }
+            }
+        }
+    }
 }
 
 /** Доступ ко всем файлам: общая папка гостя в «Внутренний накопитель/AEmulator». */

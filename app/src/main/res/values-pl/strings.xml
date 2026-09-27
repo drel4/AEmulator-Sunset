@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Połączenie przychodzące</string>
     <string name="m_call_ring">Zadzwoń</string>
+    <string name="fw_folder_title">Oprogramowanie w folderze</string>
+    <string name="fw_folder_import">Importuj</string>
 </resources>

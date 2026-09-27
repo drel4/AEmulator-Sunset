@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Chiamata in arrivo</string>
     <string name="m_call_ring">Chiama</string>
+    <string name="fw_folder_title">Firmware nella cartella</string>
+    <string name="fw_folder_import">Importa</string>
 </resources>

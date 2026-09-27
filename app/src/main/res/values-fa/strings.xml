@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">تماس ورودی</string>
     <string name="m_call_ring">تماس</string>
+    <string name="fw_folder_title">فریمور در پوشه</string>
+    <string name="fw_folder_import">وارد کردن</string>
 </resources>

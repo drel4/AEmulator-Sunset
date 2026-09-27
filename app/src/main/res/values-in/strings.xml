@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Panggilan masuk</string>
     <string name="m_call_ring">Panggil</string>
+    <string name="fw_folder_title">Firmware di folder</string>
+    <string name="fw_folder_import">Impor</string>
 </resources>

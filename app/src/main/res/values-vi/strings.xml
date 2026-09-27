@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Cuộc gọi đến</string>
     <string name="m_call_ring">Gọi</string>
+    <string name="fw_folder_title">Firmware trong thư mục</string>
+    <string name="fw_folder_import">Nhập</string>
 </resources>

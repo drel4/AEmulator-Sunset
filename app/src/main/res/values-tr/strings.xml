@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">Gelen arama</string>
     <string name="m_call_ring">Ara</string>
+    <string name="fw_folder_title">Klasördeki yazılımlar</string>
+    <string name="fw_folder_import">İçe aktar</string>
 </resources>

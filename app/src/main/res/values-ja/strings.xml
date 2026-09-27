@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">着信</string>
     <string name="m_call_ring">発信</string>
+    <string name="fw_folder_title">フォルダー内のファームウェア</string>
+    <string name="fw_folder_import">インポート</string>
 </resources>

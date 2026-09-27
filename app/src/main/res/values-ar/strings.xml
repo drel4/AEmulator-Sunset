@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">مكالمة واردة</string>
     <string name="m_call_ring">اتصال</string>
+    <string name="fw_folder_title">البرامج الثابتة في المجلد</string>
+    <string name="fw_folder_import">استيراد</string>
 </resources>

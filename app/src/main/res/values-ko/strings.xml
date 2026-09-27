@@ -135,4 +135,6 @@
     <string name="m_reset">Reset</string>
     <string name="m_call">수신 전화</string>
     <string name="m_call_ring">전화 걸기</string>
+    <string name="fw_folder_title">폴더의 펌웨어</string>
+    <string name="fw_folder_import">가져오기</string>
 </resources>
