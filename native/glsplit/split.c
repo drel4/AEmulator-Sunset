@@ -451,7 +451,9 @@ __attribute__((visibility("default"))) void glBindTexture(GLenum target, unsigne
     if (target == GL_TEXTURE_2D) g_bound2d = tex;
     else if (target == GL_TEXTURE_EXTERNAL_OES) g_boundext = tex;
     else return;
-    struct img_tex *e = img_find(tex);
+    static int on = -1;
+    if (on < 0) { const char *v = getenv("AEMU_GL_RETARGET"); on = !(v && v[0] == '0'); }
+    struct img_tex *e = on ? img_find(tex) : 0;
     if (e && e->target == target && e->frame != g_frame) {
         e->frame = g_frame;
         ((ImageTargetFn)aemu_split_resolve(IDX_glEGLImageTargetTexture2DOES))(target, e->image);
