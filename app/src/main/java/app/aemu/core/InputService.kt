@@ -40,7 +40,7 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
         }
         val me = Client(c.outputStream, pid)
         clients.add(me)
-        log("ввод: гость подключился (процесс $pid, клиентов ${clients.size})")
+        log("input: guest connected (pid $pid, clients ${clients.size})")
         // держим соединение, пока гость его не закроет
         val ins = c.inputStream
         val buf = ByteArray(64)
@@ -134,6 +134,24 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
         put(b, EV_KEY, code, if (down) 1 else 0)
         put(b, EV_SYN, SYN_REPORT, 0)
         synchronized(this) { flush(b) }
+    }
+
+    /**
+     * Код клавиши «Домой» для этой прошивки. В Generic.kl 4.x код 102 — MOVE_HOME (курсор в начало
+     * строки), а HOME — 172; в раскладках 2.x бывает наоборот. Берём из раскладки самой прошивки.
+     */
+    @Volatile var homeCode = KEY_HOME
+
+    fun detectHome(root: java.io.File) {
+        val dir = java.io.File(root, "system/usr/keylayout")
+        for (n in listOf("Generic.kl", "qwerty.kl")) {
+            val codes = runCatching { java.io.File(dir, n).readLines() }.getOrNull() ?: continue
+            val home = codes.firstNotNullOfOrNull { l ->
+                val p = l.trim().split(Regex("\\s+"))
+                if (p.size >= 3 && p[0] == "key" && p[2] == "HOME") p[1].toIntOrNull() else null
+            }
+            if (home != null) { homeCode = home; return }
+        }
     }
 
     fun press(code: Int, holdMs: Long = 80) {

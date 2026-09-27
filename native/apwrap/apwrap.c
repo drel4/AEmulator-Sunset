@@ -108,7 +108,7 @@ static fn_t g_real_open_on_module;
 typedef int (*open_on_module_t)(void *, int, uint32_t *, uint32_t *, int *, uint32_t *, uint32_t *, int);
 static int w_open_output_on_module(void *service, int module, uint32_t *devices, uint32_t *rate, int *fmt,
                                    uint32_t *mask, uint32_t *latency, int flags) {
-    LOGI("open_output_on_module: модуль %d, устройства %x, частота %u, флаги %x", module,
+    LOGI("open_output_on_module: module %d, devices %x, rate %u, flags %x", module,
          devices ? *devices : 0xdead, rate ? *rate : 0, flags);
     int r = ((open_on_module_t)g_real_open_on_module)(service, module, devices, rate, fmt, mask, latency, flags);
     LOGI("open_output_on_module → %d", r);
@@ -186,13 +186,13 @@ static int w_open(const void *module, const char *id, void **device) {
         if (!g_real) {
             h = dlopen("/system/lib/libaemu_apaosp.so", 0);
             if (h) g_real = (const struct hw_module *)dlsym(h, "HMI");
-            else LOGI("политика AOSP не загрузилась: %s", dlerror());
+            else LOGI("AOSP policy failed to load: %s", dlerror());
         }
         if (!g_real) return -22;
     }
     struct ap_device *dev = 0;
     int r = g_real->methods->open(g_real, id, (void **)&dev);
-    if (r != 0 || !dev) { LOGI("open политики → %d", r); return r; }
+    if (r != 0 || !dev) { LOGI("policy open → %d", r); return r; }
     g_create = dev->create_audio_policy;
     g_destroy = dev->destroy_audio_policy;
     dev->create_audio_policy = w_create;

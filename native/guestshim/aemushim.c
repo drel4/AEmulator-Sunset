@@ -59,6 +59,7 @@ __attribute__((naked, noinline)) static long sys3(long n, long a, long b, long c
         "push {r7}; mov r7, r0; mov r0, r1; mov r1, r2; mov r2, r3; svc #0; pop {r7}; bx lr");
 }
 #define SYS_read 3
+#define SYS_write 4
 #define SYS_open 5
 #define SYS_close 6
 #define SYS_execve 11
@@ -190,11 +191,52 @@ EXPORT int access(const char *path, int mode) {
     return r < 0 ? fail(r) : 0;
 }
 
+/* ------------------------------------------------------------------ важность процессов (oom_adj) */
+/*
+ * ActivityManager до 4.3 пишет важность процессов в /proc/<pid>/oom_adj, хост это запрещает, и ядерный
+ * lowmemorykiller всё равно не про нас. Отдаём вместо файла FIFO /dev/aemu_oom с заголовком
+ * «\n<pid> a » (или « s » для oom_score_adj): следом ActivityManager сам допишет число, а хост (GuestLmk)
+ * убивает по этим числам фоновые процессы, когда памяти мало. Нет читателя — пишем в /dev/null.
+ */
+static int oom_open(const char *path) {
+    static const char P[] = "/proc/";
+    int i = 0;
+    while (P[i] && path[i] == P[i]) i++;
+    if (P[i]) return -1;
+    const char *pid = path + i;
+    int n = 0;
+    while (pid[n] >= '0' && pid[n] <= '9') n++;
+    if (!n || n > 10 || pid[n] != '/') return -1;
+    const char *f = pid + n + 1;
+    static const char A[] = "oom_adj", S[] = "oom_score_adj";
+    int ka = 0, ks = 0;
+    while (A[ka] && f[ka] == A[ka]) ka++;
+    while (S[ks] && f[ks] == S[ks]) ks++;
+    char kind;
+    if (!A[ka] && !f[ka]) kind = 'a';
+    else if (!S[ks] && !f[ks]) kind = 's';
+    else return -1;
+    long fd = sys3(SYS_open, (long)"/dev/aemu_oom", 01 /* O_WRONLY */ | 04000 /* O_NONBLOCK */ | 02000000 /* O_CLOEXEC */, 0);
+    if (fd < 0) fd = sys3(SYS_open, (long)"/dev/null", 01 | 02000000, 0);
+    if (fd < 0) return -1;
+    char h[16];
+    int k = 0;
+    h[k++] = '\n';
+    for (int j = 0; j < n; j++) h[k++] = pid[j];
+    h[k++] = ' '; h[k++] = kind; h[k++] = ' ';
+    sys3(SYS_write, fd, (long)h, k);
+    return (int)fd;
+}
+
 EXPORT int open(const char *path, int flags, ...) {
     char b[128];
     int mode = 0;
     if (flags & 0100 /* O_CREAT */) {
         __builtin_va_list ap; __builtin_va_start(ap, flags); mode = __builtin_va_arg(ap, int); __builtin_va_end(ap);
+    }
+    if (path && (flags & 3) && path[0] == '/' && path[1] == 'p') {
+        int fd = oom_open(path);
+        if (fd >= 0) return fd;
     }
     long r = sys3(SYS_open, (long)qt_redirect(path, b, sizeof(b)), flags | 0400000 /* O_LARGEFILE */, mode);
     return r < 0 ? fail(r) : (int)r;

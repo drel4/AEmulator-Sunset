@@ -27,6 +27,14 @@ data class VmSettings(
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
+    /** guest RAM budget in MB, 0 = automatic */
+    val ramMb: Int = 0,
+    /** emulate the radio (RIL); off = tablet-like firmware without telephony */
+    val radio: Boolean = true,
+    /** IMEI reported by the fake modem; blank = default sample IMEI */
+    val imei: String = "",
+    /** extra qemu options; KEY=VALUE tokens are passed as environment variables */
+    val qemuArgs: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("width", width).put("height", height).put("density", density)
@@ -34,8 +42,20 @@ data class VmSettings(
         .put("touchHz", touchHz).put("netProxy", netProxy).put("lowRam", lowRam)
         .put("showFrame", showFrame).put("showNavBar", showNavBar)
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
+        .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
     companion object {
+        /** Luhn-valid sample IMEI from the standard; the guest has no real modem */
+        const val DEFAULT_IMEI = "490154203237518"
+
+        /** Random Luhn-valid IMEI with a test TAC prefix. */
+        fun randomImei(): String {
+            val d = IntArray(14) { if (it < 2) intArrayOf(3, 5)[it] else (0..9).random() }
+            var sum = 0
+            for (i in 0 until 14) { var x = d[i]; if (i % 2 == 1) { x *= 2; if (x > 9) x -= 9 }; sum += x }
+            return d.joinToString("") + ((10 - sum % 10) % 10)
+        }
+
         fun fromJson(o: JSONObject?): VmSettings {
             if (o == null) return VmSettings()
             val d = VmSettings()
@@ -55,6 +75,10 @@ data class VmSettings(
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
+                ramMb = o.optInt("ramMb", 0),
+                radio = o.optBoolean("radio", true),
+                imei = o.optString("imei", ""),
+                qemuArgs = o.optString("qemuArgs", ""),
             )
         }
     }

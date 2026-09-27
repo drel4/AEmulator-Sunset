@@ -15,7 +15,7 @@ object TransferList {
 
     fun build(list: String, data: InputStream, out: File) {
         val lines = list.lines().map { it.trim() }.filter { it.isNotEmpty() }
-        val version = lines[0].toIntOrNull() ?: throw IOException("transfer.list: нет версии")
+        val version = lines[0].toIntOrNull() ?: throw IOException("transfer.list: no version")
         val totalBlocks = lines[1].toLong()
         val cmdStart = if (version >= 2) 4 else 2
         RandomAccessFile(out, "rw").use { raf ->
@@ -35,7 +35,7 @@ object TransferList {
                         }
                     }
                     "zero", "erase" -> {} // дыры и так нулевые
-                    "move", "bsdiff", "imgdiff", "stash", "free" -> throw IOException("это инкрементальная OTA — нужна полная прошивка")
+                    "move", "bsdiff", "imgdiff", "stash", "free" -> throw IOException("this is an incremental OTA, a full firmware is required")
                 }
             }
         }

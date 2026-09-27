@@ -44,6 +44,8 @@ android {
         }
         debug {
             applicationIdSuffix = ""
+            // тот же ключ, что у релиза: отладочная сборка ставится поверх без потери образов
+            if (canSign) signingConfig = signingConfigs.getByName("release")
         }
     }
 

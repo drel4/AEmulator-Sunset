@@ -61,7 +61,7 @@ class Ext4Reader(private val src: RandomSource) {
         val sb = buf(1024)
         src.read(1024, sb)
         sb.flip()
-        if (sb.getShort(0x38).toInt() and 0xffff != 0xEF53) throw IOException("не ext2/3/4 (нет подписи 0xEF53)")
+        if (sb.getShort(0x38).toInt() and 0xffff != 0xEF53) throw IOException("not ext2/3/4 (no 0xEF53 magic)")
         val inodesCount = sb.getInt(0x0)
         val blocksLo = sb.getInt(0x4).toLong() and 0xffffffffL
         firstDataBlock = sb.getInt(0x14).toLong() and 0xffffffffL

@@ -30,7 +30,7 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val cmd = b.getInt()
         val name = cstr(body, 4, 32)
         val value = cstr(body, 36, 92)
-        if (cmd == 1) apply(name, value) else log("свойства: неизвестная команда $cmd")
+        if (cmd == 1) apply(name, value) else log("props: unknown command $cmd")
     }
 
     /** Разворачивает область из шаблона образа и подмешивает сохранённые persist.*. */
@@ -40,14 +40,14 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val tpl = paths.propsTemplate
         val f = paths.props
         if (!tpl.isFile) {
-            log("свойства: нет шаблона ${tpl.name}")
+            log("props: no template ${tpl.name}")
             return false
         }
         f.parentFile?.mkdirs()
         tpl.copyTo(f, overwrite = true)
         val a = PropArea.open(f)
         if (a == null) {
-            log("свойства: область не распознана")
+            log("props: area not recognized")
             return false
         }
         area = a
@@ -61,7 +61,7 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         // наши значения важнее сохранённых гостем
         for ((k, v) in overrides) a.put(k, v)
         writes = 0; rejects = 0
-        log("свойства: записей ${a.count}, свободно ${a.room()}" + if (n > 0) ", сохранённых persist.* $n" else "")
+        log("props: ${a.count} entries, ${a.room()} free" + if (n > 0) ", saved persist.* $n" else "")
         return true
     }
 
@@ -76,13 +76,13 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         if (name.isEmpty()) { rejects++; return }
         if (name.startsWith("ctl.")) {
             val what = name.removePrefix("ctl.")
-            onCtl?.invoke(what == "start" || what == "restart", value) ?: log("свойства: ctl.$what=$value (служб нет)")
+            onCtl?.invoke(what == "start" || what == "restart", value) ?: log("props: ctl.$what=$value (no services)")
             return
         }
         if (name.startsWith("ro.") && get(name) != null) { rejects++; return }
         if (!put(name, value)) {
             rejects++
-            log("свойства: не записал $name=$value (места нет?)")
+            log("props: failed to write $name=$value (out of space?)")
             return
         }
         writes++

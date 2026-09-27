@@ -57,11 +57,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     val input = InputService(paths, ::log)
     // 2.x пишет в /dev/eac через AudioHardwareGeneric на 44,1 кГц, HAL 4.x движка — на 48 кГц
     val audio = AudioOut(paths, ::log, if (img.api < 14) 44100 else AudioOut.RATE)
-    val ril = RilStub(paths, ::log)
+    val ril = RilStub(paths, ::log, img.settings.imei.ifBlank { VmSettings.DEFAULT_IMEI })
     val vold = VoldStub(paths, img.sdcardPath, ::log, others = img.volumes)
     var onFrame: (() -> Unit)? = null
     val frames = FrameBell(paths, ::log) { onFrame?.invoke() }
     private val events = EventsSink(paths, ::log)
+    @Volatile private var lmk: GuestLmk? = null
     val net = NetProxy(ctx, paths, ::log)
     val runner by lazy { GuestRunner(paths, img) }
 
@@ -81,7 +82,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             doBoot()
         } catch (t: Throwable) {
             failure = t.message ?: t.toString()
-            log("✖ запуск прерван: $failure")
+            log("✖ boot aborted: $failure")
             setState(State.FAILED)
         }
     }
@@ -89,10 +90,10 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private fun doBoot() {
         paths.bin.mkdirs()
         runCatching { logFile.writeText("") }
-        log("образ «${img.name}»: ${img.displayVersion}, ${img.skin}, движок ${engine.title}")
-        if (!File(paths.root, "system/framework").isDirectory) error("нет дерева прошивки")
+        log("image \"${img.name}\": ${img.displayVersion}, ${img.skin}, engine ${engine.title}")
+        if (!File(paths.root, "system/framework").isDirectory) error("firmware tree missing")
         val qemu = paths.nativeBin(engine.qemu)
-        if (!qemu.canExecute()) error("транслятор ${engine.qemu} не исполняемый")
+        if (!qemu.canExecute()) error("translator ${engine.qemu} is not executable")
         killLeftovers()
 
         // 1. дерево
@@ -114,7 +115,14 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         overrides["qemu.sf.lcd_density"] = s.density.toString()
         overrides["ro.aemu.host"] = "qemu-user"
         overrides["dalvik.vm.execution-mode"] = if (s.jit) "int:jit" else "int:fast"
-        if (s.lowRam) overrides["ro.config.low_ram"] = "true"
+        if (s.lowRam || s.ramMb in 1..768) overrides["ro.config.low_ram"] = "true"
+        if (s.ramMb > 0) {
+            // Dalvik heap sized from the guest RAM budget (like a real device of that class)
+            val heap = (s.ramMb / 4).coerceIn(32, 512)
+            overrides["dalvik.vm.heapsize"] = "${heap}m"
+            overrides["dalvik.vm.heapgrowthlimit"] = "${(heap / 2).coerceAtLeast(24)}m"
+        }
+        if (!s.radio) overrides["ro.radio.noril"] = "true"
         if (!s.hwui) overrides["debug.hwui.renderer"] = "skia"
         // PBO для текстур шрифтов (hwui 4.4+ на GLES3) ломают часть драйверов (Mali) — грузим текстуры напрямую
         if (HostInfo.gpu().contains("mali")) overrides["ro.hwui.use_gpu_pixel_buffers"] = "false"
@@ -138,7 +146,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         overrides["net.dns2"] = "1.1.1.1"
         // в прошивках старая база часовых поясов — передаём текущее смещение, а не название зоны
         overrides["persist.sys.timezone"] = gmtZone()
-        if (!props.prepare(overrides)) error("область свойств не готова")
+        if (!props.prepare(overrides)) error("property area not ready")
         fixer.skipPreBoot(props)
         fixer.noScreenSleep()
         props.onSet = { k, v -> onProp(k, v) }
@@ -148,9 +156,10 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         props.serve()
         input.rateHz = s.touchHz
         input.mtMode = s.mtMode
+        input.detectHome(paths.root)
         input.serve()
         frames.serve()
-        ril.serve()
+        if (s.radio) ril.serve() else log("radio: emulation disabled in settings")
         vold.serve()
         // у vold производителей бывают дополнительные сокеты (Samsung: usbstorage, enc_report) — отвечаем «ладно»
         runCatching {
@@ -172,15 +181,17 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (!isLinkTo(f, "/dev/null")) { f.delete(); android.system.Os.symlink("/dev/null", f.absolutePath) }
                 }
             }
-            log("звук: MediaTek — свой звуковой драйвер, звук эмулятора отключён")
+            log("audio: MediaTek has its own audio driver, emulator audio disabled")
         } else { audio.makeFifo(); audio.start() }
         events.start()
+        lmk = GuestLmk(paths.root, s.lowRam, ::log, s.ramMb).also { it.start() }
         val netCfg = if (s.netProxy) net.start() else GuestRunner.NetConfig()
         runner.sdcardHost = sd
         val r = GuestRunner(paths, img, netCfg.copy(glPath = if (s.gpu) "/dev/socket/gl" else null)).also {
             it.sdcardHost = sd
             // отладка: файл run/binder.verbose включает полную трассировку binder в binder-warn.log
             it.binderVerbose = File(paths.bin, "binder.verbose").exists()
+            it.userQemuArgs = s.qemuArgs
         }
         runnerRef = r
         Keeper.hold(ctx, img.name)
@@ -193,7 +204,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         paths.binderSock.delete()
         paths.creds.let { d -> d.listFiles()?.forEach { it.delete() }; d.mkdirs() }
         startBinder()
-        if (!waitFor("сокет binder", 15_000) { paths.binderSock.exists() }) error("binderd не поднялся")
+        if (!waitFor("binder socket", 15_000) { paths.binderSock.exists() }) error("binderd failed to start")
 
         // 5. службы гостя по плану из init.rc прошивки
         val plan = img.services.ifEmpty { InitPlan.fallback(img, paths.root) }
@@ -210,11 +221,11 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     "-Djava.class.path=/system/framework/aemu-stubs.jar", "/system/bin", "app.aemu.stub.BtStub"), optional = true))
             }
             startService(svc)
-            svc.waitSocket?.let { sock -> waitFor("сокет $sock", 20_000) { paths.socket(sock).exists() } }
+            svc.waitSocket?.let { sock -> waitFor("socket $sock", 20_000) { paths.socket(sock).exists() } }
             if (svc.delayMs > 0) Thread.sleep(svc.delayMs)
         }
         if (!glDone) glUp()
-        log("система пошла: ${alive().joinToString()}")
+        log("system started: ${alive().joinToString()}")
         watchdog()
     }
 
@@ -230,13 +241,13 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 spawn("binderd", listOf(paths.nativeBin(Engine.KK.binderd).absolutePath, "-s", sock), emptyMap())
             } else {
                 Slot.start(ctx, BinderSlot::class.java, listOf("binderd", "-s", sock), emptyMap(), paths.log("binderd"))
-                log("· binderd пошёл (служба :binder)")
+                log("· binderd started (:binder service)")
             }
         }
     }
 
     private fun glUp() {
-        if (!settings.gpu) { log("GPU-мост выключен — графика программная"); return }
+        if (!settings.gpu) { log("GPU bridge off, software rendering"); return }
         val (w, h) = if (engine == Engine.GB) 480 to 800 else settings.width to settings.height
         paths.glSock.parentFile?.mkdirs()
         paths.glSock.delete()
@@ -245,21 +256,22 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 Slot.start(ctx, GlSlot::class.java,
                     listOf("glserverd", "-s", paths.glSock.absolutePath, "-fb", paths.fb.absolutePath, "-w", "$w", "-h", "$h"),
                     emptyMap(), paths.log("glserverd"))
-                waitFor("сокет GL-моста", 10_000) { paths.glSock.exists() }
+                waitFor("GL bridge socket", 10_000) { paths.glSock.exists() }
             }
             Engine.KK -> {
-                if (surface == null) waitFor("поверхность экрана", 10_000) { surface != null }
+                if (surface == null) waitFor("screen surface", 10_000) { surface != null }
                 val sf = surface
+                HostNative.relaxFdsanSafe()
                 if (sf != null && GlBridge.start(sf, paths.glSock.absolutePath, paths.log("glbridge").absolutePath, w, h, false)) {
-                    log("★ GPU-мост работает в приложении: кадр рисуется прямо в поверхность")
-                    waitFor("сокет GL-моста", 5_000) { paths.glSock.exists() }
+                    log("★ GPU bridge running in-app: frames render straight to the surface")
+                    waitFor("GL bridge socket", 5_000) { paths.glSock.exists() }
                     return
                 }
-                log("GPU-мост в приложении не поднялся — беру отдельный glserverd")
+                log("in-app GPU bridge failed, falling back to standalone glserverd")
                 spawn("glserverd", listOf(paths.nativeBin(engine.glserverd).absolutePath,
                     "-s", paths.glSock.absolutePath, "-fb", paths.fb.absolutePath,
                     "-notify", paths.frameSock.absolutePath, "-w", "$w", "-h", "$h"), emptyMap())
-                waitFor("сокет GL-моста", 10_000) { paths.glSock.exists() }
+                waitFor("GL bridge socket", 10_000) { paths.glSock.exists() }
             }
         }
     }
@@ -268,7 +280,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
     private fun startService(svc: GuestService, propsFile: File? = null) {
         if (!File(paths.root, svc.argv.first().removePrefix("/")).isFile) {
-            log("· ${svc.name}: нет ${svc.argv.first()} — пропускаю")
+            log("· ${svc.name}: ${svc.argv.first()} missing, skipping")
             return
         }
         val extra = LinkedHashMap<String, String>()
@@ -292,7 +304,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val p = pb.start()
         synchronized(procs) { procs[name] = p }
         pidOf(p)?.let { pgids.add(it) }
-        log("· $name пошёл")
+        log("· $name started")
         Thread({
             runCatching {
                 OutputStreamWriter(FileOutputStream(log, true)).use { w ->
@@ -301,7 +313,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 }
             }
             val code = runCatching { p.waitFor() }.getOrDefault(-1)
-            if (!stopping) log("· $name завершился, код $code")
+            if (!stopping) log("· $name exited, code $code")
         }, "log-$name").apply { isDaemon = true; start() }
     }
 
@@ -314,7 +326,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             Thread.sleep(100)
         }
         val ok = cond()
-        if (!ok) log("⚠ не дождался: $what")
+        if (!ok) log("⚠ timed out waiting for: $what")
         return ok
     }
 
@@ -323,7 +335,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private fun onProp(k: String, v: String) {
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
             bootDoneAt = System.currentTimeMillis()
-            log("★ система загружена за ${(bootDoneAt - bootAt) / 1000} с")
+            log("★ system booted in ${(bootDoneAt - bootAt) / 1000} s")
             setState(State.RUNNING)
             Thread { afterBoot() }.start()
         }
@@ -336,7 +348,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             return
         }
         val def = plan.firstOrNull { it.name == svc } ?: InitPlan.optional(svc, img, paths.root)
-        if (def == null) { log("ctl.${if (start) "start" else "stop"} $svc — такой службы нет"); return }
+        if (def == null) { log("ctl.${if (start) "start" else "stop"} $svc: no such service"); return }
         synchronized(procs) { procs.remove(svc) }?.destroyForcibly()
         if (start) Thread { runCatching { startService(def) } }.start()
     }
@@ -361,10 +373,10 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     val code = runCatching { p.exitValue() }.getOrDefault(-1)
                     if (name == "zygote") {
                         if (state != State.FAILED && bootDoneAt == 0L) {
-                            failure = "зигота завершилась (код $code)" + if (code == 137) " — система убита по памяти" else ""
+                            failure = "zygote exited (code $code)" + if (code == 137) " — system killed by low memory" else ""
                             log("✖ $failure"); setState(State.FAILED)
                         } else if (bootDoneAt > 0) {
-                            log("✖ зигота упала (код $code) — перезапуск системы")
+                            log("✖ zygote crashed (code $code), restarting system")
                             restartZygote()
                         }
                         synchronized(procs) { procs.remove(name) }
@@ -376,7 +388,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (name == "mediaserver" && code == 139 && n == 1) swapAudioPolicy()
                     if (svc != null && (svc.restart || name == "mediaserver") && code != 137 && code != 143 && n < 12) {
                         restarts[name] = n + 1
-                        log("служба $name упала (код $code) — поднимаю заново (${n + 1}/12)")
+                        log("service $name crashed (code $code), restarting (${n + 1}/12)")
                         synchronized(procs) { procs.remove(name) }
                         runCatching { startService(svc) }
                     } else synchronized(procs) { procs.remove(name) }
@@ -399,7 +411,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         if (TreeFixer.isMtkAudio(paths.root)) {
             if (parked.isFile) runCatching {
                 parked.copyTo(f, overwrite = true); parked.delete(); aosp.delete()
-                log("звук: MediaTek — вернул родную audio_policy")
+                log("audio: MediaTek, restored stock audio_policy")
             }
             return
         }
@@ -410,7 +422,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             if (!parked.isFile && f.isFile) f.copyTo(parked, overwrite = true)
             ctx.assets.open("engines/kk/audio_policy.default.so").use { i -> aosp.outputStream().use { o -> i.copyTo(o) } }
             ctx.assets.open("engines/kk/audio_policy.wrap.so").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
-            log("звук: audio_policy прошивки падает — поставил AOSP-версию (родная сохранена)")
+            log("audio: firmware audio_policy crashes, installed AOSP one (stock kept)")
         }
     }
 
@@ -422,7 +434,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         // на настоящем ядре дети зиготы гибнут вместе с system_server; здесь они остаются жить и
         // держат ссылки на мёртвые службы (телефония отказывает новому system_server в правах)
         val n = killZygoteChildren()
-        if (n > 0) log("добиты приложения прошлой зиготы: $n")
+        if (n > 0) log("killed apps of previous zygote: $n")
         runCatching { startService(z) }
     }
 
@@ -446,11 +458,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         if (state == State.STOPPED) return
         stopping = true
         setState(State.STOPPING)
-        log("останавливаю систему")
+        log("stopping system")
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
         props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop()
         extraStubs.forEach { it.stop() }; extraStubs.clear()
+        lmk?.stop(); lmk = null
         Keeper.release(ctx)
         setState(State.STOPPED)
     }
@@ -476,7 +489,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 cmd.startsWith("${ctx.packageName}:binder") || cmd.startsWith("${ctx.packageName}:gl")
             if (ours) { runCatching { AProcess.sendSignal(pid, 9) }; n++ }
         }
-        if (n > 0) log("прибрано процессов от прошлого запуска: $n")
+        if (n > 0) log("cleaned up processes from previous run: $n")
         return n
     }
 

@@ -125,7 +125,7 @@ class PropArea private constructor(private val b: ByteBuffer, private val chan: 
         fun create(f: File): PropArea {
             f.parentFile?.mkdirs()
             RandomAccessFile(f, "rw").use { it.setLength(0); it.setLength(SIZE.toLong()) }
-            val a = open(f) ?: error("не открылась область свойств")
+            val a = open(f) ?: error("property area failed to open")
             a.b.putInt(0, 0); a.b.putInt(4, 0); a.b.putInt(8, MAGIC); a.b.putInt(12, VERSION)
             return a
         }

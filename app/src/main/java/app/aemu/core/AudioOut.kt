@@ -29,13 +29,13 @@ class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, pr
         f.parentFile?.mkdirs()
         f.delete()
         runCatching { Os.mkfifo(f.absolutePath, "666".toInt(8)) }
-            .onFailure { log("звук: канал не создался: ${it.message}") }
+            .onFailure { log("audio: channel not created: ${it.message}") }
     }
 
     @Synchronized
     fun start() {
         if (thread?.isAlive == true) return
-        if (!fifo.exists()) { log("звук: канала нет"); return }
+        if (!fifo.exists()) { log("audio: no channel"); return }
         stop = false
         thread = Thread({ pump() }, "aemu-audio").apply { isDaemon = true; start() }
     }
@@ -67,14 +67,14 @@ class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, pr
                         .setBufferSizeInBytes(bufSize)
                         .setTransferMode(AudioTrack.MODE_STREAM)
                         .build().also { it.play() }
-                }.onFailure { log("звук: вывод не открылся: ${it.message}") }.getOrNull()
+                }.onFailure { log("audio: output failed to open: ${it.message}") }.getOrNull()
             }
             ins.use { s ->
                 while (!stop) {
                     val n = try { s.read(buf) } catch (e: Exception) { -1 }
                     if (n < 0) break
                     if (n == 0) continue
-                    if (played == 0L) log("звук пошёл")
+                    if (played == 0L) log("audio started")
                     val t = track
                     if (t != null && !muted) {
                         var off = 0

@@ -13,7 +13,7 @@ import java.util.Collections
  * Заглушка rild: телефония подключается к /dev/socket/rild, получает «радио выключено»
  * и на каждый запрос — RADIO_NOT_AVAILABLE. Этого хватает, чтобы phone-процесс не падал.
  */
-class RilStub(paths: VmPaths, private val log: (String) -> Unit) {
+class RilStub(paths: VmPaths, private val log: (String) -> Unit, private val imei: String = VmSettings.DEFAULT_IMEI) {
     @Volatile var answered = 0L
         private set
 
@@ -25,7 +25,7 @@ class RilStub(paths: VmPaths, private val log: (String) -> Unit) {
     private fun serveOne(c: LocalSocket) {
         val out = c.outputStream
         frame(out, ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN).putInt(1).putInt(UNSOL_RADIO_STATE_CHANGED).putInt(0).array())
-        log("радио: телефония подключилась, радио «выключено»")
+        log("radio: telephony connected, radio \"off\"")
         val din = DataInputStream(c.inputStream)
         while (true) {
             val len = try { din.readInt() } catch (e: Exception) { break }
@@ -41,10 +41,10 @@ class RilStub(paths: VmPaths, private val log: (String) -> Unit) {
                 // Идентификаторы устройства отдаём всегда: MIUI (поиск устройства, облако) и часть
                 // приложений ждут IMEI бесконечно и зависают, пока его нет
                 val data: List<String>? = when (request) {
-                    RIL_REQUEST_GET_IMEI -> listOf(IMEI)
+                    RIL_REQUEST_GET_IMEI -> listOf(imei)
                     RIL_REQUEST_GET_IMEISV -> listOf(IMEISV)
                     RIL_REQUEST_BASEBAND_VERSION -> listOf(BASEBAND)
-                    RIL_REQUEST_DEVICE_IDENTITY -> listOf(IMEI, IMEISV, "", "")
+                    RIL_REQUEST_DEVICE_IDENTITY -> listOf(imei, IMEISV, "", "")
                     else -> null
                 }
                 val err = if (request == RIL_REQUEST_RADIO_POWER || data != null) 0 else E_RADIO_NOT_AVAILABLE
@@ -86,8 +86,6 @@ class RilStub(paths: VmPaths, private val log: (String) -> Unit) {
         private const val RIL_REQUEST_GET_IMEISV = 39
         private const val RIL_REQUEST_BASEBAND_VERSION = 51
         private const val RIL_REQUEST_DEVICE_IDENTITY = 98
-        /** правильный по Луну IMEI-образец из стандарта; настоящего модема у гостя нет */
-        private const val IMEI = "490154203237518"
         private const val IMEISV = "01"
         private const val BASEBAND = "AEmulator"
     }
@@ -247,7 +245,7 @@ class EventsSink(paths: VmPaths, private val log: (String) -> Unit) {
                 val buf = ByteArray(1 shl 16)
                 while (true) { if (runCatching { r.read(buf) }.getOrDefault(-1) < 0) break }
             }, "aemu-events").apply { isDaemon = true; start() }
-        }.onFailure { log("журнал событий: канал не поднялся: ${it.message}") }
+        }.onFailure { log("event log: channel failed: ${it.message}") }
     }
 
     fun stop() { runCatching { raf?.close() }; raf = null }

@@ -24,6 +24,11 @@ class GuestRunner(
     var singleTouch = false
     var binderVerbose = false
     var sdcardHost: File? = null
+    /** user's extra qemu options from firmware settings: KEY=VALUE tokens become env vars, the rest go to qemu */
+    var userQemuArgs: String = ""
+
+    private val userTokens: List<String> get() = Regex("""("[^"]*"|\S+)""").findAll(userQemuArgs).map { it.value.trim('"') }.toList()
+    private fun isEnvToken(t: String) = !t.startsWith("-") && Regex("^[A-Z_][A-Z0-9_]*=").containsMatchIn(t)
 
     val engine: Engine get() = img.engine
     val qemu: File get() = paths.nativeBin(engine.qemu)
@@ -44,6 +49,7 @@ class GuestRunner(
             if (qemuStrace) cmd += "-strace"
             cmd += listOf("-D", File(paths.bin, "qemu-${prog.substringAfterLast('/')}.log").absolutePath)
         }
+        cmd += userTokens.filterNot(::isEnvToken)
         cmd += host
         cmd += argv.drop(1)
         return cmd
@@ -102,13 +108,14 @@ class GuestRunner(
         if (tbFlush > 0) e["DHD_TBFLUSH"] = tbFlush.toString()
         if (noSmc) e["DHD_NO_SMC"] = "1"
         if (noTcgOpt) e["DHD_NO_TCGOPT"] = "1"
+        for (t in userTokens.filter(::isEnvToken)) e[t.substringBefore('=')] = t.substringAfter('=')
         e.putAll(extra)
         return e
     }
 
     /** Одноразовый запуск гостевой команды (am, pm, settings, sh -c …) с ожиданием вывода. */
     fun run(argv: List<String>, timeoutMs: Long = 120_000, extra: Map<String, String> = emptyMap()): Pair<Int, String> {
-        if (!qemu.canExecute()) return -1 to "нет qemu"
+        if (!qemu.canExecute()) return -1 to "no qemu"
         val pb = ProcessBuilder(cmdline(argv)).directory(paths.bin).redirectErrorStream(true)
         pb.environment().clear()
         pb.environment().putAll(env(extra))

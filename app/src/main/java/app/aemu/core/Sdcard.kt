@@ -23,17 +23,17 @@ object Sdcard {
         val readme = File(d, "README-AEmulator.txt")
         if (!readme.isFile) runCatching {
             readme.writeText(
-                "Общая папка образа «${img.name}».\n" +
-                    "На телефоне: ${d.absolutePath}\n" +
-                    "Внутри прошивки: ${img.sdcardPath} (и /sdcard)\n\n" +
-                    "Кладите сюда APK, музыку, фото — гость увидит их сразу.\n"
+                "Shared folder of image \"${img.name}\".\n" +
+                    "On the phone: ${d.absolutePath}\n" +
+                    "Inside the firmware: ${img.sdcardPath} (and /sdcard)\n\n" +
+                    "Put APKs, music and photos here, the guest sees them immediately.\n"
             )
         }
         val all = (GUEST_PATHS + img.sdcardPath.trimStart('/')).distinct()
         for (rel in all) placeholder(File(paths.root, rel))
         for (rel in listOf("mnt/asec", "mnt/obb", "mnt/secure/asec")) File(paths.root, rel).mkdirs()
         runCatching { File(paths.bin, "sdcard.path").writeText(d.absolutePath + "\n") }
-        log("карта памяти: ${d.absolutePath} → гость видит ${img.sdcardPath}")
+        log("sdcard: ${d.absolutePath} → guest sees ${img.sdcardPath}")
         return d
     }
 
@@ -50,8 +50,8 @@ object Sdcard {
         }
         ctx.getExternalFilesDir(null)?.let { tries.add(File(it, "sdcard-${img.id}")) }
         tries.add(File(ctx.filesDir, "sdcard-${img.id}"))
-        for (t in tries) if (writable(t)) return t else log("карта памяти: ${t.absolutePath} не пишется, пробую дальше")
-        log("карта памяти: ни одно место не пишется")
+        for (t in tries) if (writable(t)) return t else log("sdcard: ${t.absolutePath} not writable, trying next")
+        log("sdcard: no writable location")
         return null
     }
 
