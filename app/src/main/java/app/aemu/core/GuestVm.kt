@@ -366,7 +366,16 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private fun onCtl(start: Boolean, svc: String) {
         val plan = img.services.ifEmpty { InitPlan.fallback(img, paths.root) }
         if (svc == "bootanim" || svc == "bootanimation") {
-            if (!start) { synchronized(procs) { procs.remove("bootanim") }?.destroyForcibly(); return }
+            if (!start) {
+                // 4.x sets service.bootanim.exit first and the animation quits on its own, closing its audio.
+                // Killing it outright left Samsung's boot sound track half-open: mediaserver hung and every
+                // app creating a sound (the phone process, ToneGenerator) got an ANR.
+                val p = synchronized(procs) { procs.remove("bootanim") } ?: return
+                Thread {
+                    runCatching { if (!p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly() }
+                }.start()
+                return
+            }
             // 2.3 has no service.bootanim.exit: it is killed, and the GL bridge keeps showing its last frame
             if (img.api < 14 || bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
             InitPlan.optional("bootanim", img, paths.root)?.let { def ->
