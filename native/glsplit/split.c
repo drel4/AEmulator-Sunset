@@ -70,8 +70,12 @@ __attribute__((visibility("default"))) void glPixelStorei(GLenum pname, GLint pa
     ((PixelStoreFn)aemu_split_resolve(IDX_glPixelStorei))(pname, param);
 }
 
+static void va_bind_note(GLenum target, unsigned buffer);
+static void img_forget_bound(void);
+
 __attribute__((visibility("default"))) void glBindBuffer(GLenum target, unsigned buffer) {
     if (target == GL_PIXEL_UNPACK_BUFFER) t_pbo = buffer != 0;
+    va_bind_note(target, buffer);
     ((BindBufferFn)aemu_split_resolve(IDX_glBindBuffer))(target, buffer);
 }
 
@@ -151,6 +155,7 @@ static void unpack_tight(int on) {
 __attribute__((visibility("default"))) void glTexImage2D(GLenum target, GLint level, GLint ifmt, GLsizei w, GLsizei h,
                                                           GLint border, GLenum format, GLenum type, const GLvoid *pixels) {
     TexImageFn f = (TexImageFn)aemu_split_resolve(IDX_glTexImage2D);
+    img_forget_bound();   /* the texture now has its own storage, no longer an EGLImage alias */
     int need;
     const void *p = tighten(w, h, format, type, pixels, &need);
     if (need) unpack_tight(1);
@@ -269,4 +274,206 @@ __attribute__((visibility("default"))) unsigned eglMakeCurrent(void *dpy, void *
     unsigned r = ((MakeCurrentFn)aemu_split_resolve(IDX_eglMakeCurrent))(dpy, draw, read, ctx);
     if (r) thread_set(ctx ? ctx_version(ctx) : 2);
     return r;
+}
+
+/* ------------------------------------------------------------ client-side vertex arrays (ES2)
+ *
+ * The bridge forwards glVertexAttribPointer with no bound GL_ARRAY_BUFFER as a plain offset: the guest
+ * pointer never reaches the host, nothing gets drawn (GB live wallpapers, games → black/flickering
+ * frames). Before each draw we copy the enabled client arrays into a scratch VBO, point the attributes
+ * at it, draw, then restore the app's state. ES1 contexts are left alone: the bridge handles them.
+ */
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_ELEMENT_ARRAY_BUFFER 0x8893
+#define GL_STREAM_DRAW 0x88E0
+#define MAXATTR 16
+struct va_attr { const void *ptr; GLint size; GLenum type; unsigned char norm, enabled, client; GLsizei stride; };
+struct va_state { int tid; unsigned array_buf, elem_buf; struct va_attr a[MAXATTR]; };
+static struct va_state g_va[64];
+
+static struct va_state *va_cur(void) {
+    int tid = (int)syscall(224 /* gettid */);
+    int free = -1;
+    for (int i = 0; i < 64; i++) {
+        if (g_va[i].tid == tid) return &g_va[i];
+        if (g_va[i].tid == 0 && free < 0) free = i;
+    }
+    if (free < 0) free = tid & 63;   /* table full: reuse a slot (rare, threads are few) */
+    struct va_state *v = &g_va[free];
+    for (unsigned k = 0; k < sizeof(*v); k++) ((unsigned char *)v)[k] = 0;
+    v->tid = tid;
+    return v;
+}
+
+static void va_bind_note(GLenum target, unsigned buffer) {
+    if (target == GL_ARRAY_BUFFER) va_cur()->array_buf = buffer;
+    else if (target == GL_ELEMENT_ARRAY_BUFFER) va_cur()->elem_buf = buffer;
+}
+
+typedef void (*AttribPtrFn)(unsigned, GLint, GLenum, unsigned char, GLsizei, const void *);
+typedef void (*AttribArrFn)(unsigned);
+typedef void (*DrawArraysFn)(GLenum, GLint, GLsizei);
+typedef void (*DrawElementsFn)(GLenum, GLsizei, GLenum, const void *);
+typedef void (*GenBuffersFn)(GLsizei, unsigned *);
+typedef void (*BufferDataFn)(GLenum, long, const void *, GLenum);
+typedef void (*BufferSubDataFn)(GLenum, long, long, const void *);
+
+__attribute__((visibility("default"))) void glVertexAttribPointer(unsigned idx, GLint size, GLenum type, unsigned char norm,
+                                                                   GLsizei stride, const void *ptr) {
+    struct va_state *v = va_cur();
+    if (idx < MAXATTR) {
+        struct va_attr *a = &v->a[idx];
+        a->ptr = ptr; a->size = size; a->type = type; a->norm = norm; a->stride = stride;
+        a->client = v->array_buf == 0 && ptr != 0;
+    }
+    ((AttribPtrFn)aemu_split_resolve(IDX_glVertexAttribPointer))(idx, size, type, norm, stride, ptr);
+}
+__attribute__((visibility("default"))) void glEnableVertexAttribArray(unsigned idx) {
+    if (idx < MAXATTR) va_cur()->a[idx].enabled = 1;
+    ((AttribArrFn)aemu_split_resolve(IDX_glEnableVertexAttribArray))(idx);
+}
+__attribute__((visibility("default"))) void glDisableVertexAttribArray(unsigned idx) {
+    if (idx < MAXATTR) va_cur()->a[idx].enabled = 0;
+    ((AttribArrFn)aemu_split_resolve(IDX_glDisableVertexAttribArray))(idx);
+}
+
+static int type_size(GLenum t) {
+    switch (t) {
+        case 0x1400: case 0x1401: return 1;              /* BYTE, UNSIGNED_BYTE */
+        case 0x1402: case 0x1403: case 0x140B: case 0x8D61: return 2; /* SHORT, USHORT, HALF_FLOAT(_OES) */
+        default: return 4;                               /* FLOAT, FIXED, INT… */
+    }
+}
+
+/* uploads client arrays for vertices [0, nverts); returns the scratch buffer name or 0 if nothing to do */
+static unsigned va_upload(struct va_state *v, long nverts) {
+    if (nverts <= 0 || es1_current()) return 0;
+    long total = 0, off[MAXATTR];
+    for (int i = 0; i < MAXATTR; i++) {
+        struct va_attr *a = &v->a[i];
+        off[i] = -1;
+        if (!a->enabled || !a->client) continue;
+        long esz = (long)a->size * type_size(a->type);
+        long stride = a->stride ? a->stride : esz;
+        off[i] = total;
+        total += ((stride * (nverts - 1) + esz) + 3) & ~3L;
+    }
+    if (!total) return 0;
+    unsigned buf = 0;
+    ((GenBuffersFn)aemu_split_resolve(IDX_glGenBuffers))(1, &buf);
+    if (!buf) return 0;
+    BindBufferFn bind = (BindBufferFn)aemu_split_resolve(IDX_glBindBuffer);
+    AttribPtrFn ap = (AttribPtrFn)aemu_split_resolve(IDX_glVertexAttribPointer);
+    BufferSubDataFn sub = (BufferSubDataFn)aemu_split_resolve(IDX_glBufferSubData);
+    bind(GL_ARRAY_BUFFER, buf);
+    ((BufferDataFn)aemu_split_resolve(IDX_glBufferData))(GL_ARRAY_BUFFER, total, 0, GL_STREAM_DRAW);
+    for (int i = 0; i < MAXATTR; i++) {
+        if (off[i] < 0) continue;
+        struct va_attr *a = &v->a[i];
+        long esz = (long)a->size * type_size(a->type);
+        long stride = a->stride ? a->stride : esz;
+        sub(GL_ARRAY_BUFFER, off[i], stride * (nverts - 1) + esz, a->ptr);
+        ap((unsigned)i, a->size, a->type, a->norm, a->stride, (const void *)off[i]);
+    }
+    return buf;
+}
+
+static void va_restore(struct va_state *v, unsigned buf) {
+    BindBufferFn bind = (BindBufferFn)aemu_split_resolve(IDX_glBindBuffer);
+    AttribPtrFn ap = (AttribPtrFn)aemu_split_resolve(IDX_glVertexAttribPointer);
+    bind(GL_ARRAY_BUFFER, 0);
+    for (int i = 0; i < MAXATTR; i++) {
+        struct va_attr *a = &v->a[i];
+        if (a->enabled && a->client) ap((unsigned)i, a->size, a->type, a->norm, a->stride, a->ptr);
+    }
+    bind(GL_ARRAY_BUFFER, v->array_buf);
+    ((GenBuffersFn)aemu_split_resolve(IDX_glDeleteBuffers))(1, &buf);  /* same signature as glGenBuffers */
+}
+
+__attribute__((visibility("default"))) void glDrawArrays(GLenum mode, GLint first, GLsizei count) {
+    struct va_state *v = va_cur();
+    unsigned buf = count > 0 ? va_upload(v, (long)first + count) : 0;
+    ((DrawArraysFn)aemu_split_resolve(IDX_glDrawArrays))(mode, first, count);
+    if (buf) va_restore(v, buf);
+}
+
+__attribute__((visibility("default"))) void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices) {
+    struct va_state *v = va_cur();
+    unsigned buf = 0;
+    /* vertex count is only known when the indices are in client memory too */
+    if (count > 0 && v->elem_buf == 0 && indices) {
+        long maxi = 0;
+        for (GLsizei i = 0; i < count; i++) {
+            long x = type == 0x1401 ? ((const unsigned char *)indices)[i]
+                   : type == 0x1403 ? ((const unsigned short *)indices)[i]
+                   : (long)((const unsigned int *)indices)[i];
+            if (x > maxi) maxi = x;
+        }
+        buf = va_upload(v, maxi + 1);
+    }
+    ((DrawElementsFn)aemu_split_resolve(IDX_glDrawElements))(mode, count, type, indices);
+    if (buf) va_restore(v, buf);
+}
+
+/* ------------------------------------------------------------ EGLImage textures (SurfaceFlinger layers)
+ *
+ * On real hardware an EGLImage texture aliases the gralloc buffer, so every new frame the app queues is
+ * visible as soon as SurfaceFlinger binds the texture. The bridge instead copies the buffer's pixels once,
+ * inside glEGLImageTargetTexture2DOES. GB/ICS SurfaceFlinger calls that only the first time it sees a
+ * buffer and later just binds the texture — the layer freezes on its first contents (still animations)
+ * or on an empty buffer (black flicker with double buffering). Re-target the image on bind, at most once
+ * per SurfaceFlinger frame, so the bridge re-reads the buffer.
+ */
+#define GL_TEXTURE_2D 0x0DE1
+#define GL_TEXTURE_EXTERNAL_OES 0x8D65
+#define MAXIMG 256
+struct img_tex { unsigned tex; GLenum target; void *image; unsigned frame; };
+static struct img_tex g_img[MAXIMG];
+static unsigned g_frame = 1, g_bound2d, g_boundext;
+
+typedef void (*BindTexFn)(GLenum, unsigned);
+typedef void (*ImageTargetFn)(GLenum, void *);
+typedef void (*DeleteTexFn)(GLsizei, const unsigned *);
+typedef unsigned (*SwapFn)(void *, void *);
+
+static struct img_tex *img_find(unsigned tex) {
+    if (!tex) return 0;
+    for (int i = 0; i < MAXIMG; i++) if (g_img[i].tex == tex) return &g_img[i];
+    return 0;
+}
+static void img_forget_bound(void) {
+    struct img_tex *e = img_find(g_bound2d);
+    if (e && e->target == GL_TEXTURE_2D) e->tex = 0;
+}
+
+__attribute__((visibility("default"))) void glBindTexture(GLenum target, unsigned tex) {
+    ((BindTexFn)aemu_split_resolve(IDX_glBindTexture))(target, tex);
+    if (target == GL_TEXTURE_2D) g_bound2d = tex;
+    else if (target == GL_TEXTURE_EXTERNAL_OES) g_boundext = tex;
+    else return;
+    struct img_tex *e = img_find(tex);
+    if (e && e->target == target && e->frame != g_frame) {
+        e->frame = g_frame;
+        ((ImageTargetFn)aemu_split_resolve(IDX_glEGLImageTargetTexture2DOES))(target, e->image);
+    }
+}
+
+__attribute__((visibility("default"))) void glEGLImageTargetTexture2DOES(GLenum target, void *image) {
+    ((ImageTargetFn)aemu_split_resolve(IDX_glEGLImageTargetTexture2DOES))(target, image);
+    unsigned tex = target == GL_TEXTURE_EXTERNAL_OES ? g_boundext : g_bound2d;
+    if (!tex) return;
+    struct img_tex *e = img_find(tex);
+    if (!e) for (int i = 0; i < MAXIMG && !e; i++) if (!g_img[i].tex) e = &g_img[i];
+    if (!e) e = &g_img[tex % MAXIMG];
+    e->tex = tex; e->target = target; e->image = image; e->frame = g_frame;
+}
+
+__attribute__((visibility("default"))) void glDeleteTextures(GLsizei n, const unsigned *tex) {
+    for (GLsizei i = 0; tex && i < n; i++) { struct img_tex *e = img_find(tex[i]); if (e) e->tex = 0; }
+    ((DeleteTexFn)aemu_split_resolve(IDX_glDeleteTextures))(n, tex);
+}
+
+__attribute__((visibility("default"))) unsigned eglSwapBuffers(void *dpy, void *surface) {
+    g_frame++;
+    return ((SwapFn)aemu_split_resolve(IDX_eglSwapBuffers))(dpy, surface);
 }

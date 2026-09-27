@@ -2,7 +2,11 @@
 """Генератор переходника libGLES_split: каждая функция EGL/GL прыгает в единственный экземпляр
 GL-моста /system/lib/egl/libGLES_bridge.so. Функции из SPECIAL реализованы в split.c."""
 syms = [s.strip() for s in open('symbols.txt') if s.strip()]
-SPECIAL = {'glPixelStorei', 'glTexImage2D', 'glTexSubImage2D', 'glBindBuffer', 'eglCreateContext', 'eglMakeCurrent'}
+SPECIAL = {'glPixelStorei', 'glTexImage2D', 'glTexSubImage2D', 'glBindBuffer', 'eglCreateContext', 'eglMakeCurrent',
+           'glVertexAttribPointer', 'glEnableVertexAttribArray', 'glDisableVertexAttribArray', 'glDrawArrays', 'glDrawElements',
+           'glBindTexture', 'glEGLImageTargetTexture2DOES', 'glDeleteTextures', 'eglSwapBuffers'}
+# called from split.c but still exported as plain stubs
+HELPERS = {'glGenBuffers', 'glDeleteBuffers', 'glBufferData', 'glBufferSubData'}
 import re
 # функции, которых нет в ES 1.x: в контексте ES1 переходник делает их пустыми (см. split.c)
 ES2ONLY = re.compile(r'^gl(?!.*(OES|EXT|APPLE|IMG|QCOM|NV|AMD|ANGLE|ARM)$)(.*(Shader|Program|Uniform|VertexAttrib|AttribLocation|'
@@ -23,7 +27,7 @@ with open('names.h', 'w') as f:
     f.write('/* автоматически создано gen.py */\nstatic const char *const kNames[] = {\n')
     for s in syms: f.write(f'    "{s}",\n')
     f.write('};\n')
-    for s in sorted(SPECIAL): f.write(f'#define IDX_{s} {syms.index(s)}\n')
+    for s in sorted(SPECIAL | HELPERS): f.write(f'#define IDX_{s} {syms.index(s)}\n')
     es2 = set(i for i, s in enumerate(syms) if ES2ONLY.match(s))
     f.write('static const unsigned char kEs2Only[] = {')
     f.write(','.join('1' if i in es2 else '0' for i in range(len(syms))))

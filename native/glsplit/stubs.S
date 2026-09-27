@@ -372,16 +372,6 @@ eglSurfaceAttrib:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global eglSwapBuffers
-    .type eglSwapBuffers,%function
-    .align 2
-eglSwapBuffers:
-    push {r0-r3, lr}
-    movw r0, #39
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global eglSwapInterval
     .type eglSwapInterval,%function
     .align 2
@@ -578,16 +568,6 @@ glBindRenderbufferOES:
 glBindSampler:
     push {r0-r3, lr}
     movw r0, #60
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
-    .global glBindTexture
-    .type glBindTexture,%function
-    .align 2
-glBindTexture:
-    push {r0-r3, lr}
-    movw r0, #61
     bl aemu_split_resolve
     mov r12, r0
     pop {r0-r3, lr}
@@ -1162,16 +1142,6 @@ glDeleteSync:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global glDeleteTextures
-    .type glDeleteTextures,%function
-    .align 2
-glDeleteTextures:
-    push {r0-r3, lr}
-    movw r0, #119
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global glDeleteTransformFeedbacks
     .type glDeleteTransformFeedbacks,%function
     .align 2
@@ -1272,32 +1242,12 @@ glDisableClientState:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global glDisableVertexAttribArray
-    .type glDisableVertexAttribArray,%function
-    .align 2
-glDisableVertexAttribArray:
-    push {r0-r3, lr}
-    movw r0, #130
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global glDiscardFramebufferEXT
     .type glDiscardFramebufferEXT,%function
     .align 2
 glDiscardFramebufferEXT:
     push {r0-r3, lr}
     movw r0, #131
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
-    .global glDrawArrays
-    .type glDrawArrays,%function
-    .align 2
-glDrawArrays:
-    push {r0-r3, lr}
-    movw r0, #132
     bl aemu_split_resolve
     mov r12, r0
     pop {r0-r3, lr}
@@ -1318,16 +1268,6 @@ glDrawArraysInstanced:
 glDrawBuffers:
     push {r0-r3, lr}
     movw r0, #134
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
-    .global glDrawElements
-    .type glDrawElements,%function
-    .align 2
-glDrawElements:
-    push {r0-r3, lr}
-    movw r0, #135
     bl aemu_split_resolve
     mov r12, r0
     pop {r0-r3, lr}
@@ -1392,16 +1332,6 @@ glEGLImageTargetRenderbufferStorageOES:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global glEGLImageTargetTexture2DOES
-    .type glEGLImageTargetTexture2DOES,%function
-    .align 2
-glEGLImageTargetTexture2DOES:
-    push {r0-r3, lr}
-    movw r0, #142
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global glEnable
     .type glEnable,%function
     .align 2
@@ -1418,16 +1348,6 @@ glEnable:
 glEnableClientState:
     push {r0-r3, lr}
     movw r0, #144
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
-    .global glEnableVertexAttribArray
-    .type glEnableVertexAttribArray,%function
-    .align 2
-glEnableVertexAttribArray:
-    push {r0-r3, lr}
-    movw r0, #145
     bl aemu_split_resolve
     mov r12, r0
     pop {r0-r3, lr}
@@ -4058,16 +3978,6 @@ glVertexAttribI4uiv:
 glVertexAttribIPointer:
     push {r0-r3, lr}
     movw r0, #411
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
-    .global glVertexAttribPointer
-    .type glVertexAttribPointer,%function
-    .align 2
-glVertexAttribPointer:
-    push {r0-r3, lr}
-    movw r0, #412
     bl aemu_split_resolve
     mov r12, r0
     pop {r0-r3, lr}
