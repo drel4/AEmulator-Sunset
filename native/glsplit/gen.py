@@ -6,7 +6,7 @@ SPECIAL = {'glPixelStorei', 'glTexImage2D', 'glTexSubImage2D', 'glBindBuffer', '
            'glVertexAttribPointer', 'glEnableVertexAttribArray', 'glDisableVertexAttribArray', 'glDrawArrays', 'glDrawElements',
            'glBindTexture', 'glEGLImageTargetTexture2DOES', 'glDeleteTextures', 'eglSwapBuffers', 'eglCreateWindowSurface'}
 # called from split.c but still exported as plain stubs
-HELPERS = {'glGenBuffers', 'glDeleteBuffers', 'glBufferData', 'glBufferSubData', 'eglCreatePbufferSurface'}
+HELPERS = {'glGenBuffers', 'glDeleteBuffers', 'glBufferData', 'glBufferSubData', 'eglCreatePbufferSurface', 'eglGetConfigAttrib', 'eglChooseConfig'}
 import re
 # функции, которых нет в ES 1.x: в контексте ES1 переходник делает их пустыми (см. split.c)
 ES2ONLY = re.compile(r'^gl(?!.*(OES|EXT|APPLE|IMG|QCOM|NV|AMD|ANGLE|ARM)$)(.*(Shader|Program|Uniform|VertexAttrib|AttribLocation|'

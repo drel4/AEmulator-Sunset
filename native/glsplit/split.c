@@ -1,3 +1,4 @@
+extern int __android_log_print(int, const char *, const char *, ...);
 /*
  * libGLES_split — переходник перед GL-мостом (libGLES_bridge.so, гостевая часть моста автора).
  *
@@ -501,10 +502,31 @@ typedef void *(*CreateWinFn)(void *dpy, void *config, void *win, const GLint *at
 typedef void *(*CreatePbufFn)(void *dpy, void *config, const GLint *attribs);
 typedef int (*WinQueryFn)(const void *win, int what, int *value);
 static void *g_primary_win;
+typedef unsigned (*GetAttrFn)(void *dpy, void *config, int attr, int *value);
+typedef unsigned (*ChooseFn)(void *dpy, const GLint *attribs, void **configs, int size, int *num);
 
 __attribute__((visibility("default"))) void *eglCreateWindowSurface(void *dpy, void *config, void *win, const GLint *attribs) {
     CreateWinFn f = (CreateWinFn)aemu_split_resolve(IDX_eglCreateWindowSurface);
-    if (!is_surfaceflinger() || !win) return f(dpy, config, win, attribs);
+    if (!is_surfaceflinger() || !win) {
+        void *r = f(dpy, config, win, attribs);
+        if (r || !win) return r;
+        /* The window's pixel format does not match the config (RenderScript: RGBA_8888 window, RGB565
+         * config — GB's 3D all-apps list stayed blank): retry with a config of the window's format. */
+        int fmt = 0, depth = 0, stencil = 0, n = 0;
+        WinQueryFn q = *(WinQueryFn *)((char *)win + 84);
+        if (q) q(win, 2 /* NATIVE_WINDOW_FORMAT */, &fmt);
+        GetAttrFn ga = (GetAttrFn)aemu_split_resolve(IDX_eglGetConfigAttrib);
+        ga(dpy, config, 0x3025 /* EGL_DEPTH_SIZE */, &depth);
+        ga(dpy, config, 0x3026 /* EGL_STENCIL_SIZE */, &stencil);
+        int rgb565 = fmt == 4, alpha = fmt == 1 ? 8 : 0;
+        GLint ca[] = { 0x3024, rgb565 ? 5 : 8, 0x3023, rgb565 ? 6 : 8, 0x3022, rgb565 ? 5 : 8, 0x3021, alpha,
+                       0x3025, depth, 0x3026, stencil, 0x3033 /* SURFACE_TYPE */, 4 /* WINDOW */,
+                       0x3040 /* RENDERABLE_TYPE */, 4 /* ES2 */, EGL_NONE };
+        void *cfg = 0;
+        if (((ChooseFn)aemu_split_resolve(IDX_eglChooseConfig))(dpy, ca, &cfg, 1, &n) && n > 0 && cfg != config)
+            r = f(dpy, cfg, win, attribs);
+        return r;
+    }
     if (!g_primary_win) g_primary_win = win;
     if (win == g_primary_win) return f(dpy, config, win, attribs);
     int w = 1, h = 1;
