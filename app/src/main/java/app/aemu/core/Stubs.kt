@@ -35,8 +35,22 @@ class RilStub(
     fun serve() = server.start(log)
     fun stop() = server.stop()
 
+    private val connects = ArrayDeque<Long>()
+    /** set when telephony keeps crashing against the fake modem: fall back to "radio unavailable" */
+    @Volatile private var safeMode = false
+
     private fun serveOne(c: LocalSocket) {
         val o = c.outputStream
+        val now = System.currentTimeMillis()
+        synchronized(connects) {
+            connects.addLast(now)
+            while (connects.isNotEmpty() && now - connects.first() > 60_000) connects.removeFirst()
+            if (!safeMode && connects.size > 5) {
+                safeMode = true
+                log("radio: telephony keeps restarting, modem switched to \"radio unavailable\"")
+            }
+        }
+        if (safeMode) { serveUnavailable(c); return }
         if (api >= 14) unsol(o, UNSOL_RIL_CONNECTED, ints(RIL_VERSION))
         unsol(o, UNSOL_RADIO_STATE_CHANGED, le(0))
         log("radio: telephony connected, operator ${operator.first}${operator.second}")
@@ -56,6 +70,32 @@ class RilStub(
             frame(o, resp.toByteArray())
             answered++
             if (request == RIL_REQUEST_RADIO_POWER) afterPower(o, b)
+        }
+    }
+
+    /** the old stub: radio off, identifiers only — keeps a firmware alive that cannot use the modem */
+    private fun serveUnavailable(c: LocalSocket) {
+        val o = c.outputStream
+        unsol(o, UNSOL_RADIO_STATE_CHANGED, le(0))
+        val din = DataInputStream(c.inputStream)
+        while (true) {
+            val len = try { din.readInt() } catch (e: Exception) { break }
+            if (len <= 0 || len > 1 shl 20) break
+            val body = ByteArray(len)
+            din.readFully(body)
+            if (len < 8) continue
+            val b = ByteBuffer.wrap(body).order(ByteOrder.LITTLE_ENDIAN)
+            val request = b.getInt()
+            val serial = b.getInt()
+            val data = when (request) {
+                RIL_REQUEST_GET_IMEI -> str(imei)
+                RIL_REQUEST_GET_IMEISV -> str(IMEISV)
+                RIL_REQUEST_BASEBAND_VERSION -> str(BASEBAND)
+                RIL_REQUEST_DEVICE_IDENTITY -> strs(imei, IMEISV, "", "")
+                else -> null
+            }
+            val err = if (request == RIL_REQUEST_RADIO_POWER || data != null) 0 else E_RADIO_NOT_AVAILABLE
+            frame(o, le(0) + le(serial) + le(err) + (data ?: ByteArray(0)))
         }
     }
 
@@ -84,16 +124,16 @@ class RilStub(
             RIL_REQUEST_QUERY_FACILITY_LOCK -> 0 to ints(0)
             RIL_REQUEST_SEND_SMS, RIL_REQUEST_SEND_SMS_EXPECT_MORE -> 0 to (le(1) + str(null) + le(-1))
             RIL_REQUEST_DIAL -> E_GENERIC_FAILURE to ByteArray(0)
-            // unknown request: one element that parses both as int[] {0} and String[] {""} —
-            // an empty payload crashes com.android.phone (Samsung reads index 0 of the result)
-            else -> 0 to (le(1) + le(0) + le(0))
+            // unknown request: four elements that parse both as int[4] of zeros and String[4] of "" —
+            // shorter payloads crash com.android.phone (Samsung reads [0], Qualcomm IMS state reads [1])
+            else -> 0 to (le(4) + ByteArray(32))
         }
     }
 
     private fun afterPower(o: OutputStream, args: ByteBuffer) {
         val on = runCatching { args.position(12); args.getInt() != 0 }.getOrDefault(true)
-        // before RIL v7 (4.2) "on with a ready SIM" was its own radio state
-        unsol(o, UNSOL_RADIO_STATE_CHANGED, le(if (!on) 0 else if (api >= 17) 10 else 4))
+        // 4.0+ knows only OFF/UNAVAILABLE/ON(10); 2.3 has "SIM ready" (4) instead of ON
+        unsol(o, UNSOL_RADIO_STATE_CHANGED, le(if (!on) 0 else if (api >= 14) 10 else 4))
         if (on) {
             unsol(o, UNSOL_RESPONSE_SIM_STATUS_CHANGED, ByteArray(0))
             unsol(o, UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, ByteArray(0))
@@ -174,6 +214,7 @@ class RilStub(
         private const val UNSOL_RESPONSE_SIM_STATUS_CHANGED = 1019
         private const val UNSOL_RIL_CONNECTED = 1034
         private const val E_GENERIC_FAILURE = 2
+        private const val E_RADIO_NOT_AVAILABLE = 1
         private const val RIL_REQUEST_GET_SIM_STATUS = 1
         private const val RIL_REQUEST_GET_CURRENT_CALLS = 9
         private const val RIL_REQUEST_DIAL = 10

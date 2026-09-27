@@ -13,6 +13,10 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.concurrent.CopyOnWriteArrayList
 
+/** Daemons system_server cannot live without: restarted even when init.rc marks them oneshot
+ * (MIUI installd dies in the LBE security hook on start). */
+private val ALWAYS_RESTART = setOf("mediaserver", "installd", "netd", "keystore")
+
 /**
  * Одна запущенная виртуальная машина. Живёт в процессе :vm (одна на процесс: GL-мост нельзя
  * поднять дважды), заменяет собой init: готовит дерево, поднимает службы хоста (свойства, ввод,
@@ -389,7 +393,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     val n = restarts.getOrDefault(name, 0)
                     // родной audio_policy производителя может падать с нашим HAL — подменяем на AOSP
                     if (name == "mediaserver" && code == 139 && n == 1) swapAudioPolicy()
-                    if (svc != null && (svc.restart || name == "mediaserver") && code != 137 && code != 143 && n < 12) {
+                    if (svc != null && (svc.restart || name in ALWAYS_RESTART) && code != 137 && code != 143 && n < 12) {
                         restarts[name] = n + 1
                         log("service $name crashed (code $code), restarting (${n + 1}/12)")
                         synchronized(procs) { procs.remove(name) }
