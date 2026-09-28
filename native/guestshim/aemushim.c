@@ -361,3 +361,64 @@ EXPORT int tgkill(int tgid, int tid, int sig) {
     long r = sys3(SYS_tgkill, tgid, tid, sig);
     return r < 0 ? fail(r) : 0;
 }
+
+/*
+ * binder ordering. The stand's binderd hands a oneway transaction to a thread that is itself waiting for the
+ * reply of a synchronous call (the kernel driver never does: such a thread only takes work from its own call
+ * chain). An app's main thread blocked in attachApplication then receives scheduleCreateService/LaunchActivity
+ * while bindApplication, sent earlier, went to a pool thread — whichever posts to the main looper first wins,
+ * and a lost race kills the app ("Instrumentation.onException on a null object"). A oneway transaction that
+ * arrives nested in a pending call is held back briefly so the earlier one is queued first.
+ */
+#define BINDER_WRITE_READ_ 0xc0186201
+#define BC_TRANSACTION_ 0x40286300
+#define BR_TRANSACTION_ 0x80287202
+#define BR_REPLY_ 0x80287203
+#define TF_ONE_WAY_ 1
+#define SYS_ioctl 54
+#define SYS_gettid 224
+struct bwr { long write_size, write_consumed; ulong write_buffer; long read_size, read_consumed; ulong read_buffer; };
+static volatile int waiting_tid[64];
+
+static int wait_slot(int tid, int add) {
+    for (int k = 0; k < 64; k++) if (waiting_tid[k] == tid) { if (!add) waiting_tid[k] = 0; return 1; }
+    if (add) for (int k = 0; k < 64; k++) if (__sync_bool_compare_and_swap(&waiting_tid[k], 0, tid)) return 1;
+    return 0;
+}
+
+static int is_waiting(int tid) { for (int k = 0; k < 64; k++) if (waiting_tid[k] == tid) return 1; return 0; }
+
+EXPORT int ioctl(int fd, int req, void *arg) {
+    if ((unsigned)req != BINDER_WRITE_READ_ || !arg) {
+        long r = sys3(SYS_ioctl, fd, req, (long)arg);
+        return r < 0 ? fail(r) : (int)r;
+    }
+    struct bwr *b = (struct bwr *)arg;
+    int tid = (int)sys3(SYS_gettid, 0, 0, 0);
+    // a synchronous BC_TRANSACTION in this write: the thread now waits for its reply
+    for (long p = b->write_consumed; p + 4 <= b->write_size;) {
+        unsigned cmd = *(unsigned *)(b->write_buffer + p);
+        unsigned sz = (cmd >> 16) & 0x3fff;
+        if (cmd == BC_TRANSACTION_ && p + 4 + 16 <= b->write_size && !(*(unsigned *)(b->write_buffer + p + 4 + 12) & TF_ONE_WAY_))
+            wait_slot(tid, 1);
+        p += 4 + sz;
+    }
+    long start = b->read_consumed;
+    long r = sys3(SYS_ioctl, fd, req, (long)arg);
+    if (r < 0) return fail(r);
+    int nested_oneway = 0, replied = 0;
+    for (long p = start; p + 4 <= b->read_consumed;) {
+        unsigned cmd = *(unsigned *)(b->read_buffer + p);
+        unsigned sz = (cmd >> 16) & 0x3fff;
+        if (cmd == BR_REPLY_ || cmd == 0x7205 /* BR_DEAD_REPLY */ || cmd == 0x7211 /* BR_FAILED_REPLY */) replied = 1;
+        else if (cmd == BR_TRANSACTION_ && p + 4 + 16 <= b->read_consumed && (*(unsigned *)(b->read_buffer + p + 4 + 12) & TF_ONE_WAY_))
+            nested_oneway = 1;
+        p += 4 + sz;
+    }
+    if (nested_oneway && !replied && is_waiting(tid) && sys3(199 /* getuid32 */, 0, 0, 0) >= 10000) {
+        struct timespec_s ts = { 0, 30 * 1000 * 1000 };
+        sys3(162 /* nanosleep */, (long)&ts, 0, 0);
+    }
+    if (replied) wait_slot(tid, 0);
+    return (int)r;
+}

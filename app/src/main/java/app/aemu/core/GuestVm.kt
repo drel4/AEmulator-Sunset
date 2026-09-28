@@ -108,6 +108,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val qemu = paths.nativeBin(Engine.KK.qemu)
         if (!qemu.canExecute()) error("translator ${Engine.KK.qemu} is not executable")
         killLeftovers()
+        HostNative.limitStackSafe()
         TreeFixer(ctx, paths, img, ::log).fixup()   // framebuffer, input node
         val sd = Sdcard.setup(ctx, paths, img, ::log)
         RecoveryImage.prepare(paths, sd)
@@ -186,6 +187,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val qemu = paths.nativeBin(engine.qemu)
         if (!qemu.canExecute()) error("translator ${engine.qemu} is not executable")
         killLeftovers()
+        HostNative.limitStackSafe()
 
         // 1. дерево
         val fixer = TreeFixer(ctx, paths, img, ::log)
@@ -226,6 +228,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         if (img.api >= 21) {
             if (!s.fullDexopt) overrides["dalvik.vm.dex2oat-filter"] = "verify-none"
             overrides["dalvik.vm.dex2oat-flags"] = "-j" + Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
+            // 6.0 relocates the boot image to a random address (patchoat), which fails under qemu: keep it in place
+            if (img.api >= 23) {
+                overrides["dalvik.vm.extra-opts"] = "-Xnorelocate"
+                // installd's dex2oat starts its own runtime: without this it tries patchoat too and fails every app
+                overrides["dalvik.vm.dex2oat-flags"] = overrides["dalvik.vm.dex2oat-flags"] + " --runtime-arg -Xnorelocate"
+            }
         }
         // порты MIUI правят framework на smali так, что Dalvik-верификатор отвергает классы ядра
         // (зигота падает на VerifyError) — на телефонах они живут с выключенной проверкой байткода

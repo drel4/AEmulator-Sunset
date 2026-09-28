@@ -410,6 +410,9 @@ class TreeFixer(
         )
         for ((rel, v) in bat) File(base, rel).let { if (!it.isFile) { it.parentFile?.mkdirs(); it.writeText(v + "\n") } }
         healthdRelativeSysfs(base)
+        personalityNoop()
+        parkNfc()
+        mainStackMaps()
         val power = File(root, "sys/power").apply { mkdirs() }
         for (n in listOf("state", "wake_lock", "wake_unlock", "autosleep")) File(power, n).let { if (!it.isFile) it.createNewFile(); it.setWritable(true, false) }
         // узлы питания, которые открывает libhardware_legacy именно этой прошивки (Samsung: dvfslock_ctrl…):
@@ -686,6 +689,83 @@ class TreeFixer(
             if (n > 0) { hd.writeBytes(d); log("healthd: battery sysfs path made relative ($n)") }
         }.onFailure { log("healthd patch failed: ${it.message}") }
         if (!base.isDirectory) log("no fake power_supply")
+    }
+
+    /**
+     * bionic 6.0+ starts every 32-bit process with personality(PER_LINUX32) and aborts ("error setting PER_LINUX32
+     * personality") when it fails — and it does on phones without AArch32 (Snapdragon 8 Elite…), qemu passes the
+     * call to the host kernel. The personality syscall stub (mov ip,r7; mov r7,#136; swi 0) gets "mov r0,#0"
+     * instead of the swi, in libc.so and in static binaries (healthd, ueventd…). Done once per image.
+     */
+    private fun personalityNoop() {
+        if (img.api < 23) return
+        val stamp = File(root, ".aemu-personality")
+        if (stamp.isFile) return
+        val pat = byteArrayOf(0x07, 0xc0.toByte(), 0xa0.toByte(), 0xe1.toByte(), 0x88.toByte(), 0x70, 0xa0.toByte(), 0xe3.toByte(), 0, 0, 0, 0xef.toByte())
+        val files = listOf(File(root, "system/lib/libc.so")) +
+            listOf("sbin", "system/bin", "system/xbin").flatMap { File(root, it).listFiles().orEmpty().toList() }
+        var n = 0
+        for (f in files) {
+            if (!f.isFile || isLink(f) || f.length() > 8_000_000 || f.length() < 1024) continue
+            runCatching {
+                val d = f.readBytes()
+                if (d[0] != 0x7f.toByte() || d[1] != 'E'.code.toByte()) return@runCatching
+                var hit = false
+                var i = 0
+                while (i <= d.size - pat.size) {
+                    if (d[i] == pat[0] && (1 until pat.size).all { d[i + it] == pat[it] }) {
+                        // swi #0 → mov r0, #0 (e3a00000)
+                        d[i + 8] = 0; d[i + 9] = 0; d[i + 10] = 0xa0.toByte(); d[i + 11] = 0xe3.toByte()
+                        hit = true; i += pat.size
+                    } else i++
+                }
+                if (hit) { f.writeBytes(d); n++ }
+            }
+        }
+        log("personality(PER_LINUX32) made a no-op in $n files")
+        runCatching { stamp.writeText("$n\n") }
+    }
+
+    /**
+     * bionic 6.0 finds the main thread's stack in /proc/self/task/<pid>/maps; qemu only emulates /proc/self/maps,
+     * so the guest parses the host's 64-bit map and ART gets random stack bounds ("Check failed: &stack_variable >
+     * stack_end", then SIGSEGV in zygote). The format string in libc.so becomes "/proc/self/maps".
+     */
+    /**
+     * 5.0+: the NFC app's own watchdog aborts it while the vendor NFC stack initialises under qemu; that
+     * persistent crash loops the whole system. There is no NFC to offer, so the app is moved out of the way.
+     */
+    private fun parkNfc() {
+        if (img.api < 21) return
+        val parked = File(root, "system/.aemu-parked").apply { mkdirs() }
+        for (dir in listOf("system/app", "system/priv-app")) File(root, dir).listFiles()?.filter { it.name.startsWith("Nfc") }?.forEach { f ->
+            val dst = File(parked, f.relativeTo(root).path.replace('/', '#'))
+            if (f.renameTo(dst)) log("parked ${f.name}")
+        }
+    }
+
+    private fun mainStackMaps() {
+        if (img.api < 23) return
+        val libc = File(root, "system/lib/libc.so")
+        runCatching {
+            val d = libc.readBytes()
+            val from = "/proc/self/task/%d/maps".toByteArray()
+            val i = indexOf(d, from)
+            if (i < 0) return
+            val to = "/proc/self/maps".toByteArray()
+            for (k in from.indices) d[i + k] = if (k < to.size) to[k] else 0
+            libc.writeBytes(d)
+            log("libc: main thread stack read from /proc/self/maps")
+        }.onFailure { log("libc maps patch failed: ${it.message}") }
+    }
+
+    private fun indexOf(d: ByteArray, p: ByteArray): Int {
+        var i = 0
+        while (i <= d.size - p.size) {
+            if (d[i] == p[0] && (1 until p.size).all { d[i + it] == p[it] }) return i
+            i++
+        }
+        return -1
     }
 
     private fun isLink(f: File) = runCatching { OsConstants.S_ISLNK(Os.lstat(f.absolutePath).st_mode) }.getOrDefault(false)
