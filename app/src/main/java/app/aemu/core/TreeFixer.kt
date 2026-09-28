@@ -198,7 +198,21 @@ class TreeFixer(
             }
         }
         var copied = 0
-        for ((from, to) in copies + listOf("@libaemushim.so" to "system/lib/libaemushim.so")) {
+        // 7.0+ libEGL on a qemu kernel (qemu.gles=1) only tries the "emulation" driver name
+        val nougat = if (img.api >= 24 && copies.any { it.second == "system/lib/egl/libGLES_bridge.so" })
+            listOf("libGLES.so" to "system/lib/egl/libGLES_emulation.so") else emptyList()
+        // 7.0+ without the GPU bridge: libEGL would still find the bridge by scanning egl/, so it is not there at all
+        val noBridge = img.api >= 24 && !img.settings.gpu
+        if (noBridge) {
+            for (n in listOf("libGLES_bridge.so", "libGLES_emulation.so")) File(root, "system/lib/egl/$n").delete()
+            // a scan skips libGLES_android.so; in "vendor software renderer" mode (qemu.gles=2) libEGL asks for
+            // libGLES_swiftshader.so, which here is the stock software renderer
+            val sw = File(root, "system/lib/egl/libGLES_swiftshader.so")
+            if (!sw.exists() && !isLink(sw) && File(root, "system/lib/egl/libGLES_android.so").isFile)
+                runCatching { Os.symlink("libGLES_android.so", sw.path) }
+        }
+        for ((from, to) in (copies + nougat).filter { !noBridge || !it.second.startsWith("system/lib/egl/libGLES_") } +
+            listOf("@libaemushim.so" to "system/lib/libaemushim.so")) {
             val dst = File(root, to)
             // gralloc движка — только если в прошивке своего нет
             if (from == "gralloc.default.so" && dst.isFile) continue
@@ -700,8 +714,7 @@ class TreeFixer(
     private fun personalityNoop() {
         if (img.api < 23) return
         val stamp = File(root, ".aemu-personality")
-        if (stamp.isFile) return
-        val pat = byteArrayOf(0x07, 0xc0.toByte(), 0xa0.toByte(), 0xe1.toByte(), 0x88.toByte(), 0x70, 0xa0.toByte(), 0xe3.toByte(), 0, 0, 0, 0xef.toByte())
+        if (stamp.isFile && runCatching { stamp.readText().trim().toInt() }.getOrDefault(0) > 0) return
         val files = listOf(File(root, "system/lib/libc.so")) +
             listOf("sbin", "system/bin", "system/xbin").flatMap { File(root, it).listFiles().orEmpty().toList() }
         var n = 0
@@ -710,14 +723,22 @@ class TreeFixer(
             runCatching {
                 val d = f.readBytes()
                 if (d[0] != 0x7f.toByte() || d[1] != 'E'.code.toByte()) return@runCatching
+                val b = java.nio.ByteBuffer.wrap(d).order(java.nio.ByteOrder.LITTLE_ENDIAN)
                 var hit = false
                 var i = 0
-                while (i <= d.size - pat.size) {
-                    if (d[i] == pat[0] && (1 until pat.size).all { d[i + it] == pat[it] }) {
-                        // swi #0 → mov r0, #0 (e3a00000)
-                        d[i + 8] = 0; d[i + 9] = 0; d[i + 10] = 0xa0.toByte(); d[i + 11] = 0xe3.toByte()
-                        hit = true; i += pat.size
-                    } else i++
+                while (i + 12 <= d.size) {
+                    // mov ip, r7 ; mov r7, #136 (6.0) or ldr r7, [pc, #x] holding 136 (7.x) ; swi #0
+                    if (b.getInt(i) == 0xe1a0c007.toInt() && b.getInt(i + 8) == 0xef000000.toInt()) {
+                        val w = b.getInt(i + 4)
+                        val nr = when {
+                            w == 0xe3a07088.toInt() -> 136
+                            w and 0xfffff000.toInt() == 0xe59f7000.toInt() ->
+                                (i + 4 + 8 + (w and 0xfff)).takeIf { it + 4 <= d.size }?.let { b.getInt(it) } ?: -1
+                            else -> -1
+                        }
+                        if (nr == 136) { b.putInt(i + 8, 0xe3a00000.toInt()); hit = true }   // swi #0 → mov r0, #0
+                    }
+                    i += 4
                 }
                 if (hit) { f.writeBytes(d); n++ }
             }
@@ -736,6 +757,12 @@ class TreeFixer(
      * persistent crash loops the whole system. There is no NFC to offer, so the app is moved out of the way.
      */
     private fun parkNfc() {
+        // 7.0+ zygote: the shim shows qemu's /dhd.owners descriptor under this whitelisted name; after fork
+        // zygote reopens it by that path, which has to lead back to the same table
+        if (img.api >= 24) runCatching {
+            val link = File(root, "system/framework/aemu-owners.jar")
+            if (!isLink(link)) { link.delete(); Os.symlink(paths.owners.absolutePath, link.path) }
+        }
         if (img.api < 21) return
         val parked = File(root, "system/.aemu-parked").apply { mkdirs() }
         for (dir in listOf("system/app", "system/priv-app")) File(root, dir).listFiles()?.filter { it.name.startsWith("Nfc") }?.forEach { f ->

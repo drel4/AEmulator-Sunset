@@ -422,3 +422,83 @@ EXPORT int ioctl(int fd, int req, void *arg) {
     if (replied) wait_slot(tid, 0);
     return (int)r;
 }
+
+/*
+ * Host paths leak into the guest: /proc/self/fd/N links and the names of bound unix sockets are the phone's
+ * real paths (".../files/images/<id>/root/dev/socket/zygote"). 7.0's zygote checks every open descriptor
+ * against a whitelist of guest paths before forking and aborts ("Socket name not whitelisted", "Unable to
+ * construct file descriptor table"). The image-root prefix is cut so the guest sees its own paths.
+ */
+static int strip_root(char *s, int n) {
+    // find "/files/images/" then the following "/root", keep what comes after it
+    for (int i = 0; i + 14 < n; i++) {
+        const char *m = "/files/images/";
+        int k = 0;
+        while (k < 14 && s[i + k] == m[k]) k++;
+        if (k < 14) continue;
+        int j = i + 14;
+        while (j < n && s[j] != '/') j++;
+        if (j + 5 > n || s[j + 1] != 'r' || s[j + 2] != 'o' || s[j + 3] != 'o' || s[j + 4] != 't') return n;
+        int from = j + 5, len = n - from;
+        if (len <= 0) { s[0] = '/'; return 1; }
+        for (int q = 0; q < len; q++) s[q] = s[from + q];
+        return len;
+    }
+    return n;
+}
+
+#define SYS_readlink 85
+#define SYS_readlinkat 332
+#define SYS_getsockname 286
+/* qemu's own ownership table stays open in every guest process; zygote (7.0+) only lets through descriptors on
+ * whitelisted paths and reopens them by path after fork: it is shown as a framework jar that links to it */
+static long guest_fd_name(char *buf, long n, unsigned long size) {
+    n = strip_root(buf, (int)n);
+    // stdio of guest processes: pipes to the host's log readers or the log file itself (on Android: /dev/null)
+    int logfile = 0;
+    for (int i = 0; i + 14 < n && !logfile; i++) {
+        const char *m = "/files/images/";
+        int k = 0;
+        while (k < 14 && buf[i + k] == m[k]) k++;
+        if (k == 14) for (int j = i + 14; j + 5 <= n; j++) if (buf[j] == '/' && buf[j + 1] == 'r' && buf[j + 2] == 'u' && buf[j + 3] == 'n' && buf[j + 4] == '/') { logfile = 1; break; }
+    }
+    // the property area stays open here (on Android it is only mapped): after fork nobody needs the descriptor
+    { const char *pp = "/dev/__properties__"; int k = 0; while (k < n && pp[k] && buf[k] == pp[k]) k++; if (!pp[k]) logfile = 1; }
+    if (size >= 9 && (logfile || (n > 5 && buf[0] == 'p' && buf[1] == 'i' && buf[2] == 'p' && buf[3] == 'e' && buf[4] == ':'))) {
+        const char *dn = "/dev/null";
+        for (int m = 0; m < 9; m++) buf[m] = dn[m];
+        return 9;
+    }
+    const char *own = "/dhd.owners", *as = "/system/framework/aemu-owners.jar";
+    int k = 0;
+    while (k < n && own[k] && buf[k] == own[k]) k++;
+    if (k == n && !own[k]) {
+        int m = 0;
+        while (as[m] && (unsigned long)m < size) { buf[m] = as[m]; m++; }
+        n = m;
+    }
+    return n;
+}
+EXPORT long readlink(const char *path, char *buf, unsigned long size) {
+    long r = sys3(SYS_readlink, (long)path, (long)buf, (long)size);
+    if (r < 0) return fail(r);
+    return guest_fd_name(buf, r, size);
+}
+EXPORT long readlinkat(int dirfd, const char *path, char *buf, unsigned long size) {
+    long r = sys4(SYS_readlinkat, dirfd, (long)path, (long)buf, (long)size);
+    if (r < 0) return fail(r);
+    return guest_fd_name(buf, r, size);
+}
+struct sockaddr_un_ { unsigned short family; char path[108]; };
+EXPORT int getsockname(int fd, void *addr, unsigned *len) {
+    long r = sys3(SYS_getsockname, fd, (long)addr, (long)len);
+    if (r < 0) return fail(r);
+    struct sockaddr_un_ *u = (struct sockaddr_un_ *)addr;
+    if (u && len && *len > 2 && u->family == 1 /* AF_UNIX */ && u->path[0]) {
+        int n = (int)*len - 2;
+        while (n > 0 && u->path[n - 1] == 0) n--;
+        int m = strip_root(u->path, n);
+        if (m != n) { u->path[m] = 0; *len = 2 + m + 1; }
+    }
+    return 0;
+}

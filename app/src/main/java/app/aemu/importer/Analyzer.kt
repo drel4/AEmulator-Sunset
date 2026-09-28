@@ -160,7 +160,7 @@ class Analyzer(private val ctx: Context, private val paths: VmPaths, private val
         rel.startsWith("2.2") -> 8; rel.startsWith("2.3") -> 10; rel.startsWith("4.0") -> 15
         rel.startsWith("4.1") -> 16; rel.startsWith("4.2") -> 17; rel.startsWith("4.3") -> 18
         rel.startsWith("4.4") -> 19; rel.startsWith("5.0") -> 21; rel.startsWith("5.1") -> 22
-        rel.startsWith("6") -> 23; else -> 19
+        rel.startsWith("6") -> 23; rel.startsWith("7.0") -> 24; rel.startsWith("7") -> 25; else -> 19
     }
 
     private fun skin(p: Map<String, String>): String {

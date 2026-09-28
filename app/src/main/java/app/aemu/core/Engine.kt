@@ -29,7 +29,7 @@ enum class Engine(
     ),
     KK(
         id = "kk",
-        title = "Universal (2.3–6.x)",
+        title = "Universal (2.3–7.x)",
         qemu = "libqemu_kk.so",
         binderd = "libbinderd_kk.so",
         glserverd = "libglserverd_kk.so",
