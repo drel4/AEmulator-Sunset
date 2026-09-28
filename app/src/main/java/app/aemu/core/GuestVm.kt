@@ -109,10 +109,21 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         input.rateHz = settings.touchHz
         input.mtMode = settings.mtMode
         input.serve()
+        // recovery's minui opens /dev/input/event0 through openat(), which qemu does not emulate:
+        // a FIFO there gets the raw input_event stream straight from InputService
+        runCatching {
+            val ev = File(RecoveryImage.dir(paths), "dev/input/event0")
+            ev.delete()
+            android.system.Os.mkfifo(ev.path, "600".toInt(8))
+            val fd = android.system.Os.open(ev.path, android.system.OsConstants.O_RDWR, 0)
+            input.sink = java.io.FileOutputStream(fd)
+        }.onFailure { log("recovery: no input channel: ${it.message}") }
         val (w, h) = runCatching { File(paths.root, "dhd.fbgeom").readText().trim().split(Regex("\\s+")).map { it.toInt() } }
             .getOrNull()?.takeIf { it.size >= 2 }?.let { it[0] to it[1] } ?: (settings.width to settings.height)
         val r = RecoveryImage.dir(paths)
-        val pb = ProcessBuilder(qemu.absolutePath, "-L", r.absolutePath, "-0", "/sbin/recovery", File(r, "sbin/recovery").absolutePath)
+        // debugging: run/recovery.strace traces the guest's system calls into run/recovery.trace
+        val trace = if (File(paths.bin, "recovery.strace").exists()) listOf("-strace", "-D", File(paths.bin, "recovery.trace").absolutePath) else emptyList()
+        val pb = ProcessBuilder(listOf(qemu.absolutePath, "-L", r.absolutePath, "-0", "/sbin/recovery") + trace + File(r, "sbin/recovery").absolutePath)
             .directory(r).redirectErrorStream(true).redirectOutput(File(paths.bin, "recovery.out"))
         pb.environment().clear()
         pb.environment().putAll(mapOf(

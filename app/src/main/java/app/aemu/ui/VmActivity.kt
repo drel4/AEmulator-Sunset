@@ -161,6 +161,7 @@ class VmActivity : ComponentActivity() {
         guest = GuestScreen(this, gw, gh).apply {
             input = vm.input
             fb = if (vm.recoveryMode) app.aemu.core.RecoveryImage.fb(vm.paths) else vm.paths.fb
+            if (vm.recoveryMode) pages = 2
         }
         val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode
         surfaceView.visibility = if (useBridge) View.VISIBLE else View.GONE
@@ -215,6 +216,18 @@ class VmActivity : ComponentActivity() {
         if (!app.aemu.BuildConfig.DEBUG) return
         val rx = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
+                // --es keys "116d 115 116u": raw guest key codes, d/u = down/up only, bare = press
+                i.getStringExtra("keys")?.let { ks ->
+                    thread {
+                        for (k in ks.split(' ').filter { it.isNotBlank() }) {
+                            val code = k.trimEnd('d', 'u').toIntOrNull() ?: continue
+                            when { k.endsWith("d") -> vm.input.key(code, true); k.endsWith("u") -> vm.input.key(code, false)
+                                else -> { vm.input.key(code, true); Thread.sleep(80); vm.input.key(code, false) } }
+                            Thread.sleep(150)
+                        }
+                    }
+                    return
+                }
                 val cmd = i.getStringExtra("cmd") ?: return
                 // своё имя файла на каждую команду: медленная предыдущая команда не затрёт ответ
                 val name = i.getStringExtra("out")?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]+")) } ?: "shell.out"

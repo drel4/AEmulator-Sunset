@@ -101,8 +101,11 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
         }, "input-pump").apply { isDaemon = true; start() }
     }
 
+    /** Extra consumer of the raw input_event stream (recovery mode: a FIFO the guest reads as /dev/input/event0). */
+    @Volatile var sink: java.io.OutputStream? = null
+
     private fun send(now: List<P>) {
-        if (clients.isEmpty()) return
+        if (clients.isEmpty() && sink == null) return
         val b = ByteBuffer.allocate((now.size * 7 + 3) * EV).order(ByteOrder.LITTLE_ENDIAN)
         if (mtMode == 4) { // одиночное касание
             now.firstOrNull()?.let {
@@ -192,6 +195,7 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
         if (b.position() == 0) return
         val a = ByteArray(b.position())
         b.flip(); b.get(a); b.clear()
+        sink?.let { runCatching { it.write(a); it.flush() }.onFailure { sink = null } }
         val dead = ArrayList<Client>()
         for (c in clients) {
             try { c.out.write(a); c.out.flush() } catch (e: Exception) { dead.add(c) }

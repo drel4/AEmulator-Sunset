@@ -46,7 +46,6 @@ object RecoveryImage {
     fun prepare(paths: VmPaths, sdcard: File?) {
         val r = dir(paths)
         for (d in listOf("dev/graphics", "dev/input", "tmp", "cache", "data", "system", "sdcard", "proc", "sys")) File(r, d).mkdirs()
-        File(r, "dev/input/event0").let { if (!it.exists()) it.createNewFile() }
         // no tty0: minui gives up on graphics when it opens one but KDSETMODE fails; without it, it skips the step
         File(r, "dev/tty0").delete()
         // its own framebuffer (qemu only emulates an fb0 inside the guest root; links out of it are not followed

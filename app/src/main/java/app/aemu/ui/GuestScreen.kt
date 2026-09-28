@@ -29,6 +29,10 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
     @Volatile var fps = 0f
         private set
     @Volatile var rings = 0L
+    /** 2 = the guest flips between two pages by panning (recovery's minui); show the one it wrote last */
+    var pages = 1
+    private val pageHash = LongArray(2)
+    private var page = 0
 
     private var bmp: Bitmap? = null
     private var buf: MappedByteBuffer? = null
@@ -70,15 +74,28 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
         if (buf == null) {
             if (!f.isFile || f.length() < pixels) return
             raf = RandomAccessFile(f, "r")
-            buf = raf!!.channel.map(FileChannel.MapMode.READ_ONLY, 0, pixels)
+            val span = if (pages == 2 && f.length() >= pixels * 2) pixels * 2 else pixels
+            buf = raf!!.channel.map(FileChannel.MapMode.READ_ONLY, 0, span)
             mappedIno = runCatching { android.system.Os.stat(f.absolutePath).st_ino }.getOrDefault(0L)
             bmp = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
         }
         val b = buf ?: return
         val bitmap = bmp ?: return
-        var hash = 0L
-        val last = pixels.toInt() - 4
-        var i = 0
+        val two = b.capacity() >= pixels * 2
+        if (two) {
+            // two pages: follow the one whose content changed most recently
+            for (pg in 0..1) {
+                var hh = 0L
+                var j = (pg * pixels).toInt()
+                val end = j + pixels.toInt() - 4
+                while (j <= end) { hh = 31 * hh + b.getInt(j); j += 2048 }
+                if (hh != pageHash[pg]) { pageHash[pg] = hh; page = pg }
+            }
+        }
+        val base = if (two) (page * pixels).toInt() else 0
+        var hash = page.toLong()
+        val last = base + pixels.toInt() - 4
+        var i = base
         while (i <= last) { hash = 31 * hash + b.getInt(i); i += 2048 }
         val rung = rings != ringSeen
         ringSeen = rings
@@ -86,8 +103,9 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
         val force = quiet > 30
         if (rung || hash != lastHash || force) {
             if (force) quiet = 0
-            b.rewind()
+            b.limit(base + pixels.toInt()); b.position(base)
             bitmap.copyPixelsFromBuffer(b)
+            b.clear()
             if (hash != lastHash || rung) {
                 quiet = 0
                 lastHash = hash
