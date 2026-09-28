@@ -459,8 +459,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 }.start()
                 return
             }
-            // 2.3 has no service.bootanim.exit: it is killed, and the GL bridge keeps showing its last frame
-            if (img.api < 14 || bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
+            // below 4.1 (2.3, MIUI ICS) the animation does not quit by itself: killed, it leaves the GL bridge on its last frame
+            if (img.api < 16 || bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
             InitPlan.optional("bootanim", img, paths.root)?.let { def ->
                 Thread { runCatching { startService(def) } }.start()
                 log("boot animation started")
