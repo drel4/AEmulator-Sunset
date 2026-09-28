@@ -59,19 +59,29 @@ object RecoveryImage {
         }
         // dynamic recoveries (TWRP) get librecshim.so preloaded: mount points look mounted, reboot reaches the host
         runCatching {
-            paths.ctx.assets.open("engines/common/librecshim.so").use { i -> File(r, "sbin/librecshim.so").outputStream().use { i.copyTo(it) } }
-            File(r, "sbin/librecshim.so").setReadable(true, false)
+            // + the system's guest shim: it runs #! scripts (qemu only starts ELF), e.g. installers inside zips
+            for (lib in listOf("librecshim.so", "libaemushim.so")) {
+                paths.ctx.assets.open("engines/common/$lib").use { i -> File(r, "sbin/$lib").outputStream().use { i.copyTo(it) } }
+                File(r, "sbin/$lib").setReadable(true, false)
+            }
         }
         File(r, "dev/aemu_power").let { if (!it.exists()) it.createNewFile() }
         runCatching { File(r, "dhd.fbgeom").writeText(File(paths.root, "dhd.fbgeom").readText()) }
         // the system's partitions and memory card, for recoveries that browse or flash files
         for ((name, target) in listOf("system" to File(paths.root, "system"), "data" to File(paths.root, "data"))) {
             val link = File(r, name)
-            if (link.isDirectory && link.list().isNullOrEmpty()) { link.delete(); runCatching { Os.symlink(target.absolutePath, link.path) } }
+            if (!java.nio.file.Files.isSymbolicLink(link.toPath()) && link.isDirectory && !hasFiles(link)) {
+                ImageStore.wipe(link); runCatching { Os.symlink(target.absolutePath, link.path) }
+            }
         }
         if (sdcard != null) {
             val link = File(r, "sdcard")
             if (link.isDirectory && link.list().isNullOrEmpty()) { link.delete(); runCatching { Os.symlink(sdcard.absolutePath, link.path) } }
         }
+    }
+
+    /** a ramdisk mount point may hold empty folders (TWRP: system/bin); it still gets linked to the partition */
+    private fun hasFiles(d: File): Boolean = d.listFiles().orEmpty().any {
+        java.nio.file.Files.isSymbolicLink(it.toPath()) || !it.isDirectory || hasFiles(it)
     }
 }

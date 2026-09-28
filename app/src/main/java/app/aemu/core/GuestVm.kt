@@ -132,7 +132,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         pb.environment().putAll(mapOf(
             "PATH" to "/sbin:/system/bin", "LD_LIBRARY_PATH" to ".:/sbin", "ANDROID_ROOT" to "/system", "ANDROID_DATA" to "/data",
             "EXTERNAL_STORAGE" to "/sdcard", "TZ" to "UTC",
-            "LD_PRELOAD" to "/sbin/librecshim.so", "AEMU_MOUNTS" to "/sdcard:/data:/system:/cache:/emmc:/external_sd:/usb-otg",
+            "LD_PRELOAD" to "/sbin/librecshim.so:/sbin/libaemushim.so", "AEMU_MOUNTS" to "/sdcard:/data:/system:/cache:/emmc:/external_sd:/usb-otg",
             "DHD_FB_W" to "$w", "DHD_FB_H" to "$h", "DHD_IN_W" to "$w", "DHD_IN_H" to "$h",
             "DHD_INPUT" to paths.inputSock.absolutePath,
         ))
