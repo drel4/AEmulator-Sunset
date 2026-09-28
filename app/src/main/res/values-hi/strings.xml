@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">⋮ मेनू से इसमें रीबूट करें। TWRP, OrangeFox या CWM का recovery.img लगाया जा सकता है।</string>
     <string name="vs_recovery_install">इंस्टॉल करें…</string>
     <string name="vs_recovery_failed">यह रिकवरी इमेज नहीं है</string>
+    <string name="m_adb">नेटवर्क पर ADB</string>
+    <string name="m_adb_enable">चालू करें</string>
+    <string name="m_adb_hint">इस Wi-Fi नेटवर्क पर कोई भी फ़र्मवेयर का root शेल पा सकता है। सार्वजनिक नेटवर्क पर बंद रखें।</string>
 </resources>

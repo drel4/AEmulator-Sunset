@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Redémarrez-y depuis le menu ⋮. Un recovery.img TWRP, OrangeFox ou CWM peut le remplacer.</string>
     <string name="vs_recovery_install">Installer…</string>
     <string name="vs_recovery_failed">Ce n’est pas une image recovery</string>
+    <string name="m_adb">ADB via le réseau</string>
+    <string name="m_adb_enable">Activer</string>
+    <string name="m_adb_hint">Toute personne sur ce Wi-Fi obtient un shell root du firmware. Désactivez-le sur les réseaux publics.</string>
 </resources>

@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Mulai ulang ke sana dari menu ⋮. recovery.img TWRP, OrangeFox, atau CWM bisa dipasang.</string>
     <string name="vs_recovery_install">Pasang…</string>
     <string name="vs_recovery_failed">Bukan image recovery</string>
+    <string name="m_adb">ADB lewat jaringan</string>
+    <string name="m_adb_enable">Aktifkan</string>
+    <string name="m_adb_hint">Siapa pun di jaringan Wi-Fi ini mendapat shell root firmware. Matikan di jaringan publik.</string>
 </resources>

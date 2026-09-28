@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">⋮ メニューから再起動できます。TWRP・OrangeFox・CWM の recovery.img に置き換えられます。</string>
     <string name="vs_recovery_install">インストール…</string>
     <string name="vs_recovery_failed">リカバリーイメージではありません</string>
+    <string name="m_adb">ネットワーク経由のADB</string>
+    <string name="m_adb_enable">有効にする</string>
+    <string name="m_adb_hint">このWi-Fiネットワーク上の誰でもファームウェアのrootシェルを使えます。公共ネットワークではオフにしてください。</string>
 </resources>

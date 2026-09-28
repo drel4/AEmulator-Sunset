@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">⋮ menüsünden yeniden başlatın. TWRP, OrangeFox veya CWM recovery.img yüklenebilir.</string>
     <string name="vs_recovery_install">Yükle…</string>
     <string name="vs_recovery_failed">Bu bir recovery imajı değil</string>
+    <string name="m_adb">Ağ üzerinden ADB</string>
+    <string name="m_adb_enable">Etkinleştir</string>
+    <string name="m_adb_hint">Bu Wi-Fi ağındaki herkes yazılımın root kabuğuna erişir. Herkese açık ağlarda kapatın.</string>
 </resources>

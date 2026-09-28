@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Uruchom je z menu ⋮. Można wgrać recovery.img z TWRP, OrangeFox lub CWM.</string>
     <string name="vs_recovery_install">Zainstaluj…</string>
     <string name="vs_recovery_failed">To nie jest obraz recovery</string>
+    <string name="m_adb">ADB przez sieć</string>
+    <string name="m_adb_enable">Włącz</string>
+    <string name="m_adb_hint">Każdy w tej sieci Wi-Fi dostaje powłokę root oprogramowania. Wyłącz w sieciach publicznych.</string>
 </resources>

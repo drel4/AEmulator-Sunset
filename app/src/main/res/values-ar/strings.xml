@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">أعد التشغيل إليه من القائمة ⋮. يمكن تثبيت recovery.img من TWRP أو OrangeFox أو CWM.</string>
     <string name="vs_recovery_install">تثبيت…</string>
     <string name="vs_recovery_failed">ليست صورة استرداد</string>
+    <string name="m_adb">ADB عبر الشبكة</string>
+    <string name="m_adb_enable">تفعيل</string>
+    <string name="m_adb_hint">أي شخص على شبكة Wi-Fi هذه يحصل على صلاحيات root للنظام. أوقفه في الشبكات العامة.</string>
 </resources>

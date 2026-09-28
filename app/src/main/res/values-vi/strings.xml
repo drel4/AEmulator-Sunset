@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Khởi động lại vào từ menu ⋮. Có thể cài recovery.img của TWRP, OrangeFox hoặc CWM.</string>
     <string name="vs_recovery_install">Cài đặt…</string>
     <string name="vs_recovery_failed">Không phải ảnh recovery</string>
+    <string name="m_adb">ADB qua mạng</string>
+    <string name="m_adb_enable">Bật</string>
+    <string name="m_adb_hint">Bất kỳ ai trong mạng Wi-Fi này đều có shell root của firmware. Hãy tắt khi dùng mạng công cộng.</string>
 </resources>

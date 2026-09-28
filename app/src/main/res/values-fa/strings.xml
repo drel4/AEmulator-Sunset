@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">از منوی ⋮ به آن راه‌اندازی کنید. می‌توان recovery.img از TWRP، OrangeFox یا CWM نصب کرد.</string>
     <string name="vs_recovery_install">نصب…</string>
     <string name="vs_recovery_failed">این ایمیج ریکاوری نیست</string>
+    <string name="m_adb">ADB از طریق شبکه</string>
+    <string name="m_adb_enable">فعال‌سازی</string>
+    <string name="m_adb_hint">هر کسی در این شبکه Wi-Fi به پوسته root سیستم دسترسی دارد. در شبکه‌های عمومی خاموشش کنید.</string>
 </resources>

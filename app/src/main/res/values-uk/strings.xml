@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Перезавантаження в нього — у меню ⋮. Можна поставити recovery.img від TWRP, OrangeFox або CWM.</string>
     <string name="vs_recovery_install">Встановити…</string>
     <string name="vs_recovery_failed">Це не образ recovery</string>
+    <string name="m_adb">ADB через мережу</string>
+    <string name="m_adb_enable">Увімкнути</string>
+    <string name="m_adb_hint">Будь-хто в цій Wi-Fi-мережі отримає root-доступ до прошивки. Вимикайте в публічних мережах.</string>
 </resources>

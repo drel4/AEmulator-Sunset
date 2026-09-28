@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Sms
 import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.Lan
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
@@ -228,6 +229,7 @@ class VmActivity : ComponentActivity() {
                     }
                     return
                 }
+                if (i.hasExtra("adb")) { if (i.getBooleanExtra("adb", false)) vm.adb.start() else vm.adb.stop(); return }
                 val cmd = i.getStringExtra("cmd") ?: return
                 // своё имя файла на каждую команду: медленная предыдущая команда не затрёт ответ
                 val name = i.getStringExtra("out")?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]+")) } ?: "shell.out"
@@ -280,7 +282,7 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private enum class Dlg { NONE, SMS, CALL, BATTERY }
+    private enum class Dlg { NONE, SMS, CALL, BATTERY, ADB }
 
     // position of the floating menu button, kept across launches
     private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
@@ -333,6 +335,29 @@ class VmActivity : ComponentActivity() {
             },
             confirmButton = { Button(onClick = { sendSms(from, body); onDone() }) { Text(stringResource(R.string.m_send)) } },
             dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun AdbDialog(onDone: () -> Unit) {
+        var on by remember { mutableStateOf(vm.adb.running) }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_adb)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_adb_enable), Modifier.weight(1f))
+                        Switch(on, { v -> if (v) vm.adb.start() else vm.adb.stop(); on = vm.adb.running })
+                    }
+                    if (on) {
+                        val ips = app.aemu.core.AdbServer.addresses()
+                        for (ip in ips.ifEmpty { listOf("127.0.0.1") })
+                            Text("adb connect $ip:${vm.adb.port}", style = MaterialTheme.typography.bodyLarge,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                    }
+                    Text(stringResource(R.string.m_adb_hint), style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.close)) } })
     }
 
     @Composable
@@ -459,6 +484,8 @@ class VmActivity : ComponentActivity() {
                         enabled = running, onClick = { menu = false; dialog = Dlg.CALL })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_battery)) }, leadingIcon = { Icon(Icons.Rounded.BatteryStd, null) },
                         enabled = running && vm.img.api >= 19, onClick = { menu = false; dialog = Dlg.BATTERY })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_adb)) }, leadingIcon = { Icon(Icons.Rounded.Lan, null) },
+                        enabled = running, onClick = { menu = false; dialog = Dlg.ADB })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_screenshot)) }, leadingIcon = { Icon(Icons.Rounded.Screenshot, null) },
                         enabled = running, onClick = { menu = false; screenshot() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_settings)) }, leadingIcon = { Icon(Icons.Rounded.Settings, null) },
@@ -479,6 +506,7 @@ class VmActivity : ComponentActivity() {
                 Dlg.SMS -> SmsDialog { dialog = Dlg.NONE }
                 Dlg.CALL -> CallDialog { dialog = Dlg.NONE }
                 Dlg.BATTERY -> BatteryDialog { dialog = Dlg.NONE }
+                Dlg.ADB -> AdbDialog { dialog = Dlg.NONE }
                 Dlg.NONE -> {}
             }
 

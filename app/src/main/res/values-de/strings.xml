@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">Neustart dorthin über das ⋮-Menü. Ein recovery.img von TWRP, OrangeFox oder CWM kann es ersetzen.</string>
     <string name="vs_recovery_install">Installieren…</string>
     <string name="vs_recovery_failed">Kein Recovery-Image</string>
+    <string name="m_adb">ADB über Netzwerk</string>
+    <string name="m_adb_enable">Aktivieren</string>
+    <string name="m_adb_hint">Jeder in diesem WLAN erhält eine Root-Shell der Firmware. In öffentlichen Netzen ausschalten.</string>
 </resources>

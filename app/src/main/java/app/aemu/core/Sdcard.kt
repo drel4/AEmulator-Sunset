@@ -37,6 +37,9 @@ object Sdcard {
         return d
     }
 
+    /** guest paths (without the leading /) that show the shared card folder */
+    fun guestPaths(img: GuestImage) = (GUEST_PATHS + img.sdcardPath.trimStart('/')).distinct()
+
     fun hostDir(paths: VmPaths): File? =
         runCatching { File(File(paths.bin, "sdcard.path").readText().trim()) }.getOrNull()?.takeIf { it.isDirectory }
 

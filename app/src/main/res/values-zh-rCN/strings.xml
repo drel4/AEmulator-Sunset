@@ -144,4 +144,7 @@
     <string name="vs_recovery_sub">可从 ⋮ 菜单重启进入。可安装 TWRP、OrangeFox 或 CWM 的 recovery.img。</string>
     <string name="vs_recovery_install">安装…</string>
     <string name="vs_recovery_failed">不是 recovery 镜像</string>
+    <string name="m_adb">网络 ADB</string>
+    <string name="m_adb_enable">启用</string>
+    <string name="m_adb_hint">同一 Wi-Fi 网络中的任何人都能获得固件的 root shell。在公共网络上请关闭。</string>
 </resources>

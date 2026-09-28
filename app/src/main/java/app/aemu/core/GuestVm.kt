@@ -58,6 +58,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private fun setState(s: State) { state = s; stateListeners.forEach { runCatching { it(s) } } }
 
     val props = PropService(paths, ::log)
+    /** ADB over the LAN, switched on from the VM menu */
+    val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     // 2.x пишет в /dev/eac через AudioHardwareGeneric на 44,1 кГц, HAL 4.x движка — на 48 кГц
     val audio = AudioOut(paths, ::log, if (img.api < 14) 44100 else AudioOut.RATE,
@@ -586,7 +588,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         log("stopping system")
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
-        props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop()
+        adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop()
         extraStubs.forEach { it.stop() }; extraStubs.clear()
         lmk?.stop(); lmk = null
         Keeper.release(ctx)
