@@ -164,7 +164,8 @@ class VmActivity : ComponentActivity() {
             fb = if (vm.recoveryMode) app.aemu.core.RecoveryImage.fb(vm.paths) else vm.paths.fb
             if (vm.recoveryMode) pages = 2
         }
-        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode
+        // 5.0+ renders through the standalone glserverd into fb0 (see GuestVm.glUp), shown like the software path
+        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode && vm.img.api < 21
         surfaceView.visibility = if (useBridge) View.VISIBLE else View.GONE
         guest.passthrough = useBridge
         box.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))

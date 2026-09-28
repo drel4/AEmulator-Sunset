@@ -147,6 +147,8 @@ class RilStub(
             RIL_REQUEST_QUERY_FACILITY_LOCK -> 0 to ints(0)
             RIL_REQUEST_SEND_SMS, RIL_REQUEST_SEND_SMS_EXPECT_MORE -> 0 to (le(1) + str(null) + le(-1))
             RIL_REQUEST_DIAL -> E_GENERIC_FAILURE to ByteArray(0)
+            // 5.0+ SIM logical channels (carrier privilege rules): a "success" with channel 0 crashes com.android.phone
+            in 114..117 -> E_GENERIC_FAILURE to ByteArray(0)
             // unknown request: four elements that parse both as int[4] of zeros and String[4] of "" —
             // shorter payloads crash com.android.phone (Samsung reads [0], Qualcomm IMS state reads [1])
             else -> 0 to (le(4) + ByteArray(32))
