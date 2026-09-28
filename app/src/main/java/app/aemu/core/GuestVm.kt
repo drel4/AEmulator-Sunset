@@ -94,6 +94,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
     /** Boot the firmware's recovery (RecoveryImage) instead of Android. */
     @Volatile var recoveryMode = false
+    /** recovery framebuffer format for the screen view: 0 RGB565, 1 RGBA/RGBX_8888, 2 BGRA_8888 */
+    @Volatile var recoveryFormat = 0
 
     private fun doRecovery() {
         paths.bin.mkdirs()
@@ -121,13 +123,16 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val (w, h) = runCatching { File(paths.root, "dhd.fbgeom").readText().trim().split(Regex("\\s+")).map { it.toInt() } }
             .getOrNull()?.takeIf { it.size >= 2 }?.let { it[0] to it[1] } ?: (settings.width to settings.height)
         val r = RecoveryImage.dir(paths)
+        runCatching { File(r, "tmp/recovery.log").delete() }
         // debugging: run/recovery.strace traces the guest's system calls into run/recovery.trace
         val trace = if (File(paths.bin, "recovery.strace").exists()) listOf("-strace", "-D", File(paths.bin, "recovery.trace").absolutePath) else emptyList()
         val pb = ProcessBuilder(listOf(qemu.absolutePath, "-L", r.absolutePath, "-0", "/sbin/recovery") + trace + File(r, "sbin/recovery").absolutePath)
             .directory(r).redirectErrorStream(true).redirectOutput(File(paths.bin, "recovery.out"))
         pb.environment().clear()
         pb.environment().putAll(mapOf(
-            "PATH" to "/sbin:/system/bin", "ANDROID_ROOT" to "/system", "ANDROID_DATA" to "/data", "TZ" to "UTC",
+            "PATH" to "/sbin:/system/bin", "LD_LIBRARY_PATH" to ".:/sbin", "ANDROID_ROOT" to "/system", "ANDROID_DATA" to "/data",
+            "EXTERNAL_STORAGE" to "/sdcard", "TZ" to "UTC",
+            "LD_PRELOAD" to "/sbin/librecshim.so", "AEMU_MOUNTS" to "/sdcard:/data:/system:/cache:/emmc:/external_sd:/usb-otg",
             "DHD_FB_W" to "$w", "DHD_FB_H" to "$h", "DHD_IN_W" to "$w", "DHD_IN_H" to "$h",
             "DHD_INPUT" to paths.inputSock.absolutePath,
         ))
@@ -136,9 +141,35 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         synchronized(procs) { procs["recovery"] = p }
         setState(State.RUNNING)
         log("recovery started (${w}x$h)")
+        // pixel format the recovery draws in, from its own log ("Pixel format: BGRA_8888", TWRP)
+        Thread {
+            val rlog = File(r, "tmp/recovery.log")
+            repeat(40) {
+                if (!p.isAlive || stopping) return@Thread
+                val t = runCatching { rlog.readText() }.getOrDefault("")
+                val fmt = Regex("Pixel format: (BGRA_8888|RGBX_8888|RGBA_8888|RGB_565)").findAll(t).lastOrNull()?.groupValues?.get(1)
+                if (fmt != null) {
+                    recoveryFormat = when (fmt) { "BGRA_8888" -> 2; "RGB_565" -> 0; else -> 1 }
+                    log("recovery draws $fmt")
+                    return@Thread
+                }
+                Thread.sleep(250)
+            }
+        }.start()
+        // reboot requests of the recovery (librecshim → /dev/aemu_power)
+        val power = File(r, "dev/aemu_power")
+        Thread {
+            while (p.isAlive && !stopping) {
+                if (power.length() > 0) {
+                    val v = runCatching { power.readText().trim() }.getOrDefault("reboot"); power.writeText("")
+                    powerRequest(v); break
+                }
+                Thread.sleep(500)
+            }
+        }.start()
         Thread {
             val code = runCatching { p.waitFor() }.getOrDefault(-1)
-            if (stopping) return@Thread
+            if (stopping || powerHandled) return@Thread
             log("recovery exited (code $code), booting the system")
             onPower?.invoke(true, "")
         }.start()

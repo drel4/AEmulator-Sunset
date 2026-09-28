@@ -31,6 +31,19 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
     @Volatile var rings = 0L
     /** 2 = the guest flips between two pages by panning (recovery's minui); show the one it wrote last */
     var pages = 1
+    /** pixel format of fb0: 0 = RGB565, 1 = RGBA/RGBX_8888, 2 = BGRA_8888 (TWRP); a change remaps the file */
+    @Volatile var format = 0
+        set(v) {
+            if (field == v) return
+            field = v
+            paint.colorFilter = if (v == 2) android.graphics.ColorMatrixColorFilter(floatArrayOf(
+                0f, 0f, 1f, 0f, 0f,  0f, 1f, 0f, 0f, 0f,  1f, 0f, 0f, 0f, 0f,  0f, 0f, 0f, 0f, 255f))
+            else if (v == 1) android.graphics.ColorMatrixColorFilter(floatArrayOf(
+                1f, 0f, 0f, 0f, 0f,  0f, 1f, 0f, 0f, 0f,  0f, 0f, 1f, 0f, 0f,  0f, 0f, 0f, 0f, 255f))
+            else null
+            mappedIno = -1
+            poke()
+        }
     private val pageHash = LongArray(2)
     private var page = 0
 
@@ -66,10 +79,10 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
     private fun tick() {
         if (passthrough) return
         val f = fb ?: return
-        val pixels = w.toLong() * h * 2
+        val pixels = w.toLong() * h * (if (format == 0) 2 else 4)
         if (buf != null) {
             val ino = runCatching { android.system.Os.stat(f.absolutePath).st_ino }.getOrDefault(0L)
-            if (ino != mappedIno) { runCatching { raf?.close() }; raf = null; buf = null; bmp = null; lastHash = 0 }
+            if (ino != mappedIno || mappedIno == -1L) { runCatching { raf?.close() }; raf = null; buf = null; bmp = null; lastHash = 0 }
         }
         if (buf == null) {
             if (!f.isFile || f.length() < pixels) return
@@ -77,7 +90,7 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
             val span = if (pages == 2 && f.length() >= pixels * 2) pixels * 2 else pixels
             buf = raf!!.channel.map(FileChannel.MapMode.READ_ONLY, 0, span)
             mappedIno = runCatching { android.system.Os.stat(f.absolutePath).st_ino }.getOrDefault(0L)
-            bmp = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
+            bmp = Bitmap.createBitmap(w, h, if (format == 0) Bitmap.Config.RGB_565 else Bitmap.Config.ARGB_8888)
         }
         val b = buf ?: return
         val bitmap = bmp ?: return

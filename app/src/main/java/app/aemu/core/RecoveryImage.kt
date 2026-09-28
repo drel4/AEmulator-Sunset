@@ -56,6 +56,12 @@ object RecoveryImage {
             if (java.nio.file.Files.isSymbolicLink(fb.toPath())) fb.delete()
             if (size > 0 && fb.length() != size) java.io.RandomAccessFile(fb, "rw").use { it.setLength(size) }
         }
+        // dynamic recoveries (TWRP) get librecshim.so preloaded: mount points look mounted, reboot reaches the host
+        runCatching {
+            paths.ctx.assets.open("engines/common/librecshim.so").use { i -> File(r, "sbin/librecshim.so").outputStream().use { i.copyTo(it) } }
+            File(r, "sbin/librecshim.so").setReadable(true, false)
+        }
+        File(r, "dev/aemu_power").let { if (!it.exists()) it.createNewFile() }
         runCatching { File(r, "dhd.fbgeom").writeText(File(paths.root, "dhd.fbgeom").readText()) }
         // the system's partitions and memory card, for recoveries that browse or flash files
         for ((name, target) in listOf("system" to File(paths.root, "system"), "data" to File(paths.root, "data"))) {

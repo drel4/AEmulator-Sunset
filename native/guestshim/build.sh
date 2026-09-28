@@ -14,3 +14,8 @@ BIN="$(dirname "$CC")"
 "$CC" --target=armv7a-linux-androideabi21 -nostdlib -static -Wl,--build-id=none \
   -o "$(dirname "$OUT")/aemu_true.so" true.S
 "$BIN/llvm-strip" "$(dirname "$OUT")/aemu_true.so" 2>/dev/null || true
+# прослойка для динамического recovery (TWRP): «смонтированные» разделы и перезагрузка через хост
+"$CC" --target=armv7a-linux-androideabi21 -march=armv7-a -mthumb -Os -fPIC -shared -nostdlib \
+  -fvisibility=hidden -fno-stack-protector -ffreestanding -fno-builtin -Wl,--hash-style=sysv -Wl,-z,norelro -Wl,--no-undefined \
+  -Wl,-soname,librecshim.so -Wl,--build-id=none -o "$(dirname "$OUT")/librecshim.so" recshim.c -lc
+"$BIN/llvm-strip" "$(dirname "$OUT")/librecshim.so" 2>/dev/null || true

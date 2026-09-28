@@ -533,7 +533,8 @@ class TreeFixer(
         val s = img.settings
         val (w, h) = if (engine == Engine.GB) 480 to 800 else s.width to s.height
         // двойная буферизация: гость листает страницы через FBIOPAN_DISPLAY
-        val need = w.toLong() * h * 2 * 2
+        // qemu reports smem_len = two 32-bit pages (TWRP draws BGRA_8888); mmap past the file end would SIGBUS
+        val need = w.toLong() * h * 4 * 2
         val f = paths.fb
         if (f.isFile && f.length() == need) return
         f.parentFile?.mkdirs()
