@@ -156,4 +156,7 @@
     <string name="container_copy_data">Copy apps and data too</string>
     <string name="container_hint">The container is a full separate copy of the firmware, /system included: flashing or changing one never affects the other. /data starts clean unless copied.</string>
     <string name="container_create">Create</string>
+    <string name="section_systems">Systems</string>
+    <string name="section_containers">Containers</string>
+    <string name="container_of">Based on: %1$s</string>
 </resources>

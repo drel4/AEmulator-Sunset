@@ -155,4 +155,7 @@
     <string name="container_copy_data">同时复制应用和数据</string>
     <string name="container_hint">容器是固件的完整独立副本（包括 /system）：修改其中一个不会影响另一个。未复制时 /data 从空白开始。</string>
     <string name="container_create">创建</string>
+    <string name="section_systems">系统</string>
+    <string name="section_containers">容器</string>
+    <string name="container_of">基于：%1$s</string>
 </resources>

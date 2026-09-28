@@ -155,4 +155,7 @@
     <string name="container_copy_data">Скопіювати застосунки й дані</string>
     <string name="container_hint">Контейнер — повна окрема копія прошивки разом із /system: зміни в одному не зачіпають інший. /data починається з нуля, якщо не копіювати.</string>
     <string name="container_create">Створити</string>
+    <string name="section_systems">Системи</string>
+    <string name="section_containers">Контейнери</string>
+    <string name="container_of">На основі: %1$s</string>
 </resources>

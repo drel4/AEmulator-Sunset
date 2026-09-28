@@ -155,4 +155,7 @@
     <string name="container_copy_data">Salin juga aplikasi dan data</string>
     <string name="container_hint">Kontainer adalah salinan firmware lengkap dan terpisah, termasuk /system: mengubah satu tidak memengaruhi yang lain. /data mulai kosong jika tidak disalin.</string>
     <string name="container_create">Buat</string>
+    <string name="section_systems">Sistem</string>
+    <string name="section_containers">Kontainer</string>
+    <string name="container_of">Berdasarkan: %1$s</string>
 </resources>

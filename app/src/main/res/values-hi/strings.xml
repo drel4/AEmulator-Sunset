@@ -155,4 +155,7 @@
     <string name="container_copy_data">ऐप और डेटा भी कॉपी करें</string>
     <string name="container_hint">कंटेनर /system सहित फ़र्मवेयर की पूरी अलग कॉपी है: एक में बदलाव दूसरे को प्रभावित नहीं करता। /data खाली शुरू होता है जब तक कॉपी न करें।</string>
     <string name="container_create">बनाएँ</string>
+    <string name="section_systems">सिस्टम</string>
+    <string name="section_containers">कंटेनर</string>
+    <string name="container_of">आधार: %1$s</string>
 </resources>

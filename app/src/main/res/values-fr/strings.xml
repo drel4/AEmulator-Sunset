@@ -155,4 +155,7 @@
     <string name="container_copy_data">Copier aussi les apps et données</string>
     <string name="container_hint">Le conteneur est une copie complète et séparée du firmware, /system compris : modifier l’un n’affecte jamais l’autre. /data démarre vide sauf copie.</string>
     <string name="container_create">Créer</string>
+    <string name="section_systems">Systèmes</string>
+    <string name="section_containers">Conteneurs</string>
+    <string name="container_of">Basé sur : %1$s</string>
 </resources>

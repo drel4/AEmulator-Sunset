@@ -155,4 +155,7 @@
     <string name="container_copy_data">برنامه‌ها و داده‌ها هم کپی شوند</string>
     <string name="container_hint">کانتینر یک نسخه کامل و جدا از فریم‌ور همراه ‎/system است: تغییر در یکی روی دیگری اثری ندارد. ‎/data خالی شروع می‌شود مگر کپی شود.</string>
     <string name="container_create">ساختن</string>
+    <string name="section_systems">سیستم‌ها</string>
+    <string name="section_containers">کانتینرها</string>
+    <string name="container_of">بر پایه: %1$s</string>
 </resources>

@@ -173,14 +173,25 @@ fun Library(model: LibraryModel) {
                         ImportCard(imp, onCancel = model::cancelImport, onDismiss = model::dismissImport)
                     }
                 }
-                items(images, key = { it.id }) { img ->
-                    ImageCard(
-                        img,
-                        onStart = { VmActivity.start(ctx, img.id) },
-                        onSettings = { settingsFor = img },
-                        onRename = { renameFor = img },
-                        onDelete = { deleteFor = img },
-                    )
+                // two sections: imported firmwares ("systems") and the containers made from them
+                val systems = images.filter { it.baseId.isEmpty() }
+                val containers = images.filter { it.baseId.isNotEmpty() }
+                for ((title, list) in listOf(R.string.section_systems to systems, R.string.section_containers to containers)) {
+                    if (list.isEmpty()) continue
+                    item(key = "h$title") {
+                        Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+                    }
+                    items(list, key = { it.id }) { img ->
+                        ImageCard(
+                            img,
+                            onStart = { VmActivity.start(ctx, img.id) },
+                            onSettings = { settingsFor = img },
+                            onRename = { renameFor = img },
+                            onDelete = { deleteFor = img },
+                            baseName = images.firstOrNull { it.id == img.baseId }?.name,
+                        )
+                    }
                 }
             }
         }
@@ -385,7 +396,7 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
 }
 
 @Composable
-private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit) {
+private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit, baseName: String? = null) {
     val ctx = LocalContext.current
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(20.dp)) {
@@ -404,11 +415,12 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(onClick = {}, label = { Text(img.skin) })
-                if (img.baseId.isNotEmpty()) AssistChip(onClick = {}, label = { Text(stringResource(R.string.container_chip)) },
-                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, null, Modifier.size(16.dp)) })
+
                 AssistChip(onClick = {}, label = { Text("${img.settings.width}×${img.settings.height}") })
                 AssistChip(onClick = {}, label = { Text(Formatter.formatShortFileSize(ctx, img.sizeBytes)) })
             }
+            if (baseName != null) Text(stringResource(R.string.container_of, baseName), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (img.lastBootMs > 0) Text(stringResource(R.string.last_boot, (img.lastBootMs / 1000).toInt()), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             img.warnings.firstOrNull()?.let { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }

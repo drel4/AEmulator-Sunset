@@ -155,4 +155,7 @@
     <string name="container_copy_data">نسخ التطبيقات والبيانات أيضًا</string>
     <string name="container_hint">الحاوية نسخة كاملة ومستقلة من النظام بما فيها ‎/system: تعديل إحداهما لا يؤثر في الأخرى. تبدأ ‎/data فارغة ما لم تُنسخ.</string>
     <string name="container_create">إنشاء</string>
+    <string name="section_systems">الأنظمة</string>
+    <string name="section_containers">الحاويات</string>
+    <string name="container_of">مبني على: %1$s</string>
 </resources>

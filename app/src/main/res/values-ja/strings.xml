@@ -155,4 +155,7 @@
     <string name="container_copy_data">アプリとデータもコピー</string>
     <string name="container_hint">コンテナは /system を含むファームウェアの完全な別コピーです。一方の変更はもう一方に影響しません。コピーしない場合 /data は空から始まります。</string>
     <string name="container_create">作成</string>
+    <string name="section_systems">システム</string>
+    <string name="section_containers">コンテナ</string>
+    <string name="container_of">ベース：%1$s</string>
 </resources>

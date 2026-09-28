@@ -155,4 +155,7 @@
     <string name="container_copy_data">Uygulamaları ve verileri de kopyala</string>
     <string name="container_hint">Kapsayıcı, /system dahil yazılımın tam ve ayrı bir kopyasıdır: birindeki değişiklik diğerini etkilemez. Kopyalanmazsa /data boş başlar.</string>
     <string name="container_create">Oluştur</string>
+    <string name="section_systems">Sistemler</string>
+    <string name="section_containers">Kapsayıcılar</string>
+    <string name="container_of">Temel: %1$s</string>
 </resources>

@@ -155,4 +155,7 @@
     <string name="container_copy_data">Apps und Daten mitkopieren</string>
     <string name="container_hint">Der Container ist eine vollständige, eigene Kopie der Firmware inklusive /system: Änderungen an einem betreffen den anderen nie. /data startet leer, sofern nicht kopiert.</string>
     <string name="container_create">Erstellen</string>
+    <string name="section_systems">Systeme</string>
+    <string name="section_containers">Container</string>
+    <string name="container_of">Basiert auf: %1$s</string>
 </resources>

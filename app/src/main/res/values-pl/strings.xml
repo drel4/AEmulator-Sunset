@@ -155,4 +155,7 @@
     <string name="container_copy_data">Skopiuj też aplikacje i dane</string>
     <string name="container_hint">Kontener to pełna, osobna kopia firmware razem z /system: zmiany w jednym nie wpływają na drugi. /data startuje pusty, jeśli nie skopiujesz.</string>
     <string name="container_create">Utwórz</string>
+    <string name="section_systems">Systemy</string>
+    <string name="section_containers">Kontenery</string>
+    <string name="container_of">Na bazie: %1$s</string>
 </resources>
