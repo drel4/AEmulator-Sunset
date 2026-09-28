@@ -503,6 +503,32 @@ static unsigned set_damage_region(void *dpy, void *surface, const GLint *rects, 
     (void)dpy; (void)surface; (void)rects; (void)n;
     return 1;
 }
+/*
+ * 7.0+ app window buffers carry SW_READ/WRITE_OFTEN usage (0x933); the bridge refuses EGLImages for them, so
+ * SurfaceFlinger never latched launcher or status bar frames and the apps stalled on dequeue. On failure the
+ * image is retried with the software bits hidden (ANativeWindowBuffer.usage, after the 32-byte base header).
+ */
+/* 7.x SurfaceFlinger runs with stdin closed, so a gralloc buffer can land on descriptor 0, which the bridge
+ * takes for "no fd" (layer shown empty, the app stalls): keep 0..2 occupied */
+__attribute__((constructor)) static void hold_std_fds(void) {
+    for (int fd = 0; fd < 3; fd++)
+        if (syscall(55 /* fcntl */, fd, 1 /* F_GETFD */) < 0) syscall(5 /* open */, "/dev/null", 2 /* O_RDWR */, 0);
+}
+
+typedef void *(*CreateImageFn)(void *dpy, void *ctx, unsigned target, void *buf, const GLint *attribs);
+__attribute__((visibility("default"))) void *eglCreateImageKHR(void *dpy, void *ctx, unsigned target, void *buf, const GLint *attribs) {
+    CreateImageFn f = (CreateImageFn)aemu_split_resolve(IDX_eglCreateImageKHR);
+    void *img = f(dpy, ctx, target, buf, attribs);
+    if (img || target != 0x3140 /* EGL_NATIVE_BUFFER_ANDROID */ || !buf) return img;
+    int *usage = (int *)((char *)buf + 48);
+    int old = *usage;
+    if (!(old & 0xff)) return img;
+    *usage = old & ~0xff;
+    img = f(dpy, ctx, target, buf, attribs);
+    *usage = old;
+    return img;
+}
+
 typedef void *(*ProcFn)(const char *);
 __attribute__((visibility("default"))) void *eglGetProcAddress(const char *name) {
     static const char *const names[] = { "eglSwapBuffersWithDamageKHR", "eglSwapBuffersWithDamageEXT", "eglSetDamageRegionKHR" };

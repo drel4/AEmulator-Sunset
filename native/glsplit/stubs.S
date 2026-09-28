@@ -52,16 +52,6 @@ eglCopyBuffers:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global eglCreateImageKHR
-    .type eglCreateImageKHR,%function
-    .align 2
-eglCreateImageKHR:
-    push {r0-r3, lr}
-    movw r0, #6
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global eglCreatePbufferFromClientBuffer
     .type eglCreatePbufferFromClientBuffer,%function
     .align 2

@@ -546,6 +546,16 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     }
                     val svc = img.services.firstOrNull { it.name == name }
                     val n = restarts.getOrDefault(name, 0)
+                    // init restarts surfaceflinger and then zygote ("onrestart restart zygote"); without that a
+                    // crashed compositor leaves the last frame on screen forever
+                    if (name == "surfaceflinger" && svc != null && bootDoneAt > 0 && n < 12) {
+                        restarts[name] = n + 1
+                        log("✖ surfaceflinger crashed (code $code), restarting it and the system (${n + 1}/12)")
+                        synchronized(procs) { procs.remove(name) }
+                        runCatching { startService(svc) }
+                        synchronized(procs) { procs["zygote"] }?.let { z -> pidOf(z)?.let { runCatching { AProcess.sendSignal(it, 9) } } }
+                        continue
+                    }
                     // родной audio_policy производителя может падать с нашим HAL — подменяем на AOSP
                     if (name == "mediaserver" && code == 139 && n == 1) swapAudioPolicy()
                     if (svc != null && (svc.restart || name in ALWAYS_RESTART) && code != 137 && code != 143 && n < 12) {

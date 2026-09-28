@@ -419,6 +419,7 @@ static const char *const kNames[] = {
 };
 #define IDX_eglChooseConfig 2
 #define IDX_eglCreateContext 5
+#define IDX_eglCreateImageKHR 6
 #define IDX_eglCreatePbufferSurface 8
 #define IDX_eglCreateWindowSurface 11
 #define IDX_eglGetConfigAttrib 16
