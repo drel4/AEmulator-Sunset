@@ -161,4 +161,9 @@
     <string name="container_of">Based on: %1$s</string>
     <string name="vs_fulldex">Full app compilation</string>
     <string name="vs_fulldex_sub">ART compiles apps to machine code: first boot and installs take much longer, apps run faster</string>
+    <string name="m_install_apk">Install APK…</string>
+    <string name="m_install_apk_start">Installing…</string>
+    <string name="m_device">Device state</string>
+    <string name="m_airplane">Airplane mode</string>
+    <string name="m_stay_awake">Keep screen on</string>
 </resources>

@@ -7,6 +7,8 @@ import android.content.Context
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.rounded.BatteryStd
+import androidx.compose.material.icons.rounded.InstallMobile
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.RestartAlt
@@ -283,7 +285,7 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private enum class Dlg { NONE, SMS, CALL, BATTERY, ADB }
+    private enum class Dlg { NONE, SMS, CALL, BATTERY, ADB, DEVICE }
 
     // position of the floating menu button, kept across launches
     private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
@@ -315,6 +317,22 @@ class VmActivity : ComponentActivity() {
         }
     }
 
+    // APK picked on the host: copied into the shared card folder, then installed by the guest's package manager
+    private val pickApk = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val dir = app.aemu.core.Sdcard.hostDir(vm.paths)
+        if (dir == null) { toast(getString(R.string.m_failed)); return@registerForActivityResult }
+        toast(getString(R.string.m_install_apk_start))
+        thread {
+            val ok = runCatching {
+                contentResolver.openInputStream(uri)!!.use { i -> java.io.File(dir, "aemu-install.apk").outputStream().use { o -> i.copyTo(o) } }
+            }.isSuccess
+            if (!ok) { toast(getString(R.string.m_failed)); return@thread }
+            val out = runCatching { vm.guestShell("pm install -r " + vm.img.sdcardPath.trimEnd('/') + "/aemu-install.apk", 300_000) }.getOrElse { it.toString() }
+            toast(out.trim().lines().lastOrNull { it.isNotBlank() }?.take(200) ?: getString(R.string.m_failed))
+        }
+    }
+
     private fun sendSms(from: String, body: String) {
         // no live modem: the message is written straight into the SMS provider inbox
         val cmd = "content insert --uri content://sms/inbox --bind address:s:${q(from)} --bind body:s:${q(body)} " +
@@ -336,6 +354,34 @@ class VmActivity : ComponentActivity() {
             },
             confirmButton = { Button(onClick = { sendSms(from, body); onDone() }) { Text(stringResource(R.string.m_send)) } },
             dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun DeviceDialog(onDone: () -> Unit) {
+        var airplane by remember { mutableStateOf(false) }
+        var awake by remember { mutableStateOf(false) }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_device)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_airplane), Modifier.weight(1f))
+                        Switch(airplane, { v ->
+                            airplane = v
+                            guestAsync("settings put global airplane_mode_on ${if (v) 1 else 0}; " +
+                                "am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $v")
+                        })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_stay_awake), Modifier.weight(1f))
+                        Switch(awake, { v ->
+                            awake = v
+                            guestAsync("settings put global stay_on_while_plugged_in ${if (v) 7 else 0}; svc power stayon ${if (v) "true" else "false"}")
+                        })
+                    }
+                }
+            },
+            confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.close)) } })
     }
 
     @Composable
@@ -485,6 +531,10 @@ class VmActivity : ComponentActivity() {
                         enabled = running, onClick = { menu = false; dialog = Dlg.CALL })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_battery)) }, leadingIcon = { Icon(Icons.Rounded.BatteryStd, null) },
                         enabled = running && vm.img.api >= 19, onClick = { menu = false; dialog = Dlg.BATTERY })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_install_apk)) }, leadingIcon = { Icon(Icons.Rounded.InstallMobile, null) },
+                        enabled = running, onClick = { menu = false; pickApk.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_device)) }, leadingIcon = { Icon(Icons.Rounded.Tune, null) },
+                        enabled = running && vm.img.api >= 17, onClick = { menu = false; dialog = Dlg.DEVICE })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_adb)) }, leadingIcon = { Icon(Icons.Rounded.Lan, null) },
                         enabled = running, onClick = { menu = false; dialog = Dlg.ADB })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_screenshot)) }, leadingIcon = { Icon(Icons.Rounded.Screenshot, null) },
@@ -508,6 +558,7 @@ class VmActivity : ComponentActivity() {
                 Dlg.CALL -> CallDialog { dialog = Dlg.NONE }
                 Dlg.BATTERY -> BatteryDialog { dialog = Dlg.NONE }
                 Dlg.ADB -> AdbDialog { dialog = Dlg.NONE }
+                Dlg.DEVICE -> DeviceDialog { dialog = Dlg.NONE }
                 Dlg.NONE -> {}
             }
 

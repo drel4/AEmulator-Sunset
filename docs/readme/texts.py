@@ -4,7 +4,7 @@ T = {}
 T["en"] = dict(
     s_fw="tested firmware", s_langs="languages", s_to="to", copied="Address copied",
     tagline="Run classic Android firmware — HTC Sense, TouchWiz, MIUI, AOSP — on a modern phone. No root, no PC.",
-    about="AEmulator boots a real Android 2.3–4.4 system image straight from a firmware file you already have: a recovery ZIP, an Odin archive or a Google factory image. It translates the old ARM code with a patched QEMU, emulates the kernel’s binder, draws with your phone’s GPU and plays sound through Android’s audio stack — everything runs inside a normal app.",
+    about="AEmulator boots a real Android 2.3–7.x system image straight from a firmware file you already have: a recovery ZIP, an Odin archive or a Google factory image. It translates the old ARM code with a patched QEMU, emulates the kernel’s binder, draws with your phone’s GPU and plays sound through Android’s audio stack — everything runs inside a normal app.",
     feat_title="Features",
     feats=["Import almost any firmware format: CWM/TWRP ZIP, Samsung Odin `.tar.md5`, Google factory `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Vendor skins work as shipped: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -45,7 +45,7 @@ T["en"] = dict(
 T["ru"] = dict(
     s_fw="проверенных прошивок", s_langs="языков", s_to="до", copied="Адрес скопирован",
     tagline="Старые прошивки Android — HTC Sense, TouchWiz, MIUI, AOSP — на современном телефоне. Без root и без ПК.",
-    about="AEmulator загружает настоящую систему Android 2.3–4.4 прямо из файла прошивки: ZIP для рекавери, архива Odin или factory-образа Google. Старый ARM-код транслирует доработанный QEMU, binder ядра эмулируется, графика идёт через GPU телефона, звук — через аудиосистему Android. Всё работает внутри обычного приложения.",
+    about="AEmulator загружает настоящую систему Android 2.3–7.x прямо из файла прошивки: ZIP для рекавери, архива Odin или factory-образа Google. Старый ARM-код транслирует доработанный QEMU, binder ядра эмулируется, графика идёт через GPU телефона, звук — через аудиосистему Android. Всё работает внутри обычного приложения.",
     feat_title="Возможности",
     feats=["Импорт почти любых форматов: ZIP для CWM/TWRP, Odin `.tar.md5` от Samsung, factory `.tgz` от Google, `system.img`, OTA `system.new.dat.br`",
            "Оболочки производителей работают как есть: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -86,7 +86,7 @@ T["ru"] = dict(
 T["uk"] = dict(
     s_fw="перевірених прошивок", s_langs="мов", s_to="до", copied="Адресу скопійовано",
     tagline="Старі прошивки Android — HTC Sense, TouchWiz, MIUI, AOSP — на сучасному телефоні. Без root і без ПК.",
-    about="AEmulator завантажує справжню систему Android 2.3–4.4 прямо з файлу прошивки: ZIP для рекавері, архіву Odin або factory-образу Google. Старий ARM-код транслює доопрацьований QEMU, binder ядра емулюється, графіка йде через GPU телефона, звук — через аудіосистему Android. Усе працює всередині звичайного застосунку.",
+    about="AEmulator завантажує справжню систему Android 2.3–7.x прямо з файлу прошивки: ZIP для рекавері, архіву Odin або factory-образу Google. Старий ARM-код транслює доопрацьований QEMU, binder ядра емулюється, графіка йде через GPU телефона, звук — через аудіосистему Android. Усе працює всередині звичайного застосунку.",
     feat_title="Можливості",
     feats=["Імпорт майже будь-яких форматів: ZIP для CWM/TWRP, Odin `.tar.md5` від Samsung, factory `.tgz` від Google, `system.img`, OTA `system.new.dat.br`",
            "Оболонки виробників працюють як є: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -127,7 +127,7 @@ T["uk"] = dict(
 T["de"] = dict(
     s_fw="getestete Firmwares", s_langs="Sprachen", s_to="bis", copied="Adresse kopiert",
     tagline="Klassische Android-Firmware — HTC Sense, TouchWiz, MIUI, AOSP — auf einem modernen Handy. Ohne Root, ohne PC.",
-    about="AEmulator startet ein echtes Android-2.3–4.4-System direkt aus einer Firmware-Datei: Recovery-ZIP, Odin-Archiv oder Google-Factory-Image. Der alte ARM-Code läuft über ein angepasstes QEMU, der Binder des Kernels wird emuliert, die Grafik läuft über die GPU des Handys und der Ton über Androids Audiosystem — alles in einer normalen App.",
+    about="AEmulator startet ein echtes Android-2.3–7.x-System direkt aus einer Firmware-Datei: Recovery-ZIP, Odin-Archiv oder Google-Factory-Image. Der alte ARM-Code läuft über ein angepasstes QEMU, der Binder des Kernels wird emuliert, die Grafik läuft über die GPU des Handys und der Ton über Androids Audiosystem — alles in einer normalen App.",
     feat_title="Funktionen",
     feats=["Import fast aller Formate: CWM/TWRP-ZIP, Samsung Odin `.tar.md5`, Google Factory `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Hersteller-Oberflächen laufen unverändert: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -168,7 +168,7 @@ T["de"] = dict(
 T["fr"] = dict(
     s_fw="ROM testées", s_langs="langues", s_to="à", copied="Adresse copiée",
     tagline="Les anciennes ROM Android — HTC Sense, TouchWiz, MIUI, AOSP — sur un téléphone moderne. Sans root, sans PC.",
-    about="AEmulator démarre un vrai système Android 2.3–4.4 directement depuis un fichier de ROM : ZIP recovery, archive Odin ou image d’usine Google. L’ancien code ARM passe par un QEMU modifié, le binder du noyau est émulé, les graphismes utilisent le GPU du téléphone et le son passe par la pile audio d’Android — le tout dans une application ordinaire.",
+    about="AEmulator démarre un vrai système Android 2.3–7.x directement depuis un fichier de ROM : ZIP recovery, archive Odin ou image d’usine Google. L’ancien code ARM passe par un QEMU modifié, le binder du noyau est émulé, les graphismes utilisent le GPU du téléphone et le son passe par la pile audio d’Android — le tout dans une application ordinaire.",
     feat_title="Fonctionnalités",
     feats=["Import de presque tous les formats : ZIP CWM/TWRP, Odin `.tar.md5` de Samsung, image d’usine Google `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Les surcouches constructeur fonctionnent telles quelles : HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -209,7 +209,7 @@ T["fr"] = dict(
 T["es"] = dict(
     s_fw="firmwares probados", s_langs="idiomas", s_to="a", copied="Dirección copiada",
     tagline="Firmware clásico de Android — HTC Sense, TouchWiz, MIUI, AOSP — en un teléfono moderno. Sin root, sin PC.",
-    about="AEmulator arranca un sistema Android 2.3–4.4 real directamente desde un archivo de firmware: ZIP de recovery, archivo de Odin o imagen de fábrica de Google. El código ARM antiguo se traduce con un QEMU modificado, el binder del kernel se emula, los gráficos usan la GPU del teléfono y el sonido pasa por la pila de audio de Android — todo dentro de una app normal.",
+    about="AEmulator arranca un sistema Android 2.3–7.x real directamente desde un archivo de firmware: ZIP de recovery, archivo de Odin o imagen de fábrica de Google. El código ARM antiguo se traduce con un QEMU modificado, el binder del kernel se emula, los gráficos usan la GPU del teléfono y el sonido pasa por la pila de audio de Android — todo dentro de una app normal.",
     feat_title="Características",
     feats=["Importa casi cualquier formato: ZIP CWM/TWRP, Odin `.tar.md5` de Samsung, imagen de fábrica `.tgz` de Google, `system.img`, OTA `system.new.dat.br`",
            "Las capas de los fabricantes funcionan tal cual: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -250,7 +250,7 @@ T["es"] = dict(
 T["pt-BR"] = dict(
     s_fw="firmwares testados", s_langs="idiomas", s_to="a", copied="Endereço copiado",
     tagline="Firmwares clássicos do Android — HTC Sense, TouchWiz, MIUI, AOSP — em um celular moderno. Sem root, sem PC.",
-    about="O AEmulator inicia um sistema Android 2.3–4.4 real direto de um arquivo de firmware: ZIP de recovery, pacote do Odin ou imagem de fábrica do Google. O código ARM antigo é traduzido por um QEMU modificado, o binder do kernel é emulado, os gráficos usam a GPU do celular e o som passa pelo áudio do Android — tudo dentro de um app comum.",
+    about="O AEmulator inicia um sistema Android 2.3–7.x real direto de um arquivo de firmware: ZIP de recovery, pacote do Odin ou imagem de fábrica do Google. O código ARM antigo é traduzido por um QEMU modificado, o binder do kernel é emulado, os gráficos usam a GPU do celular e o som passa pelo áudio do Android — tudo dentro de um app comum.",
     feat_title="Recursos",
     feats=["Importa quase qualquer formato: ZIP CWM/TWRP, Odin `.tar.md5` da Samsung, imagem de fábrica `.tgz` do Google, `system.img`, OTA `system.new.dat.br`",
            "Interfaces das fabricantes funcionam como vieram: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -291,7 +291,7 @@ T["pt-BR"] = dict(
 T["it"] = dict(
     s_fw="firmware testati", s_langs="lingue", s_to="a", copied="Indirizzo copiato",
     tagline="Firmware Android classici — HTC Sense, TouchWiz, MIUI, AOSP — su un telefono moderno. Senza root, senza PC.",
-    about="AEmulator avvia un vero sistema Android 2.3–4.4 direttamente da un file firmware: ZIP per recovery, archivio Odin o immagine di fabbrica Google. Il vecchio codice ARM passa da un QEMU modificato, il binder del kernel è emulato, la grafica usa la GPU del telefono e l’audio passa per lo stack audio di Android — tutto in una normale app.",
+    about="AEmulator avvia un vero sistema Android 2.3–7.x direttamente da un file firmware: ZIP per recovery, archivio Odin o immagine di fabbrica Google. Il vecchio codice ARM passa da un QEMU modificato, il binder del kernel è emulato, la grafica usa la GPU del telefono e l’audio passa per lo stack audio di Android — tutto in una normale app.",
     feat_title="Funzionalità",
     feats=["Importa quasi ogni formato: ZIP CWM/TWRP, Odin `.tar.md5` di Samsung, immagine di fabbrica Google `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Le interfacce dei produttori funzionano così come sono: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -332,7 +332,7 @@ T["it"] = dict(
 T["pl"] = dict(
     s_fw="przetestowanych firmware", s_langs="języków", s_to="do", copied="Skopiowano adres",
     tagline="Klasyczne firmware Androida — HTC Sense, TouchWiz, MIUI, AOSP — na nowoczesnym telefonie. Bez roota, bez PC.",
-    about="AEmulator uruchamia prawdziwy system Android 2.3–4.4 prosto z pliku firmware: ZIP do recovery, archiwum Odin lub obraz fabryczny Google. Stary kod ARM tłumaczy zmodyfikowane QEMU, binder jądra jest emulowany, grafika korzysta z GPU telefonu, a dźwięk z systemu audio Androida — wszystko w zwykłej aplikacji.",
+    about="AEmulator uruchamia prawdziwy system Android 2.3–7.x prosto z pliku firmware: ZIP do recovery, archiwum Odin lub obraz fabryczny Google. Stary kod ARM tłumaczy zmodyfikowane QEMU, binder jądra jest emulowany, grafika korzysta z GPU telefonu, a dźwięk z systemu audio Androida — wszystko w zwykłej aplikacji.",
     feat_title="Funkcje",
     feats=["Import niemal każdego formatu: ZIP CWM/TWRP, Odin `.tar.md5` Samsunga, obraz fabryczny Google `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Nakładki producentów działają bez zmian: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -373,7 +373,7 @@ T["pl"] = dict(
 T["tr"] = dict(
     s_fw="test edilen yazılım", s_langs="dil", s_to="–", copied="Adres kopyalandı",
     tagline="Klasik Android yazılımları — HTC Sense, TouchWiz, MIUI, AOSP — modern bir telefonda. Root ve PC gerekmez.",
-    about="AEmulator gerçek bir Android 2.3–4.4 sistemini doğrudan yazılım dosyasından başlatır: recovery ZIP, Odin arşivi veya Google fabrika imajı. Eski ARM kodu değiştirilmiş QEMU ile çevrilir, çekirdeğin binder’ı taklit edilir, grafikler telefonun GPU’sunu, ses Android’in ses altyapısını kullanır — hepsi sıradan bir uygulamanın içinde.",
+    about="AEmulator gerçek bir Android 2.3–7.x sistemini doğrudan yazılım dosyasından başlatır: recovery ZIP, Odin arşivi veya Google fabrika imajı. Eski ARM kodu değiştirilmiş QEMU ile çevrilir, çekirdeğin binder’ı taklit edilir, grafikler telefonun GPU’sunu, ses Android’in ses altyapısını kullanır — hepsi sıradan bir uygulamanın içinde.",
     feat_title="Özellikler",
     feats=["Neredeyse her biçimi içe aktarma: CWM/TWRP ZIP, Samsung Odin `.tar.md5`, Google fabrika `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Üretici arayüzleri olduğu gibi çalışır: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -414,7 +414,7 @@ T["tr"] = dict(
 T["ar"] = dict(
     s_fw="برامج ثابتة مُختبرة", s_langs="لغة", s_to="إلى", copied="نُسخ العنوان",
     tagline="شغّل برامج أندرويد الكلاسيكية — HTC Sense وTouchWiz وMIUI وAOSP — على هاتف حديث. بلا روت وبلا حاسوب.",
-    about="يقلع AEmulator نظام أندرويد 2.3–4.4 حقيقيًا مباشرة من ملف البرنامج الثابت: ملف ZIP للريكفري أو أرشيف Odin أو صورة مصنع Google. تُترجم شفرة ARM القديمة عبر QEMU معدّل، ويُحاكى binder النواة، وتُرسم الواجهة بمعالج رسومات الهاتف ويمر الصوت عبر نظام صوت أندرويد — كل ذلك داخل تطبيق عادي.",
+    about="يقلع AEmulator نظام أندرويد 2.3–7.x حقيقيًا مباشرة من ملف البرنامج الثابت: ملف ZIP للريكفري أو أرشيف Odin أو صورة مصنع Google. تُترجم شفرة ARM القديمة عبر QEMU معدّل، ويُحاكى binder النواة، وتُرسم الواجهة بمعالج رسومات الهاتف ويمر الصوت عبر نظام صوت أندرويد — كل ذلك داخل تطبيق عادي.",
     feat_title="المزايا",
     feats=["استيراد كل الصيغ تقريبًا: ‏ZIP لـ CWM/TWRP، و‏Odin ‏`.tar.md5` من سامسونج، وصورة مصنع Google ‏`.tgz`، و`system.img`، وOTA ‏`system.new.dat.br`",
            "واجهات الشركات تعمل كما هي: HTC Sense وSamsung TouchWiz وMIUI وAOSP",
@@ -455,7 +455,7 @@ T["ar"] = dict(
 T["fa"] = dict(
     s_fw="فرم‌ویر آزموده", s_langs="زبان", s_to="تا", copied="نشانی کپی شد",
     tagline="فرم‌ویرهای کلاسیک اندروید — HTC Sense، TouchWiz، MIUI، AOSP — روی گوشی مدرن. بدون روت و بدون رایانه.",
-    about="AEmulator یک سیستم واقعی اندروید 2.3 تا 4.4 را مستقیم از فایل فرم‌ویر بوت می‌کند: ZIP ریکاوری، آرشیو Odin یا ایمیج کارخانهٔ گوگل. کد قدیمی ARM با QEMU اصلاح‌شده ترجمه می‌شود، binder هسته شبیه‌سازی می‌شود، گرافیک با GPU گوشی و صدا با سامانهٔ صوتی اندروید پخش می‌شود — همه درون یک برنامهٔ معمولی.",
+    about="AEmulator یک سیستم واقعی اندروید 2.3 تا 7.x را مستقیم از فایل فرم‌ویر بوت می‌کند: ZIP ریکاوری، آرشیو Odin یا ایمیج کارخانهٔ گوگل. کد قدیمی ARM با QEMU اصلاح‌شده ترجمه می‌شود، binder هسته شبیه‌سازی می‌شود، گرافیک با GPU گوشی و صدا با سامانهٔ صوتی اندروید پخش می‌شود — همه درون یک برنامهٔ معمولی.",
     feat_title="ویژگی‌ها",
     feats=["درون‌ریزی تقریباً همهٔ قالب‌ها: ‏ZIP ‏CWM/TWRP، ‏Odin ‏`.tar.md5` سامسونگ، ایمیج کارخانهٔ گوگل ‏`.tgz`، ‏`system.img`، ‏OTA ‏`system.new.dat.br`",
            "رابط‌های سازندگان همان‌طور که هستند کار می‌کنند: HTC Sense، Samsung TouchWiz، MIUI، AOSP",
@@ -496,7 +496,7 @@ T["fa"] = dict(
 T["hi"] = dict(
     s_fw="परखे गए फ़र्मवेयर", s_langs="भाषाएँ", s_to="से", copied="पता कॉपी हुआ",
     tagline="पुराने Android फ़र्मवेयर — HTC Sense, TouchWiz, MIUI, AOSP — आधुनिक फ़ोन पर। बिना root, बिना PC।",
-    about="AEmulator सीधे फ़र्मवेयर फ़ाइल से असली Android 2.3–4.4 सिस्टम बूट करता है: रिकवरी ZIP, Odin आर्काइव या Google फ़ैक्टरी इमेज। पुराना ARM कोड संशोधित QEMU से चलता है, कर्नेल का binder एमुलेट होता है, ग्राफ़िक्स फ़ोन के GPU से और आवाज़ Android के ऑडियो सिस्टम से चलती है — सब कुछ एक सामान्य ऐप के भीतर।",
+    about="AEmulator सीधे फ़र्मवेयर फ़ाइल से असली Android 2.3–7.x सिस्टम बूट करता है: रिकवरी ZIP, Odin आर्काइव या Google फ़ैक्टरी इमेज। पुराना ARM कोड संशोधित QEMU से चलता है, कर्नेल का binder एमुलेट होता है, ग्राफ़िक्स फ़ोन के GPU से और आवाज़ Android के ऑडियो सिस्टम से चलती है — सब कुछ एक सामान्य ऐप के भीतर।",
     feat_title="विशेषताएँ",
     feats=["लगभग हर फ़ॉर्मेट आयात करें: CWM/TWRP ZIP, Samsung Odin `.tar.md5`, Google फ़ैक्टरी `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "कंपनियों के स्किन जैसे हैं वैसे चलते हैं: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -537,7 +537,7 @@ T["hi"] = dict(
 T["id"] = dict(
     s_fw="firmware teruji", s_langs="bahasa", s_to="hingga", copied="Alamat disalin",
     tagline="Firmware Android klasik — HTC Sense, TouchWiz, MIUI, AOSP — di ponsel modern. Tanpa root, tanpa PC.",
-    about="AEmulator mem-boot sistem Android 2.3–4.4 asli langsung dari file firmware: ZIP recovery, arsip Odin, atau factory image Google. Kode ARM lama diterjemahkan oleh QEMU yang dimodifikasi, binder kernel diemulasikan, grafis memakai GPU ponsel, dan suara lewat sistem audio Android — semuanya di dalam aplikasi biasa.",
+    about="AEmulator mem-boot sistem Android 2.3–7.x asli langsung dari file firmware: ZIP recovery, arsip Odin, atau factory image Google. Kode ARM lama diterjemahkan oleh QEMU yang dimodifikasi, binder kernel diemulasikan, grafis memakai GPU ponsel, dan suara lewat sistem audio Android — semuanya di dalam aplikasi biasa.",
     feat_title="Fitur",
     feats=["Impor hampir semua format: ZIP CWM/TWRP, Odin `.tar.md5` Samsung, factory image Google `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "Tampilan pabrikan berjalan apa adanya: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -578,7 +578,7 @@ T["id"] = dict(
 T["vi"] = dict(
     s_fw="firmware đã thử", s_langs="ngôn ngữ", s_to="đến", copied="Đã sao chép địa chỉ",
     tagline="Firmware Android cổ điển — HTC Sense, TouchWiz, MIUI, AOSP — trên điện thoại hiện đại. Không root, không cần PC.",
-    about="AEmulator khởi động một hệ thống Android 2.3–4.4 thật trực tiếp từ tệp firmware: ZIP recovery, gói Odin hoặc factory image của Google. Mã ARM cũ được dịch bằng QEMU đã chỉnh sửa, binder của nhân được giả lập, đồ họa dùng GPU điện thoại và âm thanh đi qua hệ thống âm thanh Android — tất cả trong một ứng dụng bình thường.",
+    about="AEmulator khởi động một hệ thống Android 2.3–7.x thật trực tiếp từ tệp firmware: ZIP recovery, gói Odin hoặc factory image của Google. Mã ARM cũ được dịch bằng QEMU đã chỉnh sửa, binder của nhân được giả lập, đồ họa dùng GPU điện thoại và âm thanh đi qua hệ thống âm thanh Android — tất cả trong một ứng dụng bình thường.",
     feat_title="Tính năng",
     feats=["Nhập gần như mọi định dạng: ZIP CWM/TWRP, Odin `.tar.md5` của Samsung, factory `.tgz` của Google, `system.img`, OTA `system.new.dat.br`",
            "Giao diện hãng chạy nguyên bản: HTC Sense, Samsung TouchWiz, MIUI, AOSP",
@@ -619,7 +619,7 @@ T["vi"] = dict(
 T["zh-CN"] = dict(
     s_fw="已测试固件", s_langs="种语言", s_to="至", copied="地址已复制",
     tagline="在现代手机上运行经典 Android 固件——HTC Sense、TouchWiz、MIUI、AOSP。无需 root，无需电脑。",
-    about="AEmulator 直接从固件文件启动真实的 Android 2.3–4.4 系统：Recovery 卡刷包、Odin 包或 Google 出厂镜像。旧的 ARM 代码由改进的 QEMU 转译，内核 binder 被模拟，图形使用手机 GPU 绘制，声音经由 Android 音频系统播放——一切都在一个普通应用里完成。",
+    about="AEmulator 直接从固件文件启动真实的 Android 2.3–7.x 系统：Recovery 卡刷包、Odin 包或 Google 出厂镜像。旧的 ARM 代码由改进的 QEMU 转译，内核 binder 被模拟，图形使用手机 GPU 绘制，声音经由 Android 音频系统播放——一切都在一个普通应用里完成。",
     feat_title="功能",
     feats=["导入几乎所有格式：CWM/TWRP 卡刷 ZIP、三星 Odin `.tar.md5`、Google 出厂 `.tgz`、`system.img`、OTA `system.new.dat.br`",
            "厂商系统原样运行：HTC Sense、三星 TouchWiz、MIUI、AOSP",
@@ -660,7 +660,7 @@ T["zh-CN"] = dict(
 T["ja"] = dict(
     s_fw="検証済みファームウェア", s_langs="言語", s_to="〜", copied="アドレスをコピーしました",
     tagline="懐かしの Android ファームウェア — HTC Sense、TouchWiz、MIUI、AOSP — を最新スマホで。root も PC も不要。",
-    about="AEmulator はファームウェアファイルから本物の Android 2.3〜4.4 を直接起動します：リカバリー ZIP、Odin アーカイブ、Google ファクトリーイメージ。古い ARM コードは改良版 QEMU で変換し、カーネルの binder をエミュレートし、描画はスマホの GPU、音声は Android のオーディオを使います。すべて普通のアプリの中で動きます。",
+    about="AEmulator はファームウェアファイルから本物の Android 2.3〜7.x を直接起動します：リカバリー ZIP、Odin アーカイブ、Google ファクトリーイメージ。古い ARM コードは改良版 QEMU で変換し、カーネルの binder をエミュレートし、描画はスマホの GPU、音声は Android のオーディオを使います。すべて普通のアプリの中で動きます。",
     feat_title="特長",
     feats=["ほぼすべての形式をインポート：CWM/TWRP ZIP、Samsung Odin `.tar.md5`、Google ファクトリー `.tgz`、`system.img`、OTA `system.new.dat.br`",
            "メーカー独自 UI がそのまま動作：HTC Sense、Samsung TouchWiz、MIUI、AOSP",
@@ -701,7 +701,7 @@ T["ja"] = dict(
 T["ko"] = dict(
     s_fw="테스트된 펌웨어", s_langs="개 언어", s_to="~", copied="주소가 복사되었습니다",
     tagline="클래식 Android 펌웨어 — HTC Sense, TouchWiz, MIUI, AOSP — 를 최신 휴대폰에서. 루팅도 PC도 필요 없습니다.",
-    about="AEmulator는 펌웨어 파일에서 진짜 Android 2.3–4.4 시스템을 바로 부팅합니다: 리커버리 ZIP, Odin 아카이브, Google 팩토리 이미지. 오래된 ARM 코드는 수정된 QEMU가 변환하고, 커널 binder를 에뮬레이션하며, 그래픽은 휴대폰 GPU로, 소리는 Android 오디오로 처리합니다. 모두 평범한 앱 안에서 동작합니다.",
+    about="AEmulator는 펌웨어 파일에서 진짜 Android 2.3–7.x 시스템을 바로 부팅합니다: 리커버리 ZIP, Odin 아카이브, Google 팩토리 이미지. 오래된 ARM 코드는 수정된 QEMU가 변환하고, 커널 binder를 에뮬레이션하며, 그래픽은 휴대폰 GPU로, 소리는 Android 오디오로 처리합니다. 모두 평범한 앱 안에서 동작합니다.",
     feat_title="기능",
     feats=["거의 모든 형식 가져오기: CWM/TWRP ZIP, 삼성 Odin `.tar.md5`, Google 팩토리 `.tgz`, `system.img`, OTA `system.new.dat.br`",
            "제조사 UI가 그대로 동작: HTC Sense, Samsung TouchWiz, MIUI, AOSP",

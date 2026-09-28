@@ -160,4 +160,9 @@
     <string name="container_of">На основе: %1$s</string>
     <string name="vs_fulldex">Полная компиляция приложений</string>
     <string name="vs_fulldex_sub">ART переводит приложения в машинный код: первый запуск и установка намного дольше, приложения работают быстрее</string>
+    <string name="m_install_apk">Установить APK…</string>
+    <string name="m_install_apk_start">Установка…</string>
+    <string name="m_device">Состояние устройства</string>
+    <string name="m_airplane">Режим полёта</string>
+    <string name="m_stay_awake">Не гасить экран</string>
 </resources>

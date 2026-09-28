@@ -8,7 +8,7 @@ import java.io.File
  * Same folder as "AEmulator" (the shared storage is case-insensitive), next to the systems' memory cards.
  */
 object FirmwareFolder {
-    private val EXT = Regex("""(?i).*\.(zip|tar|md5|tgz|gz|xz|bz2|tbz2?|img|win|ext4)$""")
+    private val EXT = Regex("""(?i).*\.(zip|7z|tar|md5|tgz|gz|xz|bz2|tbz2?|img|win|ext4)$""")
 
     val dir: File get() = File(Environment.getExternalStorageDirectory(), "aemulator/firmware")
 

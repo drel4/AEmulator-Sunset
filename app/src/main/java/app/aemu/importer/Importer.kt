@@ -10,6 +10,7 @@ import app.aemu.core.VmPaths
 import app.aemu.core.RecoveryImage
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipFile
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
@@ -100,6 +101,9 @@ class Importer(
         when {
             h.size > 4 && h[0] == 'P'.code.toByte() && h[1] == 'K'.code.toByte() && h[2].toInt() == 3 && h[3].toInt() == 4 -> {
                 if (ch != null) importZip(ch, name, depth) else throw IOException("zip without random access")
+            }
+            h.size > 6 && h[0] == '7'.code.toByte() && h[1] == 'z'.code.toByte() && h[2] == 0xBC.toByte() && h[3] == 0xAF.toByte() -> {
+                if (ch != null) importSevenZ(ch, name, depth) else throw IOException("7z without random access")
             }
             SparseSource.probe(src) -> importImage(SparseSource(listOf(src)), "system")
             Ext4Reader.probe(src) -> importImage(src, "system")
@@ -208,6 +212,43 @@ class Importer(
             try { importImage(SparseSource(chans.map { ChannelSource(it) }), "system") } finally { chans.forEach { it.close() }; parts.forEach { it.delete() } }
         }
         if (!names.any { it.startsWith("system/") } && !gotSystem) log("no system found in archive $name")
+    }
+
+    /** 7z: entries are read in order (solid archives cannot seek); interesting ones are unpacked like their zip twins */
+    private fun importSevenZ(ch: FileChannel, name: String, depth: Int) {
+        SevenZFile.builder().setSeekableByteChannel(ch).get().use { z ->
+            val nested = ArrayList<Pair<File, String>>()
+            while (true) {
+                if (cancelled) throw IOException("cancelled")
+                val e = z.nextEntry ?: break
+                if (e.isDirectory) continue
+                val n = e.name.replace('\\', '/')
+                val base = n.substringAfterLast('/')
+                val stream = z.getInputStream(e)
+                when {
+                    n.contains("__MACOSX/") || base.startsWith("._") -> {}
+                    n.startsWith("system/") -> { writeFile(n, stream, null); gotSystem = true }
+                    base.equals("boot.img", true) -> takeBoot(stream.readBytes())
+                    base.equals("recovery.img", true) && e.size < 64_000_000 -> recovery = stream.readBytes()
+                    base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
+                        nested.add(spill(stream, base) to "system")
+                    base.matches(Regex("(?i).*\\.(zip|tar|tar\\.md5|md5|tgz|tar\\.gz)")) && e.size > 20_000_000 &&
+                        !base.startsWith("MODEM") && !base.startsWith("CP_") && !base.contains("CSC") ->
+                        nested.add(spill(stream, base) to "archive")
+                }
+                onProgress("Extracting: $base", 0.5f)
+            }
+            for ((f, kind) in nested) {
+                try {
+                    FileChannel.open(f.toPath(), StandardOpenOption.READ).use { c ->
+                        val src = ChannelSource(c)
+                        if (kind == "system") importImage(if (SparseSource.probe(src)) SparseSource(listOf(src)) else src, "system")
+                        else handle(src, c, f.name, depth + 1)
+                    }
+                } finally { f.delete() }
+            }
+            if (!gotSystem && nested.isEmpty()) log("no system found in archive $name")
+        }
     }
 
     private fun withEntrySource(zip: ZipFile, e: ZipArchiveEntry, block: (RandomSource) -> Unit) {

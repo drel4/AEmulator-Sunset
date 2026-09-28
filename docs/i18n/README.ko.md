@@ -14,7 +14,7 @@
 
 ---
 
-AEmulator는 펌웨어 파일에서 진짜 Android 2.3–4.4 시스템을 바로 부팅합니다: 리커버리 ZIP, Odin 아카이브, Google 팩토리 이미지. 오래된 ARM 코드는 수정된 QEMU가 변환하고, 커널 binder를 에뮬레이션하며, 그래픽은 휴대폰 GPU로, 소리는 Android 오디오로 처리합니다. 모두 평범한 앱 안에서 동작합니다.
+AEmulator는 펌웨어 파일에서 진짜 Android 2.3–7.x 시스템을 바로 부팅합니다: 리커버리 ZIP, Odin 아카이브, Google 팩토리 이미지. 오래된 ARM 코드는 수정된 QEMU가 변환하고, 커널 binder를 에뮬레이션하며, 그래픽은 휴대폰 GPU로, 소리는 Android 오디오로 처리합니다. 모두 평범한 앱 안에서 동작합니다.
 
 ## ✨ 기능
 
