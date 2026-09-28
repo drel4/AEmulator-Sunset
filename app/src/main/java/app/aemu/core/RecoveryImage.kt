@@ -18,7 +18,8 @@ object RecoveryImage {
         val rd = runCatching { BootImage.ramdisk(image) }.getOrNull()
         if (rd.isNullOrEmpty() || rd.none { it.name == "sbin/recovery" }) { log("recovery: image has no /sbin/recovery"); return false }
         val out = dir(paths)
-        out.deleteRecursively()
+        // never deleteRecursively: system/, data/, sdcard/ in it are links to the firmware's partitions and card
+        ImageStore.wipe(out)
         out.mkdirs()
         val base = out.canonicalPath
         for (e in rd) {
