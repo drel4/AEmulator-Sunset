@@ -153,7 +153,6 @@
     <string name="add_container_sub">نسخه دیگری از فریم‌ور موجود: برنامه‌ها، داده، کارت و تنظیمات جدا</string>
     <string name="container_chip">کانتینر</string>
     <string name="container_copy_data">برنامه‌ها و داده‌ها هم کپی شوند</string>
-    <string name="container_hint">کانتینر ‎/system را با نسخه اصلی شریک است (فضای اضافه نمی‌خواهد) و ‎/data خالی شروع می‌شود مگر کپی شود. هر بار یکی را اجرا کنید.</string>
+    <string name="container_hint">کانتینر یک نسخه کامل و جدا از فریم‌ور همراه ‎/system است: تغییر در یکی روی دیگری اثری ندارد. ‎/data خالی شروع می‌شود مگر کپی شود.</string>
     <string name="container_create">ساختن</string>
-    <string name="container_delete_base">این کانتینرها از این فریم‌ور استفاده می‌کنند: %1$s. اول آن‌ها را حذف کنید.</string>
 </resources>

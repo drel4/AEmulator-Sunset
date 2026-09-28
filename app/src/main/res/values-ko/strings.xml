@@ -153,7 +153,6 @@
     <string name="add_container_sub">기존 펌웨어의 또 다른 사본: 자체 앱, 데이터, 카드, 설정</string>
     <string name="container_chip">컨테이너</string>
     <string name="container_copy_data">앱과 데이터도 복사</string>
-    <string name="container_hint">컨테이너는 원본과 /system을 공유하며(추가 공간 없음), 복사하지 않으면 /data는 비어 있는 상태로 시작합니다. 한 번에 하나만 실행하세요.</string>
+    <string name="container_hint">컨테이너는 /system을 포함한 펌웨어의 완전한 별도 사본입니다. 한쪽을 바꿔도 다른 쪽에 영향이 없습니다. 복사하지 않으면 /data는 비어 있는 상태로 시작합니다.</string>
     <string name="container_create">만들기</string>
-    <string name="container_delete_base">이 펌웨어를 쓰는 컨테이너: %1$s. 먼저 삭제하세요.</string>
 </resources>

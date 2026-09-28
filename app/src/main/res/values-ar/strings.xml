@@ -153,7 +153,6 @@
     <string name="add_container_sub">نسخة أخرى من نظام موجود: تطبيقات وبيانات وبطاقة وإعدادات خاصة بها</string>
     <string name="container_chip">حاوية</string>
     <string name="container_copy_data">نسخ التطبيقات والبيانات أيضًا</string>
-    <string name="container_hint">تشارك الحاوية ‎/system مع الأصل (دون مساحة إضافية)، و‎/data تبدأ فارغة ما لم تُنسخ. شغّل واحدة في كل مرة.</string>
+    <string name="container_hint">الحاوية نسخة كاملة ومستقلة من النظام بما فيها ‎/system: تعديل إحداهما لا يؤثر في الأخرى. تبدأ ‎/data فارغة ما لم تُنسخ.</string>
     <string name="container_create">إنشاء</string>
-    <string name="container_delete_base">هذه الحاويات تستخدم النظام: %1$s. احذفها أولًا.</string>
 </resources>

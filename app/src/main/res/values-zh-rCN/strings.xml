@@ -153,7 +153,6 @@
     <string name="add_container_sub">现有固件的另一个副本：独立的应用、数据、存储卡和设置</string>
     <string name="container_chip">容器</string>
     <string name="container_copy_data">同时复制应用和数据</string>
-    <string name="container_hint">容器与原固件共享 /system（不占额外空间），未复制时 /data 从空白开始。一次只运行一个。</string>
+    <string name="container_hint">容器是固件的完整独立副本（包括 /system）：修改其中一个不会影响另一个。未复制时 /data 从空白开始。</string>
     <string name="container_create">创建</string>
-    <string name="container_delete_base">以下容器正在使用此固件：%1$s。请先删除它们。</string>
 </resources>

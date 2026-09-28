@@ -153,7 +153,6 @@
     <string name="add_container_sub">Outra cópia de um firmware existente: apps, dados, cartão e ajustes próprios</string>
     <string name="container_chip">Contêiner</string>
     <string name="container_copy_data">Copiar apps e dados também</string>
-    <string name="container_hint">O contêiner compartilha /system com o original (sem espaço extra); /data começa vazio se não copiado. Rode um por vez.</string>
+    <string name="container_hint">O contêiner é uma cópia completa e separada do firmware, incluindo /system: mudar um nunca afeta o outro. /data começa vazio se não copiado.</string>
     <string name="container_create">Criar</string>
-    <string name="container_delete_base">Contêineres usam este firmware: %1$s. Exclua-os primeiro.</string>
 </resources>

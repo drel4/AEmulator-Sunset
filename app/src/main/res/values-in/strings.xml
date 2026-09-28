@@ -153,7 +153,6 @@
     <string name="add_container_sub">Salinan lain firmware yang ada: aplikasi, data, kartu, dan setelan sendiri</string>
     <string name="container_chip">Kontainer</string>
     <string name="container_copy_data">Salin juga aplikasi dan data</string>
-    <string name="container_hint">Kontainer berbagi /system dengan aslinya (tanpa ruang tambahan); /data mulai kosong jika tidak disalin. Jalankan satu per satu.</string>
+    <string name="container_hint">Kontainer adalah salinan firmware lengkap dan terpisah, termasuk /system: mengubah satu tidak memengaruhi yang lain. /data mulai kosong jika tidak disalin.</string>
     <string name="container_create">Buat</string>
-    <string name="container_delete_base">Kontainer ini memakai firmware tersebut: %1$s. Hapus dulu.</string>
 </resources>

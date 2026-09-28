@@ -153,7 +153,6 @@
     <string name="add_container_sub">Mevcut bir yazılımın başka kopyası: kendi uygulamaları, verisi, kartı ve ayarları</string>
     <string name="container_chip">Kapsayıcı</string>
     <string name="container_copy_data">Uygulamaları ve verileri de kopyala</string>
-    <string name="container_hint">Kapsayıcı /system\'i orijinalle paylaşır (ek yer gerekmez); kopyalanmazsa /data boş başlar. Aynı anda birini çalıştırın.</string>
+    <string name="container_hint">Kapsayıcı, /system dahil yazılımın tam ve ayrı bir kopyasıdır: birindeki değişiklik diğerini etkilemez. Kopyalanmazsa /data boş başlar.</string>
     <string name="container_create">Oluştur</string>
-    <string name="container_delete_base">Bu yazılımı kullanan kapsayıcılar: %1$s. Önce onları silin.</string>
 </resources>

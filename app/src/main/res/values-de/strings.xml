@@ -153,7 +153,6 @@
     <string name="add_container_sub">Weitere Kopie einer vorhandenen Firmware: eigene Apps, Daten, Karte und Einstellungen</string>
     <string name="container_chip">Container</string>
     <string name="container_copy_data">Apps und Daten mitkopieren</string>
-    <string name="container_hint">Der Container teilt /system mit dem Original (kein Extra-Speicher), /data startet leer, sofern nicht kopiert. Immer nur einen gleichzeitig starten.</string>
+    <string name="container_hint">Der Container ist eine vollständige, eigene Kopie der Firmware inklusive /system: Änderungen an einem betreffen den anderen nie. /data startet leer, sofern nicht kopiert.</string>
     <string name="container_create">Erstellen</string>
-    <string name="container_delete_base">Container nutzen diese Firmware: %1$s. Lösche sie zuerst.</string>
 </resources>

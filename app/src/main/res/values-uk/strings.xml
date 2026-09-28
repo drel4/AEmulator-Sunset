@@ -153,7 +153,6 @@
     <string name="add_container_sub">Ще одна копія наявної прошивки: свої застосунки, дані, карта й налаштування</string>
     <string name="container_chip">Контейнер</string>
     <string name="container_copy_data">Скопіювати застосунки й дані</string>
-    <string name="container_hint">Контейнер використовує /system оригіналу (місця не потребує), /data починається з нуля, якщо не копіювати. Запускайте їх по одному.</string>
+    <string name="container_hint">Контейнер — повна окрема копія прошивки разом із /system: зміни в одному не зачіпають інший. /data починається з нуля, якщо не копіювати.</string>
     <string name="container_create">Створити</string>
-    <string name="container_delete_base">Цю прошивку використовують контейнери: %1$s. Спершу видаліть їх.</string>
 </resources>

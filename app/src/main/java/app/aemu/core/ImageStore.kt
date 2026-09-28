@@ -64,18 +64,16 @@ object ImageStore {
         wipe(VmPaths(ctx, id).dir)
     }
 
-    /** containers built on this image (they share its /system, so it cannot be deleted before them) */
-    fun containersOf(ctx: Context, id: String) = list(ctx).filter { it.baseId == id }
-
     /**
-     * New container of [src]'s firmware: its own root with /system linked to the source's (no second copy of
-     * hundreds of MB), a fresh /data (factory reset: apps, settings and accounts start empty; dalvik-cache is kept
+     * New container of [src]'s firmware: a full own copy of the root including /system (flashing in one container
+     * never touches another), a fresh /data (factory reset: apps, settings and accounts start empty; dalvik-cache is kept
      * so the first boot is quick) or a full copy of it, its own memory-card folder and settings.
      */
     fun clone(ctx: Context, src: GuestImage, name: String, copyData: Boolean, progress: (String) -> Unit): GuestImage {
-        val base = if (src.baseId.isNotEmpty()) get(ctx, src.baseId) ?: src else src
         val from = VmPaths(ctx, src.id)
-        val sysReal = VmPaths(ctx, base.id).root.let { File(it, "system") }
+        val need = du(from.root) + du(File(from.root, "system").canonicalFile).takeIf { File(from.root, "system").canonicalPath != File(from.root, "system").path } .let { it ?: 0 }
+        val free = imagesDir(ctx).usableSpace
+        if (need + (200L shl 20) > free) error("not enough space: need ${need shr 20} MB, free ${free shr 20} MB")
         val id = newId(ctx)
         val to = VmPaths(ctx, id)
         try {
@@ -90,7 +88,8 @@ object ImageStore {
                         b.mkdirs()
                         for (c in a.list().orEmpty()) {
                             val r = if (rel.isEmpty()) c else "$rel/$c"
-                            if (rel.isEmpty() && (c == "system" || c == "dev" || c == "proc")) continue
+                            if (rel.isEmpty() && (c == "dev" || c == "proc")) continue
+                            if (rel.isEmpty() && c == "system") progress("system")
                             if (!copyData && r.startsWith("data/") && r.removePrefix("data/") in skipData) { File(b, c).mkdirs(); continue }
                             if (rel.isEmpty() && c == "data") progress("data")
                             copy(File(a, c), File(b, c), r)
@@ -103,13 +102,17 @@ object ImageStore {
                 }
             }
             progress("root")
+            // an older container's /system may be a link to its original: copy what it points to
+            val sys = File(from.root, "system").canonicalFile
             copy(from.root, to.root, "")
+            if (runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(File(to.root, "system").path).st_mode) }.getOrDefault(false)) {
+                File(to.root, "system").delete(); copy(sys, File(to.root, "system"), "system")
+            }
             File(to.root, "dev").mkdirs()
-            Os.symlink(sysReal.canonicalPath, File(to.root, "system").path)
             // ownership table is keyed by inode: the fresh copy gets its own on first boot
             if (!copyData) { File(to.root, "dhd.owners").delete(); File(to.root, "dhd.owners.seeded").delete() }
             listOf("props.base").forEach { n -> File(from.dir, n).takeIf { it.isFile }?.copyTo(File(to.dir, n), true) }
-            val img = src.copy(id = id, name = name, baseId = base.id, createdAt = System.currentTimeMillis(),
+            val img = src.copy(id = id, name = name, baseId = src.id, createdAt = System.currentTimeMillis(),
                 lastBootMs = 0, bootCount = 0, sizeBytes = du(to.dir))
             save(ctx, img)
             return img

@@ -153,7 +153,6 @@
     <string name="add_container_sub">Bản sao khác của firmware đã có: ứng dụng, dữ liệu, thẻ và cài đặt riêng</string>
     <string name="container_chip">Container</string>
     <string name="container_copy_data">Sao chép cả ứng dụng và dữ liệu</string>
-    <string name="container_hint">Container dùng chung /system với bản gốc (không tốn thêm chỗ); /data bắt đầu trống nếu không sao chép. Mỗi lần chạy một cái.</string>
+    <string name="container_hint">Container là bản sao đầy đủ, tách biệt của firmware, kể cả /system: thay đổi một cái không ảnh hưởng cái kia. /data bắt đầu trống nếu không sao chép.</string>
     <string name="container_create">Tạo</string>
-    <string name="container_delete_base">Các container đang dùng firmware này: %1$s. Hãy xóa chúng trước.</string>
 </resources>

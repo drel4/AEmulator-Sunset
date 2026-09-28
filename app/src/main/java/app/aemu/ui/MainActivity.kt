@@ -190,14 +190,7 @@ fun Library(model: LibraryModel) {
         SettingsSheet(img, onDismiss = { settingsFor = null }, onSave = { s -> model.updateSettings(img, s); settingsFor = null })
     }
     deleteFor?.let { img ->
-        val kids = images.filter { it.baseId == img.id }
-        if (kids.isNotEmpty()) AlertDialog(
-            onDismissRequest = { deleteFor = null },
-            icon = { Icon(Icons.Rounded.Delete, null) },
-            title = { Text(stringResource(R.string.delete_title, img.name)) },
-            text = { Text(stringResource(R.string.container_delete_base, kids.joinToString { it.name })) },
-            confirmButton = { TextButton(onClick = { deleteFor = null }) { Text(stringResource(R.string.ok)) } },
-        ) else AlertDialog(
+AlertDialog(
             onDismissRequest = { deleteFor = null },
             icon = { Icon(Icons.Rounded.Delete, null) },
             title = { Text(stringResource(R.string.delete_title, img.name)) },

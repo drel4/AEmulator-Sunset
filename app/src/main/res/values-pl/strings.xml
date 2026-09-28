@@ -153,7 +153,6 @@
     <string name="add_container_sub">Kolejna kopia posiadanego firmware: własne aplikacje, dane, karta i ustawienia</string>
     <string name="container_chip">Kontener</string>
     <string name="container_copy_data">Skopiuj też aplikacje i dane</string>
-    <string name="container_hint">Kontener współdzieli /system z oryginałem (bez dodatkowego miejsca); /data startuje pusty, jeśli nie skopiujesz. Uruchamiaj po jednym.</string>
+    <string name="container_hint">Kontener to pełna, osobna kopia firmware razem z /system: zmiany w jednym nie wpływają na drugi. /data startuje pusty, jeśli nie skopiujesz.</string>
     <string name="container_create">Utwórz</string>
-    <string name="container_delete_base">Z tego firmware korzystają kontenery: %1$s. Najpierw je usuń.</string>
 </resources>
