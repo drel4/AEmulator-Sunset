@@ -349,3 +349,15 @@ EXPORT int sigaction(int sig, const struct bionic_sigaction *act, struct bionic_
     return 0;
 }
 
+
+/*
+ * libbacktrace (ART thread dumps on SIGQUIT, ANR traces) unwinds each thread by sending it signal 33 and
+ * waiting on a futex for the handler; under qemu every wait runs into its timeout, a dump of system_server
+ * takes minutes and the watchdogs kill the system. That request fails at once instead: dumps keep Java stacks.
+ */
+#define SYS_tgkill 268
+EXPORT int tgkill(int tgid, int tid, int sig) {
+    if (sig == 33 /* libbacktrace THREAD_SIGNAL, __SIGRTMIN+1 */) { *__errno() = 22; return -1; }
+    long r = sys3(SYS_tgkill, tgid, tid, sig);
+    return r < 0 ? fail(r) : 0;
+}
