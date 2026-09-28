@@ -45,6 +45,7 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         }
         f.parentFile?.mkdirs()
         tpl.copyTo(f, overwrite = true)
+        rootOwned(f)
         val a = PropArea.open(f)
         if (a == null) {
             log("props: area not recognized")
@@ -109,9 +110,22 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val dst = File(paths.bin, "props.$name")
         return runCatching {
             src.copyTo(dst, overwrite = true)
+            rootOwned(dst)
             PropArea.open(dst)?.use { a -> extra.forEach { (k, v) -> a.put(k, v) } }
             dst
         }.getOrNull()
+    }
+
+    /**
+     * The area is a fresh file every boot, and its inode may be one the owners table (dev, ino → uid) still
+     * maps to an app: 7.0+ libc refuses a property area not owned by root, and every process then sees no
+     * properties. A later row wins, so the file is pinned to root here.
+     */
+    private fun rootOwned(f: File) {
+        runCatching {
+            val st = android.system.Os.lstat(f.absolutePath)
+            paths.owners.appendText(String.format("%016x %016x %08x %08x\n", st.st_dev, st.st_ino, 0, 0))
+        }
     }
 
     private fun cstr(b: ByteArray, at: Int, max: Int): String {

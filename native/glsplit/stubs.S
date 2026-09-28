@@ -212,16 +212,6 @@ eglGetError:
     mov r12, r0
     pop {r0-r3, lr}
     bx r12
-    .global eglGetProcAddress
-    .type eglGetProcAddress,%function
-    .align 2
-eglGetProcAddress:
-    push {r0-r3, lr}
-    movw r0, #23
-    bl aemu_split_resolve
-    mov r12, r0
-    pop {r0-r3, lr}
-    bx r12
     .global eglGetRenderBufferANDROID
     .type eglGetRenderBufferANDROID,%function
     .align 2

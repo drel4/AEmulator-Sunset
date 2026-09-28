@@ -4,7 +4,7 @@ GL-моста /system/lib/egl/libGLES_bridge.so. Функции из SPECIAL р�
 syms = [s.strip() for s in open('symbols.txt') if s.strip()]
 SPECIAL = {'glPixelStorei', 'glTexImage2D', 'glTexSubImage2D', 'glBindBuffer', 'eglCreateContext', 'eglMakeCurrent',
            'glVertexAttribPointer', 'glEnableVertexAttribArray', 'glDisableVertexAttribArray', 'glDrawArrays', 'glDrawElements',
-           'glBindTexture', 'glEGLImageTargetTexture2DOES', 'glDeleteTextures', 'eglSwapBuffers', 'eglCreateWindowSurface'}
+           'glBindTexture', 'glEGLImageTargetTexture2DOES', 'glDeleteTextures', 'eglSwapBuffers', 'eglCreateWindowSurface', 'eglGetProcAddress'}
 # called from split.c but still exported as plain stubs
 HELPERS = {'glGenBuffers', 'glDeleteBuffers', 'glBufferData', 'glBufferSubData', 'eglCreatePbufferSurface', 'eglGetConfigAttrib', 'eglChooseConfig'}
 import re

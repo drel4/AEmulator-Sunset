@@ -200,7 +200,7 @@ class TreeFixer(
         var copied = 0
         // 7.0+ libEGL on a qemu kernel (qemu.gles=1) only tries the "emulation" driver name
         val nougat = if (img.api >= 24 && copies.any { it.second == "system/lib/egl/libGLES_bridge.so" })
-            listOf("libGLES.so" to "system/lib/egl/libGLES_emulation.so") else emptyList()
+            listOf("libGLES_split.so" to "system/lib/egl/libGLES_emulation.so") else emptyList()
         // 7.0+ without the GPU bridge: libEGL would still find the bridge by scanning egl/, so it is not there at all
         val noBridge = img.api >= 24 && !img.settings.gpu
         if (noBridge) {
@@ -383,6 +383,9 @@ class TreeFixer(
 
     private fun makeUserZeroLink() {
         if (img.api < 14) return // ICS installd creates /data/user/0 too; an absolute link points at the host /data
+        // 7.0+: vold prepares the device-encrypted per-user dirs; without it installd cannot create app DE storage
+        if (img.api >= 24) for (d in listOf("data", "user_de/0", "misc_ce/0", "misc_de/0", "system_ce/0", "system_de/0", "media/0", "misc/profiles/cur/0", "misc/profiles/ref"))
+            File(root, "data/$d").mkdirs()
         val user = File(root, "data/user").apply { mkdirs() }
         val zero = File(user, "0")
         val cur = runCatching { Os.readlink(zero.absolutePath) }.getOrNull()

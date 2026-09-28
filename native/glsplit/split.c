@@ -490,6 +490,31 @@ __attribute__((visibility("default"))) unsigned eglSwapBuffers(void *dpy, void *
     return ((SwapFn)aemu_split_resolve(IDX_eglSwapBuffers))(dpy, surface);
 }
 
+/*
+ * 7.0+ libEGL takes eglSwapBuffersWithDamageKHR / eglSetDamageRegionKHR from the driver when it offers them, and
+ * hwui then presents only through them. The bridge hands out empty stubs for both, so no app frame ever reached
+ * SurfaceFlinger (black screen): damage is ignored and the whole surface is swapped.
+ */
+static unsigned swap_with_damage(void *dpy, void *surface, const GLint *rects, GLint n) {
+    (void)rects; (void)n;
+    return eglSwapBuffers(dpy, surface);
+}
+static unsigned set_damage_region(void *dpy, void *surface, const GLint *rects, GLint n) {
+    (void)dpy; (void)surface; (void)rects; (void)n;
+    return 1;
+}
+typedef void *(*ProcFn)(const char *);
+__attribute__((visibility("default"))) void *eglGetProcAddress(const char *name) {
+    static const char *const names[] = { "eglSwapBuffersWithDamageKHR", "eglSwapBuffersWithDamageEXT", "eglSetDamageRegionKHR" };
+    static void *const fns[] = { (void *)swap_with_damage, (void *)swap_with_damage, (void *)set_damage_region };
+    for (int i = 0; name && i < 3; i++) {
+        int k = 0;
+        while (names[i][k] && name[k] == names[i][k]) k++;
+        if (!names[i][k] && !name[k]) return fns[i];
+    }
+    return ((ProcFn)aemu_split_resolve(IDX_eglGetProcAddress))(name);
+}
+
 /* ------------------------------------------------------------ extra SurfaceFlinger windows (4.3+)
  *
  * The bridge treats every window surface SurfaceFlinger creates as "the screen" and moves the phone's

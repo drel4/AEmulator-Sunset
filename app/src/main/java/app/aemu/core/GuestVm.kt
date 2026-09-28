@@ -275,7 +275,10 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         vold.serve()
         // у vold производителей бывают дополнительные сокеты (Samsung: usbstorage, enc_report) — отвечаем «ладно»
         runCatching {
-            val rc = InitPlan.parse(paths.root.listFiles()?.filter { it.isFile && it.name.endsWith(".rc") } ?: emptyList())
+            // 7.0+ keeps vold (with its cryptd socket) in /system/etc/init
+            val rcFiles = listOf(paths.root, File(paths.root, "system/etc/init"))
+                .flatMap { d -> d.listFiles()?.filter { it.isFile && it.name.endsWith(".rc") } ?: emptyList() }
+            val rc = InitPlan.parse(rcFiles)
             rc.services["vold"]?.sockets?.keys?.filter { it != "vold" }?.forEach { name ->
                 VoldStub(paths, img.sdcardPath, ::log, name).also { it.serve(); extraStubs.add(it) }
             }

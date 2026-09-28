@@ -249,6 +249,51 @@ static int oom_open(const char *path) {
     return (int)fd;
 }
 
+/*
+ * qemu answers /proc/self/cmdline from the command line the process was started with, but zygote children rename
+ * themselves by rewriting their argument block (Process.setArgV0). Google Play services check that name ("must be
+ * used only in persistent process") and crash. The block's address is taken at load time (it sits right before
+ * environ on the initial stack) and its current text is served through a pipe.
+ */
+static char *g_argv0;
+__attribute__((constructor)) static void find_argv(void) {
+    char **e = environ;
+    if (!e || e[-1]) return;
+    long n = 0;
+    char **a = e - 2;
+    /* walk back over argv[] to the argc word */
+    while (n < 64 && (unsigned long)a[0] > 4096) { a--; n++; }
+    if (n > 0 && (long)a[0] == n) g_argv0 = a[1];
+}
+#define SYS_getpid 20
+#define SYS_pipe2 359
+static int cmdline_open(const char *path) {
+    if (!g_argv0) return -1;
+    static const char P[] = "/proc/";
+    int i = 0;
+    while (P[i] && path[i] == P[i]) i++;
+    if (P[i]) return -1;
+    const char *who = path + i;
+    int n = 0;
+    if (who[0] == 's' && who[1] == 'e' && who[2] == 'l' && who[3] == 'f') n = 4;
+    else {
+        long pid = 0;
+        while (who[n] >= '0' && who[n] <= '9' && n < 10) pid = pid * 10 + (who[n++] - '0');
+        if (!n || pid != sys3(SYS_getpid, 0, 0, 0)) return -1;
+    }
+    static const char C[] = "/cmdline";
+    int k = 0;
+    while (C[k] && who[n + k] == C[k]) k++;
+    if (C[k] || who[n + k]) return -1;
+    int fds[2];
+    if (sys3(SYS_pipe2, (long)fds, 02000000 /* O_CLOEXEC */, 0) < 0) return -1;
+    long len = 0;
+    while (len < 1024 && g_argv0[len]) len++;
+    sys3(SYS_write, fds[1], (long)g_argv0, len + 1);
+    sys3(SYS_close, fds[1], 0, 0);
+    return fds[0];
+}
+
 EXPORT int open(const char *path, int flags, ...) {
     char b[128];
     int mode = 0;
@@ -257,6 +302,10 @@ EXPORT int open(const char *path, int flags, ...) {
     }
     if (path && (flags & 3) && path[0] == '/' && path[1] == 'p') {
         int fd = oom_open(path);
+        if (fd >= 0) return fd;
+    }
+    if (path && !(flags & 3) && path[0] == '/' && path[1] == 'p') {
+        int fd = cmdline_open(path);
         if (fd >= 0) return fd;
     }
     long r = sys3(SYS_open, (long)qt_redirect(path, b, sizeof(b)), flags | 0400000 /* O_LARGEFILE */, mode);
@@ -501,4 +550,63 @@ EXPORT int getsockname(int fd, void *addr, unsigned *len) {
         if (m != n) { u->path[m] = 0; *len = 2 + m + 1; }
     }
     return 0;
+}
+
+/* Extended attributes are unavailable here (ENOSYS): 7.0+ installd gives up on every app dir when restorecon cannot
+ * read the SELinux label, and never creates the /data/user_de storage. Label reads give a fixed label, writes succeed.
+ * getxattr passes through except for user.default, before this library is relocated. */
+static long sys5(long n, long a, long b, long c, long d, long e);
+/* 7.0+ installd migrates app data between /data/user_de and /data/data on every boot unless the target dir carries
+ * user.default, deleting one copy each time: report that marker as present. Everything else is the plain syscall
+ * (mapping other errors broke property reads in 7.x processes). */
+EXPORT long getxattr(const char *p, const char *n, void *v, unsigned long s) {
+    const char *want = "user.default";
+    int k = 0;
+    while (n && want[k] && n[k] == want[k]) k++;
+    if (n && !want[k] && !n[k]) return 0;
+    /* UserManager reads user.serial on the user dirs; any error but ENODATA ("not set yet, write it") makes
+     * system_server destroy all data of user 0 */
+    const char *ser = "user.serial";
+    k = 0;
+    while (n && ser[k] && n[k] == ser[k]) k++;
+    if (n && !ser[k] && !n[k]) return fail(-61 /* ENODATA */);
+    long r = sys4(229, (long)p, (long)n, (long)v, (long)s);
+    return r >= 0 ? r : fail(r);
+}
+EXPORT long lgetxattr(const char *p, const char *n, void *v, unsigned long s) {
+    long r = sys4(230, (long)p, (long)n, (long)v, (long)s);
+    if (r >= 0 || (r != -38 /* ENOSYS */ && r != -95 /* EOPNOTSUPP */)) return r >= 0 ? r : fail(r);
+    /* restorecon needs some current label to compare with; any mismatch is then "fixed" by lsetxattr below */
+    const char *sel = "security.selinux", *ctx = "u:object_r:system_data_file:s0";
+    for (int k = 0; sel[k]; k++) if (!n || n[k] != sel[k]) return fail(-61 /* ENODATA */);
+    unsigned long m = 0;
+    while (ctx[m]) m++;
+    m++;
+    if (!s) return (long)m;
+    if (s < m) return fail(-34 /* ERANGE */);
+    for (unsigned long k = 0; k < m; k++) ((char *)v)[k] = ctx[k];
+    return (long)m;
+}
+/* installd tags app dirs (user.default, user.inode_cache); libc may reach this through fsetxattr, so no errno
+ * is touched on the ENOSYS path */
+EXPORT int setxattr(const char *p, const char *n, const void *v, unsigned long s, int fl) {
+    long r = sys5(226, (long)p, (long)n, (long)v, (long)s, fl);
+    return r >= 0 || r == -38 || r == -95 ? 0 : fail(r);
+}
+EXPORT int lsetxattr(const char *p, const char *n, const void *v, unsigned long s, int fl) {
+    long r = sys5(227, (long)p, (long)n, (long)v, (long)s, fl);
+    return r >= 0 || r == -38 || r == -95 ? 0 : fail(r);
+}
+__attribute__((naked, noinline)) static long sys5(long n, long a, long b, long c, long d, long e) {
+    __asm__ volatile(
+        "push {r4, r7}; mov r7, r0; mov r0, r1; mov r1, r2; mov r2, r3; ldr r3, [sp, #8]; ldr r4, [sp, #12]; svc #0; pop {r4, r7}; bx lr");
+}
+
+/* The *_ALARM clocks need CAP_WAKE_ALARM, which an app never has: 7.0+ AlarmManagerService then falls back to a
+ * handler that throws on listener alarms and kills system_server. The plain clocks behave the same without wakeups. */
+EXPORT int timerfd_create(int clock, int flags) {
+    if (clock == 8 /* REALTIME_ALARM */) clock = 0 /* REALTIME */;
+    else if (clock == 9 /* BOOTTIME_ALARM */) clock = 7 /* BOOTTIME */;
+    long r = sys3(350 /* timerfd_create */, clock, flags, 0);
+    return r < 0 ? fail(r) : (int)r;
 }
