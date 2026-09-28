@@ -139,4 +139,9 @@
     <string name="fw_folder_import">وارد کردن</string>
     <string name="m_reboot_recovery">راه‌اندازی مجدد به ریکاوری</string>
     <string name="m_reboot_system">راه‌اندازی مجدد به سیستم</string>
+    <string name="vs_recovery">ریکاوری</string>
+    <string name="vs_recovery_none">نصب نشده</string>
+    <string name="vs_recovery_sub">از منوی ⋮ به آن راه‌اندازی کنید. می‌توان recovery.img از TWRP، OrangeFox یا CWM نصب کرد.</string>
+    <string name="vs_recovery_install">نصب…</string>
+    <string name="vs_recovery_failed">این ایمیج ریکاوری نیست</string>
 </resources>

@@ -139,4 +139,9 @@
     <string name="fw_folder_import">Importuj</string>
     <string name="m_reboot_recovery">Uruchom ponownie w recovery</string>
     <string name="m_reboot_system">Uruchom ponownie system</string>
+    <string name="vs_recovery">Recovery</string>
+    <string name="vs_recovery_none">Nie zainstalowano</string>
+    <string name="vs_recovery_sub">Uruchom je z menu ⋮. Można wgrać recovery.img z TWRP, OrangeFox lub CWM.</string>
+    <string name="vs_recovery_install">Zainstaluj…</string>
+    <string name="vs_recovery_failed">To nie jest obraz recovery</string>
 </resources>

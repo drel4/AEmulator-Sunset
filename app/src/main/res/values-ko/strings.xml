@@ -139,4 +139,9 @@
     <string name="fw_folder_import">가져오기</string>
     <string name="m_reboot_recovery">복구 모드로 재부팅</string>
     <string name="m_reboot_system">시스템으로 재부팅</string>
+    <string name="vs_recovery">복구</string>
+    <string name="vs_recovery_none">설치 안 됨</string>
+    <string name="vs_recovery_sub">⋮ 메뉴에서 재부팅하세요. TWRP, OrangeFox, CWM recovery.img로 바꿀 수 있습니다.</string>
+    <string name="vs_recovery_install">설치…</string>
+    <string name="vs_recovery_failed">복구 이미지가 아닙니다</string>
 </resources>

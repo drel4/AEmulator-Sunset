@@ -139,4 +139,9 @@
     <string name="fw_folder_import">استيراد</string>
     <string name="m_reboot_recovery">إعادة التشغيل إلى الاسترداد</string>
     <string name="m_reboot_system">إعادة التشغيل إلى النظام</string>
+    <string name="vs_recovery">الاسترداد</string>
+    <string name="vs_recovery_none">غير مثبت</string>
+    <string name="vs_recovery_sub">أعد التشغيل إليه من القائمة ⋮. يمكن تثبيت recovery.img من TWRP أو OrangeFox أو CWM.</string>
+    <string name="vs_recovery_install">تثبيت…</string>
+    <string name="vs_recovery_failed">ليست صورة استرداد</string>
 </resources>

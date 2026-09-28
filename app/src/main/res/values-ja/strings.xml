@@ -139,4 +139,9 @@
     <string name="fw_folder_import">インポート</string>
     <string name="m_reboot_recovery">リカバリーで再起動</string>
     <string name="m_reboot_system">システムで再起動</string>
+    <string name="vs_recovery">リカバリー</string>
+    <string name="vs_recovery_none">未インストール</string>
+    <string name="vs_recovery_sub">⋮ メニューから再起動できます。TWRP・OrangeFox・CWM の recovery.img に置き換えられます。</string>
+    <string name="vs_recovery_install">インストール…</string>
+    <string name="vs_recovery_failed">リカバリーイメージではありません</string>
 </resources>

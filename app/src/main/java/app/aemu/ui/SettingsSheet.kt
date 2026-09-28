@@ -130,6 +130,9 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 
             Spacer(Modifier.height(8.dp))
+            RecoverySection(img)
+
+            Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.vs_controls), style = MaterialTheme.typography.titleMedium)
             Toggle(stringResource(R.string.vs_nav), stringResource(R.string.vs_nav_sub), s.showNavBar) { s = s.copy(showNavBar = it) }
             Toggle(stringResource(R.string.vs_awake), stringResource(R.string.vs_awake_sub), s.keepScreenOn) { s = s.copy(keepScreenOn = it) }
@@ -159,4 +162,53 @@ private fun NumField(label: String, value: Int, modifier: Modifier, set: (Int) -
     OutlinedTextField(value = text, onValueChange = { v -> text = v.filter(Char::isDigit).take(4); text.toIntOrNull()?.let(set) },
         label = { Text(label) }, singleLine = true, modifier = modifier,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+}
+
+/** Recovery of this firmware: stock one from the import, or a custom recovery.img (TWRP, OrangeFox, CWM…). */
+@Composable
+private fun RecoverySection(img: GuestImage) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val paths = remember(img.id) { app.aemu.core.VmPaths(ctx, img.id) }
+    var status by remember { mutableStateOf(recoveryStatus(paths)) }
+    var busy by remember { mutableStateOf(false) }
+    val failed = stringResource(R.string.vs_recovery_failed)
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true
+        Thread {
+            val ok = runCatching {
+                val data = ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                app.aemu.core.RecoveryImage.install(paths, data) {}
+            }.getOrDefault(false)
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                busy = false
+                status = recoveryStatus(paths)
+                if (!ok) android.widget.Toast.makeText(ctx, failed, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+    Text(stringResource(R.string.vs_recovery), style = MaterialTheme.typography.titleMedium)
+    ListItem(
+        headlineContent = { Text(status ?: stringResource(R.string.vs_recovery_none)) },
+        supportingContent = { Text(stringResource(R.string.vs_recovery_sub)) },
+        trailingContent = {
+            TextButton(enabled = !busy, onClick = { pick.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.vs_recovery_install)) }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+private fun recoveryStatus(paths: app.aemu.core.VmPaths): String? {
+    if (!app.aemu.core.RecoveryImage.installed(paths)) return null
+    val dir = app.aemu.core.RecoveryImage.dir(paths)
+    val prop = runCatching { java.io.File(dir, "default.prop").readText() }.getOrDefault("")
+    val twrp = Regex("""ro\.twrp\.version=(\S+)""").find(prop)?.groupValues?.get(1)
+    return when {
+        twrp != null -> "TWRP $twrp"
+        java.io.File(dir, "twres").isDirectory -> "TWRP"
+        java.io.File(dir, "sbin/orangefox.sh").exists() || prop.contains("orangefox", true) -> "OrangeFox"
+        prop.contains("cwm", true) || java.io.File(dir, "res/images/icon_clockwork.png").exists() -> "ClockworkMod"
+        else -> "Stock recovery"
+    }
 }

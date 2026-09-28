@@ -139,4 +139,9 @@
     <string name="fw_folder_import">Импорт</string>
     <string name="m_reboot_recovery">Перезагрузка в recovery</string>
     <string name="m_reboot_system">Перезагрузка в систему</string>
+    <string name="vs_recovery">Recovery</string>
+    <string name="vs_recovery_none">Не установлен</string>
+    <string name="vs_recovery_sub">Перезагрузка в него — в меню ⋮. Можно поставить recovery.img от TWRP, OrangeFox или CWM.</string>
+    <string name="vs_recovery_install">Установить…</string>
+    <string name="vs_recovery_failed">Это не образ recovery</string>
 </resources>

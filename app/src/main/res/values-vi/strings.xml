@@ -139,4 +139,9 @@
     <string name="fw_folder_import">Nhập</string>
     <string name="m_reboot_recovery">Khởi động lại vào recovery</string>
     <string name="m_reboot_system">Khởi động lại vào hệ thống</string>
+    <string name="vs_recovery">Recovery</string>
+    <string name="vs_recovery_none">Chưa cài</string>
+    <string name="vs_recovery_sub">Khởi động lại vào từ menu ⋮. Có thể cài recovery.img của TWRP, OrangeFox hoặc CWM.</string>
+    <string name="vs_recovery_install">Cài đặt…</string>
+    <string name="vs_recovery_failed">Không phải ảnh recovery</string>
 </resources>

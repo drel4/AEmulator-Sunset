@@ -139,4 +139,9 @@
     <string name="fw_folder_import">导入</string>
     <string name="m_reboot_recovery">重启到 Recovery</string>
     <string name="m_reboot_system">重启到系统</string>
+    <string name="vs_recovery">Recovery</string>
+    <string name="vs_recovery_none">未安装</string>
+    <string name="vs_recovery_sub">可从 ⋮ 菜单重启进入。可安装 TWRP、OrangeFox 或 CWM 的 recovery.img。</string>
+    <string name="vs_recovery_install">安装…</string>
+    <string name="vs_recovery_failed">不是 recovery 镜像</string>
 </resources>

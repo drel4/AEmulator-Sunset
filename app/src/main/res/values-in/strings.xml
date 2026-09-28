@@ -139,4 +139,9 @@
     <string name="fw_folder_import">Impor</string>
     <string name="m_reboot_recovery">Mulai ulang ke recovery</string>
     <string name="m_reboot_system">Mulai ulang ke sistem</string>
+    <string name="vs_recovery">Recovery</string>
+    <string name="vs_recovery_none">Belum terpasang</string>
+    <string name="vs_recovery_sub">Mulai ulang ke sana dari menu ⋮. recovery.img TWRP, OrangeFox, atau CWM bisa dipasang.</string>
+    <string name="vs_recovery_install">Pasang…</string>
+    <string name="vs_recovery_failed">Bukan image recovery</string>
 </resources>
