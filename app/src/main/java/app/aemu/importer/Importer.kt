@@ -132,6 +132,8 @@ class Importer(
     }
 
     private var zipChannel: FileChannel? = null
+    /** partition images spilled out of a nested zip, imported only after that zip's temp file is gone (disk peak) */
+    private var deferred: MutableList<Pair<File, String>>? = null
 
     private fun importZip(ch: FileChannel, name: String, depth: Int) {
         val zip = ZipFile.builder().setSeekableByteChannel(ch).get()
@@ -173,9 +175,7 @@ class Importer(
                 base.matches(Regex("(?i)vendor(\\.ext4)?\\.img")) ->
                     withEntrySource(zip, e) { runCatching { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "vendor") } }
                 base.lowercase().endsWith(".zip") && (base.startsWith("image-") || depth == 0 && e.size > 50_000_000) -> {
-                    val t = spillEntry(zip, e)
-                    FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
-                    t.delete()
+                    handleNestedZip(spillEntry(zip, e), base, depth)
                 }
                 base.matches(Regex("(?i).*\\.(tar|tar\\.md5|md5|tgz|tar\\.gz)")) 
                     // Odin: AP/PDA/CODE — система, BL/KERNEL/HOME — ядро с рамдиском; модем и CSC не нужны
@@ -218,8 +218,30 @@ class Importer(
             if (e.dataOffset > 0) { block(ChannelSource(ch, e.dataOffset, e.size)); return }
         }
         val t = spillEntry(zip, e)
+        deferred?.let { d -> d.add(t to e.name); return }
         FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> block(ChannelSource(c)) }
         t.delete()
+    }
+
+    /** a nested zip: its images are copied out first, the zip deleted, then the images unpacked */
+    private fun handleNestedZip(t: File, base: String, depth: Int) {
+        val outer = deferred
+        val mine = ArrayList<Pair<File, String>>()
+        deferred = mine
+        try {
+            FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
+        } finally { deferred = outer; t.delete() }
+        try {
+            for ((f, entry) in mine) {
+                val part = if (entry.substringAfterLast('/').lowercase().startsWith("vendor")) "vendor" else "system"
+                FileChannel.open(f.toPath(), StandardOpenOption.READ).use { c ->
+                    val src = ChannelSource(c)
+                    val img = if (SparseSource.probe(src)) SparseSource(listOf(src)) else src
+                    if (part == "vendor") runCatching { importImage(img, part) } else importImage(img, part)
+                }
+                f.delete()
+            }
+        } finally { mine.forEach { it.first.delete() } }
     }
 
     private fun spillEntry(zip: ZipFile, e: ZipArchiveEntry): File = zip.getInputStream(e).use { spill(it, e.name.substringAfterLast('/')) }
@@ -255,9 +277,7 @@ class Importer(
                 base.matches(Regex("(?i).*\\.(tar|tar\\.md5)")) && e.isFile && e.size > 20_000_000 -> importTarStream(tar.nonClosing(), base, depth + 1)
                 // factory-образы Google: tgz → image-*.zip → system.img/boot.img; Samsung: zip внутри tar
                 base.lowercase().endsWith(".zip") && e.isFile && e.size > 20_000_000 -> {
-                    val t = spill(tar.nonClosing(), base)
-                    FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
-                    t.delete()
+                    handleNestedZip(spill(tar.nonClosing(), base), base, depth)
                 }
                 n.matches(Regex("^(system|data|dev|sbin|vendor|etc)(/.*)?$")) || n.matches(Regex("^[^/]+\\.rc$")) || n == "default.prop" || n.startsWith("dhd.") -> {
                     // файлы корня (рамдиск, dhd.*) берём, только если архив — целое дерево rootfs
