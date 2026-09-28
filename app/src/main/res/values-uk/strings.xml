@@ -158,4 +158,6 @@
     <string name="section_systems">Системи</string>
     <string name="section_containers">Контейнери</string>
     <string name="container_of">На основі: %1$s</string>
+    <string name="vs_fulldex">Повна компіляція застосунків</string>
+    <string name="vs_fulldex_sub">ART перекладає застосунки в машинний код: перший запуск і встановлення довші, застосунки працюють швидше</string>
 </resources>

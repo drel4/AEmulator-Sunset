@@ -158,4 +158,6 @@
     <string name="section_systems">Sistem</string>
     <string name="section_containers">Kontainer</string>
     <string name="container_of">Berdasarkan: %1$s</string>
+    <string name="vs_fulldex">Kompilasi aplikasi penuh</string>
+    <string name="vs_fulldex_sub">ART mengompilasi aplikasi ke kode mesin: boot pertama dan instalasi jauh lebih lama, aplikasi lebih cepat</string>
 </resources>

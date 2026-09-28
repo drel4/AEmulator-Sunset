@@ -158,4 +158,6 @@
     <string name="section_systems">Sistemas</string>
     <string name="section_containers">Contêineres</string>
     <string name="container_of">Baseado em: %1$s</string>
+    <string name="vs_fulldex">Compilação completa de apps</string>
+    <string name="vs_fulldex_sub">O ART compila os apps em código de máquina: primeiro boot e instalações bem mais lentos, apps mais rápidos</string>
 </resources>

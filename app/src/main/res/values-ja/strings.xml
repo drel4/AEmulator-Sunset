@@ -158,4 +158,6 @@
     <string name="section_systems">システム</string>
     <string name="section_containers">コンテナ</string>
     <string name="container_of">ベース：%1$s</string>
+    <string name="vs_fulldex">アプリの完全コンパイル</string>
+    <string name="vs_fulldex_sub">ART がアプリを機械語にコンパイルします。初回起動とインストールはかなり遅くなり、アプリは速くなります</string>
 </resources>

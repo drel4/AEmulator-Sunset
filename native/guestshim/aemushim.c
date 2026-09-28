@@ -302,3 +302,50 @@ EXPORT int sigsuspend(const unsigned long *mask) {
     *__errno() = EINTR;
     return -1;
 }
+
+/*
+ * Fault handlers that resume at a Thumb function (ART's implicit null / stack-overflow / suspend checks:
+ * the SIGSEGV handler sets uc->arm_pc = art_quick_throw_null_pointer_exception, an address with bit 0 set).
+ * A real CPU ignores PC bit 0 on the exception return, qemu keeps it and aborts translating an odd Thumb pc.
+ * The fault signals' handlers are wrapped: after the guest's handler returns, an odd pc becomes even with the
+ * Thumb bit set in cpsr. Everything else about sigaction stays as the kernel does it.
+ */
+#define SYS_rt_sigaction 174
+#define SA_SIGINFO_ 4
+#define SA_RESTORER_ 0x04000000
+struct bionic_sigaction { void *handler; unsigned long mask; int flags; void (*restorer)(void); };
+struct kernel_sigaction { void *handler; unsigned long flags; void (*restorer)(void); unsigned long mask[2]; };
+static struct bionic_sigaction guest_act[32];
+
+static int wrapped(int sig) { return sig == 4 /* ILL */ || sig == 5 /* TRAP */ || sig == 7 /* BUS */ || sig == 8 /* FPE */ || sig == 11 /* SEGV */; }
+
+static void fault_trampoline(int sig, void *info, void *uc) {
+    struct bionic_sigaction *a = &guest_act[sig & 31];
+    if (a->flags & SA_SIGINFO_) ((void (*)(int, void *, void *))a->handler)(sig, info, uc);
+    else ((void (*)(int))a->handler)(sig);
+    /* ucontext: uc_flags, uc_link, uc_stack(3) | trap_no, error_code, oldmask, r0..r10, fp, ip, sp, lr, pc, cpsr */
+    ulong *pc = (ulong *)((char *)uc + 20 + 4 * 18);
+    ulong *cpsr = pc + 1;
+    if (*pc & 1) { *pc &= ~1UL; *cpsr |= 0x20; }
+}
+
+EXPORT int sigaction(int sig, const struct bionic_sigaction *act, struct bionic_sigaction *old) {
+    struct kernel_sigaction k, ko;
+    struct kernel_sigaction *kp = 0;
+    int wrap = wrapped(sig) && act && act->handler != (void *)0 && act->handler != (void *)1;
+    if (act) {
+        k.handler = act->handler; k.flags = (unsigned long)act->flags; k.restorer = act->restorer;
+        k.mask[0] = act->mask; k.mask[1] = 0;
+        if (wrap) { k.handler = (void *)fault_trampoline; k.flags |= SA_SIGINFO_; }
+        kp = &k;
+    }
+    long r = sys4(SYS_rt_sigaction, sig, (long)kp, (long)&ko, 8);
+    if (r < 0) return fail(r);
+    if (old) {
+        if (ko.handler == (void *)fault_trampoline) *old = guest_act[sig & 31];
+        else { old->handler = ko.handler; old->mask = ko.mask[0]; old->flags = (int)ko.flags; old->restorer = ko.restorer; }
+    }
+    if (wrap) guest_act[sig & 31] = *act;
+    return 0;
+}
+

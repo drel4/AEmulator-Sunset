@@ -69,6 +69,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     var onFrame: (() -> Unit)? = null
     val frames = FrameBell(paths, ::log) { onFrame?.invoke() }
     private val events = EventsSink(paths, ::log)
+    private val logd = LogdSink(paths, ::log)
     @Volatile private var lmk: GuestLmk? = null
     val net = NetProxy(ctx, paths, ::log)
     val runner by lazy { GuestRunner(paths, img) }
@@ -220,6 +221,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         // зигота 4.4+ заранее открывает EGL; дети после fork наследуют соединение моста, и гостевая
         // библиотека моста уходит в бесконечную рекурсию (падение по стеку в каждом приложении)
         if (img.api >= 19) overrides["ro.zygote.disable_gl_preload"] = "1"
+        // ART first boot compiles every app with dex2oat under qemu (minutes, single-threaded): by default only
+        // skip it (verify-none: ART verifies classes lazily when an app runs) and use several threads; "full compilation" in the settings keeps machine code
+        if (img.api >= 21) {
+            if (!s.fullDexopt) overrides["dalvik.vm.dex2oat-filter"] = "verify-none"
+            overrides["dalvik.vm.dex2oat-flags"] = "-j" + Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
+        }
         // порты MIUI правят framework на smali так, что Dalvik-верификатор отвергает классы ядра
         // (зигота падает на VerifyError) — на телефонах они живут с выключенной проверкой байткода
         if (img.skin.contains("MIUI", true) && img.runtime == "dalvik") overrides["dalvik.vm.dexopt-flags"] = "v=n,o=a,m=y"
@@ -276,6 +283,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             log("audio: MediaTek, emulator HAL via /dev/aemu_pcm")
         } else { audio.makeFifo(); audio.start() }
         events.start()
+        if (img.api >= 21) logd.start()
         lmk = GuestLmk(paths.root, s.lowRam, ::log, s.ramMb).also { it.start() }
         val netCfg = if (s.netProxy) net.start() else GuestRunner.NetConfig()
         runner.sdcardHost = sd
@@ -588,7 +596,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         log("stopping system")
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
-        adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop()
+        adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop(); logd.stop()
         extraStubs.forEach { it.stop() }; extraStubs.clear()
         lmk?.stop(); lmk = null
         Keeper.release(ctx)

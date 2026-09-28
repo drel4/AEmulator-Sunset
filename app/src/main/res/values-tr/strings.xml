@@ -158,4 +158,6 @@
     <string name="section_systems">Sistemler</string>
     <string name="section_containers">Kapsayıcılar</string>
     <string name="container_of">Temel: %1$s</string>
+    <string name="vs_fulldex">Uygulamaların tam derlenmesi</string>
+    <string name="vs_fulldex_sub">ART uygulamaları makine koduna derler: ilk açılış ve kurulumlar çok daha uzun sürer, uygulamalar daha hızlı çalışır</string>
 </resources>

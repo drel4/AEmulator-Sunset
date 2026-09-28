@@ -158,4 +158,6 @@
     <string name="section_systems">시스템</string>
     <string name="section_containers">컨테이너</string>
     <string name="container_of">기반: %1$s</string>
+    <string name="vs_fulldex">앱 전체 컴파일</string>
+    <string name="vs_fulldex_sub">ART가 앱을 기계어로 컴파일합니다. 첫 부팅과 설치는 훨씬 느리지만 앱은 더 빠릅니다</string>
 </resources>

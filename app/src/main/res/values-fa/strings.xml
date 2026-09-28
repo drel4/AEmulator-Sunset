@@ -158,4 +158,6 @@
     <string name="section_systems">سیستم‌ها</string>
     <string name="section_containers">کانتینرها</string>
     <string name="container_of">بر پایه: %1$s</string>
+    <string name="vs_fulldex">کامپایل کامل برنامه‌ها</string>
+    <string name="vs_fulldex_sub">ART برنامه‌ها را به کد ماشین کامپایل می‌کند: اولین راه‌اندازی و نصب بسیار کندتر، اجرای برنامه‌ها سریع‌تر</string>
 </resources>

@@ -158,4 +158,6 @@
     <string name="section_systems">सिस्टम</string>
     <string name="section_containers">कंटेनर</string>
     <string name="container_of">आधार: %1$s</string>
+    <string name="vs_fulldex">ऐप्स का पूर्ण कंपाइलेशन</string>
+    <string name="vs_fulldex_sub">ART ऐप्स को मशीन कोड में बदलता है: पहला बूट और इंस्टॉल बहुत धीमे, ऐप्स तेज़</string>
 </resources>

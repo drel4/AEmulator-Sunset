@@ -14,6 +14,8 @@ data class VmSettings(
     val hwui: Boolean = true,
     /** JIT Dalvik; без него стабильнее, но медленнее */
     val jit: Boolean = true,
+    /** ART (5.0+): compile apps fully to machine code at install/first boot; off = interpret-only, fast first boot */
+    val fullDexopt: Boolean = false,
     /** частота развёртки гостя, Гц */
     val fbHz: Int = 60,
     /** касаний в секунду, которые шлём гостю */
@@ -38,7 +40,7 @@ data class VmSettings(
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("width", width).put("height", height).put("density", density)
-        .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fbHz", fbHz)
+        .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fullDexopt", fullDexopt).put("fbHz", fbHz)
         .put("touchHz", touchHz).put("netProxy", netProxy).put("lowRam", lowRam)
         .put("showFrame", showFrame).put("showNavBar", showNavBar)
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
@@ -66,6 +68,7 @@ data class VmSettings(
                 gpu = o.optBoolean("gpu", d.gpu),
                 hwui = o.optBoolean("hwui", d.hwui),
                 jit = o.optBoolean("jit", d.jit),
+                fullDexopt = o.optBoolean("fullDexopt", d.fullDexopt),
                 fbHz = o.optInt("fbHz", d.fbHz),
                 touchHz = o.optInt("touchHz", d.touchHz),
                 netProxy = o.optBoolean("netProxy", d.netProxy),

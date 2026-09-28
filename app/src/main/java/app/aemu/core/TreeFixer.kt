@@ -409,6 +409,7 @@ class TreeFixer(
             "usb/type" to "USB", "usb/online" to "0",
         )
         for ((rel, v) in bat) File(base, rel).let { if (!it.isFile) { it.parentFile?.mkdirs(); it.writeText(v + "\n") } }
+        healthdRelativeSysfs(base)
         val power = File(root, "sys/power").apply { mkdirs() }
         for (n in listOf("state", "wake_lock", "wake_unlock", "autosleep")) File(power, n).let { if (!it.isFile) it.createNewFile(); it.setWritable(true, false) }
         // узлы питания, которые открывает libhardware_legacy именно этой прошивки (Samsung: dvfslock_ctrl…):
@@ -660,6 +661,31 @@ class TreeFixer(
             }
         }
         if (changed) runCatching { f.writeText(xml); log("setup wizard disabled: ${targets.joinToString()}") }
+    }
+
+    /**
+     * Static healthd (5.0+) checks the battery files with faccessat, which the stand's qemu does not map into the
+     * guest root: it tests the phone's real /sys and finds no battery. Its path constant becomes the relative
+     * "sys/class/power_supply" (resolved from the services' working directory, run/, where sys links to root/sys).
+     */
+    private fun healthdRelativeSysfs(base: File) {
+        if (img.api < 21) return
+        runCatching {
+            val link = File(paths.bin, "sys")
+            paths.bin.mkdirs()
+            if (!isLink(link)) { wipe(link); Os.symlink(File(root, "sys").absolutePath, link.path) }
+            val hd = File(root, "sbin/healthd").takeIf { it.isFile } ?: return
+            val d = hd.readBytes()
+            val from = "/sys/class/power_supply".toByteArray()
+            val to = "sys/class/power_supply".toByteArray() + 0
+            var n = 0
+            var i = 0
+            while (i <= d.size - from.size) {
+                if (d[i] == from[0] && (0 until from.size).all { d[i + it] == from[it] }) { System.arraycopy(to, 0, d, i, to.size); n++; i += from.size } else i++
+            }
+            if (n > 0) { hd.writeBytes(d); log("healthd: battery sysfs path made relative ($n)") }
+        }.onFailure { log("healthd patch failed: ${it.message}") }
+        if (!base.isDirectory) log("no fake power_supply")
     }
 
     private fun isLink(f: File) = runCatching { OsConstants.S_ISLNK(Os.lstat(f.absolutePath).st_mode) }.getOrDefault(false)

@@ -158,4 +158,6 @@
     <string name="section_systems">Systemy</string>
     <string name="section_containers">Kontenery</string>
     <string name="container_of">Na bazie: %1$s</string>
+    <string name="vs_fulldex">Pełna kompilacja aplikacji</string>
+    <string name="vs_fulldex_sub">ART kompiluje aplikacje do kodu maszynowego: pierwszy start i instalacje trwają dłużej, aplikacje działają szybciej</string>
 </resources>

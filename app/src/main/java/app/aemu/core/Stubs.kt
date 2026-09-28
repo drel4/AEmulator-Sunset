@@ -448,3 +448,42 @@ class EventsSink(paths: VmPaths, private val log: (String) -> Unit) {
 
     fun stop() { runCatching { raf?.close() }; raf = null }
 }
+
+/**
+ * logd (Android 5+): liblog sends every record as a datagram to /dev/socket/logdw instead of writing the /dev/log files.
+ * Without a receiver all guest logging is lost. The host binds that socket and appends each record to
+ * dev/log/<buffer> in the same "[prio][tag]\0[msg]\0" form older guests write, so GuestLog reads both alike.
+ * Datagram: log_id:u8, tid:u16, realtime:8 bytes, then the payload (prio, tag\0, msg\0); events are dropped.
+ */
+class LogdSink(paths: VmPaths, private val log: (String) -> Unit) {
+    private val sock = File(paths.root, "dev/socket/logdw")
+    private val dir = File(paths.root, "dev/log")
+    @Volatile private var s: android.net.LocalSocket? = null
+
+    fun start() {
+        runCatching {
+            sock.parentFile?.mkdirs(); sock.delete()
+            val ls = android.net.LocalSocket(android.net.LocalSocket.SOCKET_DGRAM)
+            ls.bind(android.net.LocalSocketAddress(sock.absolutePath, android.net.LocalSocketAddress.Namespace.FILESYSTEM))
+            sock.setWritable(true, false)
+            s = ls
+            val outs = HashMap<Int, java.io.FileOutputStream>()
+            Thread({
+                val buf = ByteArray(5 * 1024 + 64)
+                val inp = ls.inputStream
+                while (true) {
+                    val n = runCatching { inp.read(buf) }.getOrDefault(-1)
+                    if (n < 0) break
+                    if (n <= 12) continue
+                    val id = buf[0].toInt() and 0xff
+                    val name = when (id) { 0 -> "main"; 1 -> "radio"; 3 -> "system"; 4 -> "main"; else -> continue }
+                    val o = outs.getOrPut(id) { java.io.FileOutputStream(File(dir, name), true) }
+                    runCatching { o.write(buf, 11, n - 11); if (buf[n - 1].toInt() != 0) o.write(0) }
+                }
+                outs.values.forEach { runCatching { it.close() } }
+            }, "aemu-logd").apply { isDaemon = true; start() }
+        }.onFailure { log("logd: socket failed: ${it.message}") }
+    }
+
+    fun stop() { runCatching { s?.close() }; s = null; sock.delete() }
+}

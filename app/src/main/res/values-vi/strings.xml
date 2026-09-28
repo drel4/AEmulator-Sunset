@@ -158,4 +158,6 @@
     <string name="section_systems">Hệ thống</string>
     <string name="section_containers">Container</string>
     <string name="container_of">Dựa trên: %1$s</string>
+    <string name="vs_fulldex">Biên dịch ứng dụng đầy đủ</string>
+    <string name="vs_fulldex_sub">ART biên dịch ứng dụng sang mã máy: lần khởi động đầu và cài đặt lâu hơn nhiều, ứng dụng chạy nhanh hơn</string>
 </resources>
