@@ -147,4 +147,13 @@
     <string name="m_adb">ネットワーク経由のADB</string>
     <string name="m_adb_enable">有効にする</string>
     <string name="m_adb_hint">このWi-Fiネットワーク上の誰でもファームウェアのrootシェルを使えます。公共ネットワークではオフにしてください。</string>
+    <string name="add_import">ファームウェアファイルを読み込む</string>
+    <string name="add_import_sub">ZIP・TAR/MD5・IMG — 純正・カスタムROM対応</string>
+    <string name="add_container">新しいコンテナ</string>
+    <string name="add_container_sub">既存ファームウェアの別コピー：独自のアプリ・データ・カード・設定</string>
+    <string name="container_chip">コンテナ</string>
+    <string name="container_copy_data">アプリとデータもコピー</string>
+    <string name="container_hint">コンテナは元の /system を共有します（追加容量不要）。コピーしない場合 /data は空から始まります。同時に1つだけ起動してください。</string>
+    <string name="container_create">作成</string>
+    <string name="container_delete_base">次のコンテナがこのファームウェアを使用中：%1$s。先に削除してください。</string>
 </resources>

@@ -147,4 +147,13 @@
     <string name="m_adb">ADB über Netzwerk</string>
     <string name="m_adb_enable">Aktivieren</string>
     <string name="m_adb_hint">Jeder in diesem WLAN erhält eine Root-Shell der Firmware. In öffentlichen Netzen ausschalten.</string>
+    <string name="add_import">Firmware-Datei importieren</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — jedes Stock- oder Custom-ROM</string>
+    <string name="add_container">Neuer Container</string>
+    <string name="add_container_sub">Weitere Kopie einer vorhandenen Firmware: eigene Apps, Daten, Karte und Einstellungen</string>
+    <string name="container_chip">Container</string>
+    <string name="container_copy_data">Apps und Daten mitkopieren</string>
+    <string name="container_hint">Der Container teilt /system mit dem Original (kein Extra-Speicher), /data startet leer, sofern nicht kopiert. Immer nur einen gleichzeitig starten.</string>
+    <string name="container_create">Erstellen</string>
+    <string name="container_delete_base">Container nutzen diese Firmware: %1$s. Lösche sie zuerst.</string>
 </resources>

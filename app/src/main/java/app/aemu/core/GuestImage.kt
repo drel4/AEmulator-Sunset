@@ -158,6 +158,8 @@ data class GuestImage(
     val bootCount: Int = 0,
     /** версия анализатора, которым построен профиль; устаревший профиль пересчитывается перед запуском */
     val profileVersion: Int = 0,
+    /** container: id of the image whose /system this one shares (its own /data, card and settings) */
+    val baseId: String = "",
 ) {
     val displayVersion: String get() = "Android $release (API $api)"
 
@@ -180,6 +182,7 @@ data class GuestImage(
         .put("warnings", JSONArray(warnings))
         .put("lastBootMs", lastBootMs).put("bootCount", bootCount)
         .put("profileVersion", profileVersion)
+        .put("baseId", baseId)
 
     companion object {
         fun fromJson(o: JSONObject): GuestImage {
@@ -213,6 +216,7 @@ data class GuestImage(
                 lastBootMs = o.optLong("lastBootMs", 0),
                 bootCount = o.optInt("bootCount", 0),
                 profileVersion = o.optInt("profileVersion", 0),
+                baseId = o.optString("baseId", ""),
             )
         }
     }

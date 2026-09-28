@@ -147,4 +147,13 @@
     <string name="m_adb">ADB через мережу</string>
     <string name="m_adb_enable">Увімкнути</string>
     <string name="m_adb_hint">Будь-хто в цій Wi-Fi-мережі отримає root-доступ до прошивки. Вимикайте в публічних мережах.</string>
+    <string name="add_import">Імпорт файлу прошивки</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — будь-яка стокова чи кастомна</string>
+    <string name="add_container">Новий контейнер</string>
+    <string name="add_container_sub">Ще одна копія наявної прошивки: свої застосунки, дані, карта й налаштування</string>
+    <string name="container_chip">Контейнер</string>
+    <string name="container_copy_data">Скопіювати застосунки й дані</string>
+    <string name="container_hint">Контейнер використовує /system оригіналу (місця не потребує), /data починається з нуля, якщо не копіювати. Запускайте їх по одному.</string>
+    <string name="container_create">Створити</string>
+    <string name="container_delete_base">Цю прошивку використовують контейнери: %1$s. Спершу видаліть їх.</string>
 </resources>

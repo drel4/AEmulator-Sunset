@@ -147,4 +147,13 @@
     <string name="m_adb">网络 ADB</string>
     <string name="m_adb_enable">启用</string>
     <string name="m_adb_hint">同一 Wi-Fi 网络中的任何人都能获得固件的 root shell。在公共网络上请关闭。</string>
+    <string name="add_import">导入固件文件</string>
+    <string name="add_import_sub">ZIP、TAR/MD5、IMG — 任意官方或第三方 ROM</string>
+    <string name="add_container">新建容器</string>
+    <string name="add_container_sub">现有固件的另一个副本：独立的应用、数据、存储卡和设置</string>
+    <string name="container_chip">容器</string>
+    <string name="container_copy_data">同时复制应用和数据</string>
+    <string name="container_hint">容器与原固件共享 /system（不占额外空间），未复制时 /data 从空白开始。一次只运行一个。</string>
+    <string name="container_create">创建</string>
+    <string name="container_delete_base">以下容器正在使用此固件：%1$s。请先删除它们。</string>
 </resources>

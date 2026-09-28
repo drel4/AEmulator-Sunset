@@ -147,4 +147,13 @@
     <string name="m_adb">네트워크 ADB</string>
     <string name="m_adb_enable">사용</string>
     <string name="m_adb_hint">이 Wi-Fi 네트워크의 누구나 펌웨어의 root 셸을 얻습니다. 공용 네트워크에서는 끄세요.</string>
+    <string name="add_import">펌웨어 파일 가져오기</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — 모든 순정·커스텀 ROM</string>
+    <string name="add_container">새 컨테이너</string>
+    <string name="add_container_sub">기존 펌웨어의 또 다른 사본: 자체 앱, 데이터, 카드, 설정</string>
+    <string name="container_chip">컨테이너</string>
+    <string name="container_copy_data">앱과 데이터도 복사</string>
+    <string name="container_hint">컨테이너는 원본과 /system을 공유하며(추가 공간 없음), 복사하지 않으면 /data는 비어 있는 상태로 시작합니다. 한 번에 하나만 실행하세요.</string>
+    <string name="container_create">만들기</string>
+    <string name="container_delete_base">이 펌웨어를 쓰는 컨테이너: %1$s. 먼저 삭제하세요.</string>
 </resources>

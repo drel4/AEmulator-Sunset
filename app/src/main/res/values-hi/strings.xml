@@ -147,4 +147,13 @@
     <string name="m_adb">नेटवर्क पर ADB</string>
     <string name="m_adb_enable">चालू करें</string>
     <string name="m_adb_hint">इस Wi-Fi नेटवर्क पर कोई भी फ़र्मवेयर का root शेल पा सकता है। सार्वजनिक नेटवर्क पर बंद रखें।</string>
+    <string name="add_import">फ़र्मवेयर फ़ाइल आयात करें</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — कोई भी स्टॉक या कस्टम ROM</string>
+    <string name="add_container">नया कंटेनर</string>
+    <string name="add_container_sub">मौजूदा फ़र्मवेयर की एक और कॉपी: अपने ऐप, डेटा, कार्ड और सेटिंग्स</string>
+    <string name="container_chip">कंटेनर</string>
+    <string name="container_copy_data">ऐप और डेटा भी कॉपी करें</string>
+    <string name="container_hint">कंटेनर मूल के साथ /system साझा करता है (अतिरिक्त जगह नहीं), /data खाली शुरू होता है जब तक कॉपी न करें। एक समय में एक चलाएँ।</string>
+    <string name="container_create">बनाएँ</string>
+    <string name="container_delete_base">ये कंटेनर इस फ़र्मवेयर का उपयोग करते हैं: %1$s. पहले उन्हें हटाएँ।</string>
 </resources>

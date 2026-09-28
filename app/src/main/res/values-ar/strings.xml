@@ -147,4 +147,13 @@
     <string name="m_adb">ADB عبر الشبكة</string>
     <string name="m_adb_enable">تفعيل</string>
     <string name="m_adb_hint">أي شخص على شبكة Wi-Fi هذه يحصل على صلاحيات root للنظام. أوقفه في الشبكات العامة.</string>
+    <string name="add_import">استيراد ملف نظام</string>
+    <string name="add_import_sub">ZIP وTAR/MD5 وIMG — أي روم رسمي أو معدل</string>
+    <string name="add_container">حاوية جديدة</string>
+    <string name="add_container_sub">نسخة أخرى من نظام موجود: تطبيقات وبيانات وبطاقة وإعدادات خاصة بها</string>
+    <string name="container_chip">حاوية</string>
+    <string name="container_copy_data">نسخ التطبيقات والبيانات أيضًا</string>
+    <string name="container_hint">تشارك الحاوية ‎/system مع الأصل (دون مساحة إضافية)، و‎/data تبدأ فارغة ما لم تُنسخ. شغّل واحدة في كل مرة.</string>
+    <string name="container_create">إنشاء</string>
+    <string name="container_delete_base">هذه الحاويات تستخدم النظام: %1$s. احذفها أولًا.</string>
 </resources>

@@ -147,4 +147,13 @@
     <string name="m_adb">ADB via rete</string>
     <string name="m_adb_enable">Attiva</string>
     <string name="m_adb_hint">Chiunque su questa rete Wi-Fi ottiene una shell root del firmware. Disattivalo sulle reti pubbliche.</string>
+    <string name="add_import">Importa file firmware</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — qualsiasi ROM stock o custom</string>
+    <string name="add_container">Nuovo contenitore</string>
+    <string name="add_container_sub">Un\'altra copia di un firmware presente: app, dati, scheda e impostazioni propri</string>
+    <string name="container_chip">Contenitore</string>
+    <string name="container_copy_data">Copia anche app e dati</string>
+    <string name="container_hint">Il contenitore condivide /system con l\'originale (nessuno spazio extra); /data parte vuoto se non copiato. Avviane uno alla volta.</string>
+    <string name="container_create">Crea</string>
+    <string name="container_delete_base">Questi contenitori usano il firmware: %1$s. Eliminali prima.</string>
 </resources>

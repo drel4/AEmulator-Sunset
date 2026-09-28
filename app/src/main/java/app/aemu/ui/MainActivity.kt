@@ -23,6 +23,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.rounded.FileOpen
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -127,6 +136,8 @@ fun Library(model: LibraryModel) {
     var deleteFor by remember { mutableStateOf<GuestImage?>(null) }
     var renameFor by remember { mutableStateOf<GuestImage?>(null) }
     var help by remember { mutableStateOf(false) }
+    var addMenu by remember { mutableStateOf(false) }
+    var containerFrom by remember { mutableStateOf<GuestImage?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -142,7 +153,7 @@ fun Library(model: LibraryModel) {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { pick.launch(arrayOf("*/*")) },
+                onClick = { if (images.isEmpty()) pick.launch(arrayOf("*/*")) else addMenu = true },
                 icon = { Icon(Icons.Rounded.Add, null) },
                 text = { Text(stringResource(R.string.add_firmware)) },
                 expanded = images.isEmpty() || !scroll.state.collapsedFraction.let { it > 0.5f },
@@ -179,7 +190,14 @@ fun Library(model: LibraryModel) {
         SettingsSheet(img, onDismiss = { settingsFor = null }, onSave = { s -> model.updateSettings(img, s); settingsFor = null })
     }
     deleteFor?.let { img ->
-        AlertDialog(
+        val kids = images.filter { it.baseId == img.id }
+        if (kids.isNotEmpty()) AlertDialog(
+            onDismissRequest = { deleteFor = null },
+            icon = { Icon(Icons.Rounded.Delete, null) },
+            title = { Text(stringResource(R.string.delete_title, img.name)) },
+            text = { Text(stringResource(R.string.container_delete_base, kids.joinToString { it.name })) },
+            confirmButton = { TextButton(onClick = { deleteFor = null }) { Text(stringResource(R.string.ok)) } },
+        ) else AlertDialog(
             onDismissRequest = { deleteFor = null },
             icon = { Icon(Icons.Rounded.Delete, null) },
             title = { Text(stringResource(R.string.delete_title, img.name)) },
@@ -200,6 +218,59 @@ fun Library(model: LibraryModel) {
         )
     }
     if (help) HelpDialog(onDismiss = { help = false })
+    if (addMenu) AddSheet(images, onDismiss = { addMenu = false },
+        onImport = { addMenu = false; pick.launch(arrayOf("*/*")) },
+        onContainer = { addMenu = false; containerFrom = it })
+    containerFrom?.let { src -> ContainerDialog(src, images, onDismiss = { containerFrom = null },
+        onCreate = { from, name, copy -> containerFrom = null; model.clone(from, name, copy) }) }
+}
+
+/** The "+" menu: a firmware file, or a new container of a firmware already here. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddSheet(images: List<GuestImage>, onDismiss: () -> Unit, onImport: () -> Unit, onContainer: (GuestImage) -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ListItem(headlineContent = { Text(stringResource(R.string.add_import)) },
+                supportingContent = { Text(stringResource(R.string.add_import_sub)) },
+                leadingContent = { Icon(Icons.Rounded.FileOpen, null) },
+                modifier = Modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onImport))
+            ListItem(headlineContent = { Text(stringResource(R.string.add_container)) },
+                supportingContent = { Text(stringResource(R.string.add_container_sub)) },
+                leadingContent = { Icon(Icons.Rounded.ContentCopy, null) },
+                modifier = Modifier.clip(MaterialTheme.shapes.large).clickable { images.firstOrNull()?.let(onContainer) })
+        }
+    }
+}
+
+@Composable
+private fun ContainerDialog(src: GuestImage, images: List<GuestImage>, onDismiss: () -> Unit, onCreate: (GuestImage, String, Boolean) -> Unit) {
+    var from by remember { mutableStateOf(src) }
+    var name by remember(from) { mutableStateOf("${from.name} (${images.count { it.baseId == from.id || it.baseId == from.baseId.ifEmpty { "-" } } + 2})") }
+    var copy by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ContentCopy, null) },
+        title = { Text(stringResource(R.string.add_container)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                images.forEach { img ->
+                    Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { from = img }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = from.id == img.id, onClick = { from = img })
+                        Text("${img.name} · ${img.release}", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
+                Row(Modifier.fillMaxWidth().clickable { copy = !copy }, verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(copy, { copy = it })
+                    Text(stringResource(R.string.container_copy_data))
+                }
+                Text(stringResource(R.string.container_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = { Button(onClick = { onCreate(from, name.trim().ifEmpty { from.name }, copy) }) { Text(stringResource(R.string.container_create)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 /** Firmware found in Internal storage/aemulator/firmware, rescanned whenever the screen comes back. */
@@ -340,6 +411,8 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(onClick = {}, label = { Text(img.skin) })
+                if (img.baseId.isNotEmpty()) AssistChip(onClick = {}, label = { Text(stringResource(R.string.container_chip)) },
+                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, null, Modifier.size(16.dp)) })
                 AssistChip(onClick = {}, label = { Text("${img.settings.width}×${img.settings.height}") })
                 AssistChip(onClick = {}, label = { Text(Formatter.formatShortFileSize(ctx, img.sizeBytes)) })
             }

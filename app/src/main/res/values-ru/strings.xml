@@ -147,4 +147,13 @@
     <string name="m_adb">ADB по сети</string>
     <string name="m_adb_enable">Включить</string>
     <string name="m_adb_hint">Любой в этой Wi-Fi-сети получит root-доступ к прошивке. Выключайте в общественных сетях.</string>
+    <string name="add_import">Импорт файла прошивки</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — любая стоковая или кастомная</string>
+    <string name="add_container">Новый контейнер</string>
+    <string name="add_container_sub">Ещё одна копия имеющейся прошивки: свои приложения, данные, карта и настройки</string>
+    <string name="container_chip">Контейнер</string>
+    <string name="container_copy_data">Скопировать приложения и данные</string>
+    <string name="container_hint">Контейнер использует /system оригинала (места под него не нужно), /data начинается с нуля, если не копировать. Запускайте их по одному.</string>
+    <string name="container_create">Создать</string>
+    <string name="container_delete_base">Эту прошивку используют контейнеры: %1$s. Сначала удалите их.</string>
 </resources>

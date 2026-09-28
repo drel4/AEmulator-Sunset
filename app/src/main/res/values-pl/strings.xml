@@ -147,4 +147,13 @@
     <string name="m_adb">ADB przez sieć</string>
     <string name="m_adb_enable">Włącz</string>
     <string name="m_adb_hint">Każdy w tej sieci Wi-Fi dostaje powłokę root oprogramowania. Wyłącz w sieciach publicznych.</string>
+    <string name="add_import">Importuj plik firmware</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — dowolny ROM stock lub custom</string>
+    <string name="add_container">Nowy kontener</string>
+    <string name="add_container_sub">Kolejna kopia posiadanego firmware: własne aplikacje, dane, karta i ustawienia</string>
+    <string name="container_chip">Kontener</string>
+    <string name="container_copy_data">Skopiuj też aplikacje i dane</string>
+    <string name="container_hint">Kontener współdzieli /system z oryginałem (bez dodatkowego miejsca); /data startuje pusty, jeśli nie skopiujesz. Uruchamiaj po jednym.</string>
+    <string name="container_create">Utwórz</string>
+    <string name="container_delete_base">Z tego firmware korzystają kontenery: %1$s. Najpierw je usuń.</string>
 </resources>
