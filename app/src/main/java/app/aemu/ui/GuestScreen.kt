@@ -36,15 +36,11 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
         set(v) {
             if (field == v) return
             field = v
-            paint.colorFilter = if (v == 2) android.graphics.ColorMatrixColorFilter(floatArrayOf(
-                0f, 0f, 1f, 0f, 0f,  0f, 1f, 0f, 0f, 0f,  1f, 0f, 0f, 0f, 0f,  0f, 0f, 0f, 0f, 255f))
-            else if (v == 1) android.graphics.ColorMatrixColorFilter(floatArrayOf(
-                1f, 0f, 0f, 0f, 0f,  0f, 1f, 0f, 0f, 0f,  0f, 0f, 1f, 0f, 0f,  0f, 0f, 0f, 0f, 255f))
-            else null
             mappedIno = -1
             poke()
         }
     private val pageHash = LongArray(2)
+    private var argb: IntArray? = null
     private var page = 0
 
     private var bmp: Bitmap? = null
@@ -116,9 +112,20 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
         val force = quiet > 30
         if (rung || hash != lastHash || force) {
             if (force) quiet = 0
-            b.limit(base + pixels.toInt()); b.position(base)
-            bitmap.copyPixelsFromBuffer(b)
-            b.clear()
+            if (format == 0) {
+                b.limit(base + pixels.toInt()); b.position(base)
+                bitmap.copyPixelsFromBuffer(b)
+                b.clear()
+            } else {
+                // 32-bit: the guest's alpha byte is padding (TWRP leaves 0), so force it opaque; RGBA swaps R and B
+                val n = w * h
+                val px = argb?.takeIf { it.size == n } ?: IntArray(n).also { argb = it }
+                val ib = b.duplicate().order(java.nio.ByteOrder.LITTLE_ENDIAN).position(base).let { (it as java.nio.ByteBuffer).asIntBuffer() }
+                ib.get(px, 0, n)
+                if (format == 2) for (k in 0 until n) px[k] = px[k] or -0x1000000
+                else for (k in 0 until n) { val v = px[k]; px[k] = -0x1000000 or ((v and 0xff) shl 16) or (v and 0xff00) or ((v shr 16) and 0xff) }
+                bitmap.setPixels(px, 0, w, 0, 0, w, h)
+            }
             if (hash != lastHash || rung) {
                 quiet = 0
                 lastHash = hash
