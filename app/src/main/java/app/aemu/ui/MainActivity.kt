@@ -73,7 +73,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import app.aemu.BuildConfig
+import app.aemu.update.AppUpdateManager
+import app.aemu.update.ReleaseInfo
+import app.aemu.update.UpdateState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -139,6 +146,42 @@ fun Library(model: LibraryModel) {
     var addMenu by remember { mutableStateOf(false) }
     var containerFrom by remember { mutableStateOf<GuestImage?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    val scope = rememberCoroutineScope()
+    var updateState by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
+    var downloadJob by remember { mutableStateOf<Job?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (app.aemu.AppPrefs.autoCheckUpdates(ctx)) {
+            val now = System.currentTimeMillis()
+            if (now - app.aemu.AppPrefs.lastUpdateCheck(ctx) > 3600_000L) {
+                app.aemu.AppPrefs.setLastUpdateCheck(ctx, now)
+                val res = AppUpdateManager.checkLatestRelease()
+                res.getOrNull()?.let { rel ->
+                    if (AppUpdateManager.isNewerVersion(rel.versionName, BuildConfig.VERSION_NAME)) {
+                        updateState = UpdateState.Available(rel)
+                    }
+                }
+            }
+        }
+    }
+
+    fun startDownload(rel: ReleaseInfo) {
+        updateState = UpdateState.Downloading(rel, 0f, 0L, rel.sizeBytes)
+        downloadJob = scope.launch {
+            try {
+                val file = AppUpdateManager.downloadApk(ctx, rel) { progress, downloaded, total ->
+                    updateState = UpdateState.Downloading(rel, progress, downloaded, total)
+                }
+                updateState = UpdateState.ReadyToInstall(rel, file)
+                AppUpdateManager.installApk(ctx, file)
+            } catch (e: Exception) {
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    updateState = UpdateState.Error(e.localizedMessage ?: "Ошибка загрузки")
+                }
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -227,6 +270,18 @@ AlertDialog(
         onContainer = { addMenu = false; containerFrom = it })
     containerFrom?.let { src -> ContainerDialog(src, images, onDismiss = { containerFrom = null },
         onCreate = { from, name, copy -> containerFrom = null; model.clone(from, name, copy) }) }
+
+    UpdateDialog(
+        state = updateState,
+        onDismiss = { updateState = UpdateState.Idle },
+        onStartDownload = ::startDownload,
+        onCancelDownload = {
+            downloadJob?.cancel()
+            updateState = UpdateState.Idle
+        },
+        onInstall = { file -> AppUpdateManager.installApk(ctx, file) },
+        onOpenUrl = { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
+    )
 }
 
 /** The "+" menu: a firmware file, or a new container of a firmware already here. */

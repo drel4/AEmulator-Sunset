@@ -49,6 +49,12 @@ object AppPrefs {
     fun dynamicColor(ctx: Context): Boolean = sp(ctx).getBoolean("dynamic", false)
     fun setDynamicColor(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("dynamic", v).apply()
 
+    fun autoCheckUpdates(ctx: Context): Boolean = sp(ctx).getBoolean("auto_check_updates", true)
+    fun setAutoCheckUpdates(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("auto_check_updates", v).apply()
+
+    fun lastUpdateCheck(ctx: Context): Long = sp(ctx).getLong("last_update_check", 0L)
+    fun setLastUpdateCheck(ctx: Context, v: Long) = sp(ctx).edit().putLong("last_update_check", v).apply()
+
     /** Умолчания, которые получает только что импортированная система. */
     fun defaults(ctx: Context): VmSettings {
         val p = sp(ctx)

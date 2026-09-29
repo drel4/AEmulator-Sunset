@@ -518,6 +518,26 @@ static int wait_slot(int tid, int add) {
     return 0;
 }
 
+/* player notifications taken from a thread that waits for a reply; the next pool thread that reads gets them */
+static unsigned char g_held[1024];
+static volatile int g_held_len, g_held_lock;
+static void held_lock(void) { while (!__sync_bool_compare_and_swap(&g_held_lock, 0, 1)) sys3(158 /* sched_yield */, 0, 0, 0); }
+static void held_unlock(void) { __sync_lock_release(&g_held_lock); }
+
+/* binder_transaction_data (32-bit) of a oneway call to android.media.IMediaPlayerClient: the parcel starts with the
+ * strict-mode word, then the interface name as String16 */
+static int is_player_notify(const unsigned char *td) {
+    const unsigned char *d = (const unsigned char *)(ulong)*(const unsigned *)(td + 32);
+    unsigned size = *(const unsigned *)(td + 24);
+    const char *want = "android.media.IMediaPlayerClient";
+    if (!d || size < 8 + 64) return 0;
+    if (*(const unsigned *)(d + 4) != 32) return 0;
+    for (int i = 0; i < 32; i++) if (d[8 + 2 * i] != (unsigned char)want[i] || d[9 + 2 * i]) return 0;
+    /* MEDIA_PREPARED and MEDIA_SEEK_COMPLETE stay: prepare()/seekTo() expect them on the calling thread */
+    int msg = *(const int *)(d + 76);
+    return msg != 1 && msg != 4;
+}
+
 static int is_waiting(int tid) { for (int k = 0; k < 64; k++) if (waiting_tid[k] == tid) return 1; return 0; }
 
 EXPORT int ioctl(int fd, int req, void *arg) {
@@ -554,9 +574,41 @@ EXPORT int ioctl(int fd, int req, void *arg) {
             nested_oneway = 1;
         p += 4 + sz;
     }
-    if (nested_oneway && !replied && is_waiting(tid) && sys3(199 /* getuid32 */, 0, 0, 0) >= 10000) {
+    int waiting = is_waiting(tid);
+    if (nested_oneway && !replied && waiting) {
+        /* a media player's notify must not run here: MediaPlayer::reset() and friends hold the player lock across
+         * the call and notify() takes it (MIUI's SystemUI froze playing the charging sound). It goes to the next
+         * pool thread that reads, where the kernel driver would have delivered it. */
+        unsigned char *rb = (unsigned char *)b->read_buffer;
+        held_lock();
+        for (long p = start; p + 4 <= b->read_consumed;) {
+            unsigned cmd = *(unsigned *)(rb + p);
+            long len = 4 + ((cmd >> 16) & 0x3fff);
+            if (cmd == BR_TRANSACTION_ && p + len <= b->read_consumed && (*(unsigned *)(rb + p + 4 + 12) & TF_ONE_WAY_)
+                && is_player_notify(rb + p + 4) && g_held_len + len <= (long)sizeof g_held) {
+                for (long i = 0; i < len; i++) g_held[g_held_len + i] = rb[p + i];
+                g_held_len += (int)len;
+                for (long i = p; i + len < b->read_consumed; i++) rb[i] = rb[i + len];
+                b->read_consumed -= len;
+                continue;
+            }
+            p += len;
+        }
+        held_unlock();
+    }
+    if (nested_oneway && !replied && waiting && sys3(199 /* getuid32 */, 0, 0, 0) >= 10000) {
         struct timespec_s ts = { 0, 30 * 1000 * 1000 };
         sys3(162 /* nanosleep */, (long)&ts, 0, 0);
+    }
+    if (!waiting && g_held_len) {
+        held_lock();
+        if (g_held_len && b->read_consumed + g_held_len <= b->read_size) {
+            unsigned char *rb = (unsigned char *)b->read_buffer;
+            for (int i = 0; i < g_held_len; i++) rb[b->read_consumed + i] = g_held[i];
+            b->read_consumed += g_held_len;
+            g_held_len = 0;
+        }
+        held_unlock();
     }
     if (replied) wait_slot(tid, 0);
     return (int)r;
@@ -591,7 +643,15 @@ static int strip_root(char *s, int n) {
 #define SYS_getsockname 286
 /* qemu's own ownership table stays open in every guest process; zygote (7.0+) only lets through descriptors on
  * whitelisted paths and reopens them by path after fork: it is shown as a framework jar that links to it */
+static long guest_fd_name_(char *buf, long n, unsigned long size);
+/* readlink does not terminate the name, but the host path it returned is longer than the guest one we leave: clear
+ * the tail, or callers that zero the buffer and read it as a string (MediaTek FileSourceProxy) get "...ogg" + "oot/..." */
 static long guest_fd_name(char *buf, long n, unsigned long size) {
+    long r = guest_fd_name_(buf, n, size);
+    for (long i = r; i < n; i++) buf[i] = 0;
+    return r;
+}
+static long guest_fd_name_(char *buf, long n, unsigned long size) {
     n = strip_root(buf, (int)n);
     // stdio of guest processes: pipes to the host's log readers or the log file itself (on Android: /dev/null)
     int logfile = 0;

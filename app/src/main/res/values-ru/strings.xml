@@ -165,4 +165,20 @@
     <string name="m_device">Состояние устройства</string>
     <string name="m_airplane">Режим полёта</string>
     <string name="m_stay_awake">Не гасить экран</string>
+    <string name="as_updates">Обновления</string>
+    <string name="as_auto_updates">Автопроверка обновлений</string>
+    <string name="as_auto_updates_sub">Проверять наличие новых версий на GitHub при запуске</string>
+    <string name="as_check_updates">Проверить обновления</string>
+    <string name="as_check_updates_sub">Текущая версия: %1$s</string>
+    <string name="update_available_title">Доступно обновление</string>
+    <string name="update_available_msg">Доступна новая версия %1$s. Хотите обновить приложение?</string>
+    <string name="update_latest">У вас установлена актуальная версия (%1$s)</string>
+    <string name="update_checking">Проверка обновлений…</string>
+    <string name="update_btn">Обновить</string>
+    <string name="update_later">Позже</string>
+    <string name="update_downloading">Загрузка обновления…</string>
+    <string name="update_install">Установить</string>
+    <string name="update_error">Не удалось проверить обновления: %1$s</string>
+    <string name="update_download_error">Ошибка загрузки: %1$s</string>
+    <string name="update_open_github">Открыть на GitHub</string>
 </resources>

@@ -107,7 +107,7 @@ struct audio_hw_device {
 #endif
     int (*set_mode)(struct audio_hw_device *d, int mode);
     int (*set_mic_mute)(struct audio_hw_device *d, int state);
-    int (*get_mic_mute)(const struct audio_hw_device *d, int *state);
+    int (*get_mic_mute)(const struct audio_hw_device *d, unsigned char *state);
     int (*set_parameters)(struct audio_hw_device *d, const char *kv);
     char *(*get_parameters)(const struct audio_hw_device *d, const char *keys);
 #ifdef AEMU_ICS
@@ -222,7 +222,9 @@ static int d_float_nosys(struct audio_hw_device *d, float v) { (void)d; (void)v;
 static int d_get_master_volume(struct audio_hw_device *d, float *v) { (void)d; (void)v; return -ENOSYS; }
 static int d_set_mode(struct audio_hw_device *d, int m) { (void)d; (void)m; return 0; }
 static int d_set_mic_mute(struct audio_hw_device *d, int s) { (void)d; (void)s; return 0; }
-static int d_get_mic_mute(const struct audio_hw_device *d, int *s) { (void)d; if (s) *s = 0; return 0; }
+/* bool *state in audio.h: a 4-byte store clobbers the caller's stack (MediaTek AudioFlinger keeps its hardware-lock
+   Autolock right after the flag and then never unlocks it; the next setParameters hangs system_server) */
+static int d_get_mic_mute(const struct audio_hw_device *d, unsigned char *s) { (void)d; if (s) *s = 0; return 0; }
 static int d_set_params(struct audio_hw_device *d, const char *kv) { (void)d; (void)kv; return 0; }
 static char *d_get_params(const struct audio_hw_device *d, const char *k) { (void)d; (void)k; return (char *)calloc(1, 1); }
 #ifdef AEMU_ICS
@@ -303,6 +305,12 @@ static int d_open_in(struct audio_hw_device *d, int h, uint32_t dev, struct audi
 }
 static void d_close_in(struct audio_hw_device *d, void *in) { (void)d; (void)in; }
 
+#ifdef AEMU_MTK
+/* MediaTek extends audio_hw_device with vendor calls (SetAudioCommand, VoiceUnlock...) after the AOSP slots;
+   AudioFlinger calls them under its hardware lock. Give it a zeroed tail of harmless stubs. */
+#define MTK_EXTRA 48
+static long d_mtk_stub(void) { return 0; }
+#endif
 static int d_close(struct hw_device *dev) { free(dev); return 0; }
 
 static int hal_open(const struct hw_module *m, const char *id, struct hw_device **dev) {
@@ -311,7 +319,12 @@ static int hal_open(const struct hw_module *m, const char *id, struct hw_device 
         if (id[i] != want[i]) return -EINVAL;
         if (!id[i]) break;
     }
+    #ifdef AEMU_MTK
+    struct audio_hw_device *d = (struct audio_hw_device *)calloc(1, sizeof(struct audio_hw_device) + MTK_EXTRA * sizeof(void *));
+    if (d) { void **x = (void **)(d + 1); for (int i = 0; i < MTK_EXTRA; i++) x[i] = (void *)d_mtk_stub; }
+#else
     struct audio_hw_device *d = (struct audio_hw_device *)calloc(1, sizeof(struct audio_hw_device));
+#endif
     if (!d) return -12;
     d->common.tag = 0x48574454;          /* HARDWARE_DEVICE_TAG */
 #ifdef AEMU_ICS
