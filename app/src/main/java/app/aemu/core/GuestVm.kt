@@ -607,6 +607,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         // держат ссылки на мёртвые службы (телефония отказывает новому system_server в правах)
         val n = killZygoteChildren()
         if (n > 0) log("killed apps of previous zygote: $n")
+        // healthd keeps the battery listener of the dead system_server and stops answering the new one:
+        // BatteryService.onStart then blocks in registerListener forever
+        img.services.firstOrNull { it.name == "healthd" }?.let { h ->
+            synchronized(procs) { procs.remove("healthd") }?.let { runCatching { it.destroyForcibly() } }
+            runCatching { startService(h) }
+        }
         runCatching { startService(z) }
     }
 
