@@ -85,9 +85,30 @@ class TreeFixer(
 
     // ---------------------------------------------------------------- перед каждым запуском
 
+    /**
+     * Precompiled code of 5.0+ system apps and of the framework (the odex files in oat/arm and framework/arm) is the only copy: the jars
+     * and apks are stripped. installd's dexopt on a fresh /data replaced or unlinked those files inside /system
+     * (a real /system is read-only), and the next boot died in system_server with "No original dex files found".
+     * Taking the write bit away makes such writes fail harmlessly; ImageStore.wipe gives it back before deleting.
+     */
+    private fun protectOat() {
+        val sys = File(root, "system")
+        var n = 0
+        fun lock(d: File) {
+            d.listFiles()?.forEach { f -> if (f.isFile) { if (f.canWrite()) { f.setWritable(false, false); n++ } } else if (f.isDirectory) lock(f) }
+            d.setWritable(false, false)
+        }
+        File(sys, "framework").listFiles()?.filter { it.isDirectory && (it.name == "oat" || it.name == "arm" || it.name == "arm64") }?.forEach { lock(it) }
+        for (top in listOf("app", "priv-app")) File(sys, top).listFiles()?.forEach { app ->
+            File(app, "oat").takeIf { it.isDirectory }?.let { lock(it) }
+        }
+        if (n > 0) log("oat files write-protected: $n")
+    }
+
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        protectOat()
         swapMtkAudioHal()
         eglConfig(img.settings.gpu)
         makeDataDirs()

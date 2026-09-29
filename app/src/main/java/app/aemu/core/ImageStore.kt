@@ -124,7 +124,7 @@ object ImageStore {
 
     fun wipe(f: File) {
         val isLink = runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(f.path).st_mode) }.getOrDefault(false)
-        if (!isLink && f.isDirectory) f.listFiles()?.forEach { wipe(it) }
+        if (!isLink && f.isDirectory) { f.setWritable(true, true); f.listFiles()?.forEach { wipe(it) } }
         f.delete()
     }
 

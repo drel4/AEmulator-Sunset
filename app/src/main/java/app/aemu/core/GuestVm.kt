@@ -549,6 +549,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (name == "zygote") {
                         if (state != State.FAILED && bootDoneAt == 0L && !(everBooted && zygoteRestarts < 6)) {
                             failure = "zygote exited (code $code)" + if (code == 137) " — system killed by low memory" else ""
+                            if (code == 137 && guestLogHas("No original dex files found"))
+                                failure = "system_server cannot start: the precompiled code of the framework (system/framework/oat) is missing from this container — import the firmware again"
                             log("✖ $failure"); setState(State.FAILED)
                         } else if (bootDoneAt > 0 || everBooted) {
                             zygoteRestarts++
@@ -629,6 +631,16 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         }
         runCatching { startService(z) }
     }
+
+    private fun guestLogHas(text: String): Boolean = runCatching {
+        val f = File(paths.root, "dev/log/main")
+        val len = f.length()
+        java.io.RandomAccessFile(f, "r").use { r ->
+            val n = minOf(len, 400_000L).toInt(); r.seek(len - n)
+            val b = ByteArray(n); r.readFully(b)
+            String(b, Charsets.ISO_8859_1).contains(text)
+        }
+    }.getOrDefault(false)
 
     private fun killZygoteChildren(): Int {
         val marker = "/images/${img.id}/"
