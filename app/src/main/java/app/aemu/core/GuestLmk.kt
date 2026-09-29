@@ -75,6 +75,17 @@ class GuestLmk(private val root: File, private val lowRam: Boolean, private val 
         adj[pid] = if (p[1] == "s") scoreToAdj(v) else v
     }
 
+    /**
+     * 7.0+ sends oom_score_adj (−1000…999, cached from 900), 4.4–6.0 the old −17…15 scale (cached from 9).
+     * Taking a raw 700 ("previous app") for a cached process killed services and visible apps every few seconds.
+     */
+    private fun lmkdAdj(v: Int): Int = when {
+        v in -17..16 -> v
+        v < 0 -> -17
+        v >= 900 -> CACHED + (v - 900) / 12
+        else -> CACHED - 1
+    }
+
     private fun scoreToAdj(score: Int) = if (score >= 1000) 15 else score * 17 / 1000
 
     private fun serveLmkd() {
@@ -104,7 +115,7 @@ class GuestLmk(private val root: File, private val lowRam: Boolean, private val 
                 val bb = java.nio.ByteBuffer.wrap(buf, 0, n)
                 if (n < 8) continue
                 when (bb.int) {
-                    1 -> if (n >= 16) { val pid = bb.int; bb.int; adj[pid] = bb.int }
+                    1 -> if (n >= 16) { val pid = bb.int; bb.int; adj[pid] = lmkdAdj(bb.int) }
                     2 -> adj.remove(bb.int)
                 }
             }

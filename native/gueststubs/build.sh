@@ -8,8 +8,10 @@ D8=$(ls -d "$SDK"/build-tools/*/ | sort -V | tail -1)d8
 [ -x "$D8" ] || D8="$D8.bat"
 OUT=${1:-../../app/src/main/assets/engines/kk/aemu-stubs.jar}
 rm -rf build && mkdir -p build/classes
-javac --release 8 -cp "$JAR" -d build/classes $(find src -name '*.java')
+mkdir -p build/hidden
+javac --release 8 -cp "$JAR" -d build/hidden $(find hidden -name '*.java')
+javac --release 8 -cp "build/hidden;$JAR" -d build/classes $(find src -name '*.java')
 "$D8" --min-api 17 --lib "$JAR" --output build $(find build/classes -name '*.class')
-(cd build && jar cf stubs.jar classes.dex)
+python -c "import zipfile;z=zipfile.ZipFile('build/stubs.jar','w',zipfile.ZIP_DEFLATED);z.write('build/classes.dex','classes.dex');z.close()"
 cp build/stubs.jar "$OUT"
 echo "готово: $OUT"

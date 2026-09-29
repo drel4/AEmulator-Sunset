@@ -454,6 +454,13 @@ EXPORT int ioctl(int fd, int req, void *arg) {
     }
     long start = b->read_consumed;
     long r = sys3(SYS_ioctl, fd, req, (long)arg);
+    /* The stand's binder link now and then answers ENOTCONN; libbinder aborts the whole process on that
+     * (SurfaceFlinger, system_server, ...). A short retry rides out a hiccup. */
+    for (int tries = 0; r == -107 /* ENOTCONN */ && tries < 25; tries++) {
+        struct timespec_s ts = { 0, 80 * 1000 * 1000 };
+        sys3(162 /* nanosleep */, (long)&ts, 0, 0);
+        r = sys3(SYS_ioctl, fd, req, (long)arg);
+    }
     if (r < 0) return fail(r);
     int nested_oneway = 0, replied = 0;
     for (long p = start; p + 4 <= b->read_consumed;) {
@@ -596,6 +603,15 @@ EXPORT int setxattr(const char *p, const char *n, const void *v, unsigned long s
 EXPORT int lsetxattr(const char *p, const char *n, const void *v, unsigned long s, int fl) {
     long r = sys5(227, (long)p, (long)n, (long)v, (long)s, fl);
     return r >= 0 || r == -38 || r == -95 ? 0 : fail(r);
+}
+/* 5.0+ marks every socket with its network id through fwmarkd (netd), which sets SO_MARK. An app has no
+ * CAP_NET_ADMIN, the phone's kernel refuses the option, and netd answers every connect() with that error
+ * (ENOPROTOOPT): no TCP and no DNS at all. All sockets already leave through the phone's one network, so the mark
+ * is accepted and dropped. */
+EXPORT int setsockopt(int fd, int level, int name, const void *val, unsigned int len) {
+    if (level == 1 /* SOL_SOCKET */ && name == 36 /* SO_MARK */) return 0;
+    long r = sys5(294 /* setsockopt */, fd, level, name, (long)val, len);
+    return r >= 0 ? (int)r : fail(r);
 }
 __attribute__((naked, noinline)) static long sys5(long n, long a, long b, long c, long d, long e) {
     __asm__ volatile(

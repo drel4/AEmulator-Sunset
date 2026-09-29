@@ -34,6 +34,9 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     @Volatile var bootAt = 0L
         private set
     @Volatile var bootDoneAt = 0L
+    /** the system reached the home screen at least once in this run: later crashes restart it instead of failing */
+    @Volatile private var everBooted = false
+    private var zygoteRestarts = 0
         private set
     @Volatile var failure: String? = null
         private set
@@ -72,6 +75,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private val logd = LogdSink(paths, ::log)
     @Volatile private var lmk: GuestLmk? = null
     val net = NetProxy(ctx, paths, ::log)
+    private val dns = DnsProxy(paths, ::log)
     val runner by lazy { GuestRunner(paths, img) }
 
     private val extraStubs = ArrayList<VoldStub>()
@@ -316,6 +320,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
         bootAt = System.currentTimeMillis()
         bootDoneAt = 0
+        everBooted = false; zygoteRestarts = 0
         setState(State.BOOTING)
 
         // 4. binder
@@ -337,6 +342,12 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             if (svc.name == "zygote" && img.api >= 17 && engine == Engine.KK && File(paths.root, "system/framework/aemu-stubs.jar").isFile) {
                 startService(GuestService("aemu-bt", listOf("/system/bin/app_process",
                     "-Djava.class.path=/system/framework/aemu-stubs.jar", "/system/bin", "app.aemu.stub.BtStub"), optional = true))
+            }
+            // 5.0–7.x: a registered network, otherwise ConnectivityService says "no active network" and browsers stay offline
+            if (svc.name == "zygote" && img.api in 21..25 && engine == Engine.KK && File(paths.root, "system/framework/aemu-stubs.jar").isFile) {
+                synchronized(procs) { procs.remove("aemu-net") }?.let { runCatching { it.destroyForcibly() } }
+                startService(GuestService("aemu-net", listOf("/system/bin/app_process",
+                    "-Djava.class.path=/system/framework/aemu-stubs.jar", "/system/bin", "app.aemu.stub.NetStub"), optional = true))
             }
             startService(svc)
             svc.waitSocket?.let { sock -> waitFor("socket $sock", 20_000) { paths.socket(sock).exists() } }
@@ -477,6 +488,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         if (k == "sys.powerctl") { powerRequest(v); return }
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
             bootDoneAt = System.currentTimeMillis()
+            everBooted = true
             log("★ system booted in ${(bootDoneAt - bootAt) / 1000} s")
             setState(State.RUNNING)
             Thread { afterBoot() }.start()
@@ -528,17 +540,19 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             while (!stopping) {
                 Thread.sleep(3000)
                 if (power.length() > 0) { val v = runCatching { power.readText().trim() }.getOrDefault("reboot"); power.writeText(""); powerRequest(v) }
+                if (img.api >= 21) runCatching { dns.ensure() }
                 val dead = synchronized(procs) { procs.filter { !it.value.isAlive }.keys.toList() }
                 for (name in dead) {
                     if (stopping) break
                     val p = synchronized(procs) { procs[name] } ?: continue
                     val code = runCatching { p.exitValue() }.getOrDefault(-1)
                     if (name == "zygote") {
-                        if (state != State.FAILED && bootDoneAt == 0L) {
+                        if (state != State.FAILED && bootDoneAt == 0L && !(everBooted && zygoteRestarts < 6)) {
                             failure = "zygote exited (code $code)" + if (code == 137) " — system killed by low memory" else ""
                             log("✖ $failure"); setState(State.FAILED)
-                        } else if (bootDoneAt > 0) {
-                            log("✖ zygote crashed (code $code), restarting system")
+                        } else if (bootDoneAt > 0 || everBooted) {
+                            zygoteRestarts++
+                            log("✖ zygote crashed (code $code), restarting system ($zygoteRestarts)")
                             restartZygote()
                         }
                         synchronized(procs) { procs.remove(name) }
@@ -639,7 +653,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         log("stopping system")
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
-        adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); events.stop(); logd.stop()
+        adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); dns.stop(); events.stop(); logd.stop()
         extraStubs.forEach { it.stop() }; extraStubs.clear()
         lmk?.stop(); lmk = null
         Keeper.release(ctx)
