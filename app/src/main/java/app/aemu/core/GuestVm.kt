@@ -75,7 +75,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     private val logd = LogdSink(paths, ::log)
     @Volatile private var lmk: GuestLmk? = null
     val net = NetProxy(ctx, paths, ::log)
-    private val dns = DnsProxy(paths, ::log)
+    private val dns = DnsProxy(paths, img.api, ::log)
     val runner by lazy { GuestRunner(paths, img) }
 
     private val extraStubs = ArrayList<VoldStub>()
