@@ -256,7 +256,9 @@ static int oom_open(const char *path) {
  * environ on the initial stack) and its current text is served through a pipe.
  */
 static char *g_argv0;
+static unsigned long g_main_sp;
 __attribute__((constructor)) static void find_argv(void) {
+    g_main_sp = (unsigned long)__builtin_frame_address(0);
     char **e = environ;
     if (!e || e[-1]) return;
     long n = 0;
@@ -267,24 +269,27 @@ __attribute__((constructor)) static void find_argv(void) {
 }
 #define SYS_getpid 20
 #define SYS_pipe2 359
-static int cmdline_open(const char *path) {
-    if (!g_argv0) return -1;
+/* 1 when path is /proc/self<suffix> or /proc/<own pid><suffix> */
+static int proc_is(const char *path, const char *suffix) {
     static const char P[] = "/proc/";
     int i = 0;
     while (P[i] && path[i] == P[i]) i++;
-    if (P[i]) return -1;
+    if (P[i]) return 0;
     const char *who = path + i;
     int n = 0;
     if (who[0] == 's' && who[1] == 'e' && who[2] == 'l' && who[3] == 'f') n = 4;
     else {
         long pid = 0;
         while (who[n] >= '0' && who[n] <= '9' && n < 10) pid = pid * 10 + (who[n++] - '0');
-        if (!n || pid != sys3(SYS_getpid, 0, 0, 0)) return -1;
+        if (!n || pid != sys3(SYS_getpid, 0, 0, 0)) return 0;
     }
-    static const char C[] = "/cmdline";
     int k = 0;
-    while (C[k] && who[n + k] == C[k]) k++;
-    if (C[k] || who[n + k]) return -1;
+    while (suffix[k] && who[n + k] == suffix[k]) k++;
+    return !suffix[k] && !who[n + k];
+}
+static int cmdline_open(const char *path) {
+    if (!g_argv0) return -1;
+    if (!proc_is(path, "/cmdline")) return -1;
     int fds[2];
     if (sys3(SYS_pipe2, (long)fds, 02000000 /* O_CLOEXEC */, 0) < 0) return -1;
     long len = 0;
@@ -292,6 +297,82 @@ static int cmdline_open(const char *path) {
     sys3(SYS_write, fds[1], (long)g_argv0, len + 1);
     sys3(SYS_close, fds[1], 0, 0);
     return fds[0];
+}
+
+
+/*
+ * Bionic derives the main thread stack from the "[stack]" line of /proc/self/maps. On some hosts the emulator's
+ * maps file tags a wrong range (or none at all), ART then sees a stack that does not contain sp and aborts with
+ * "Check failed: &stack_variable > stack_end" (zygote and patchoat never start). The file is served again with the
+ * tag moved onto the range that holds the main thread's sp; when it is already right the real file is used.
+ */
+#define SYS_lseek 19
+#define SYS_memfd_create 385
+static char g_maps_in[1 << 20], g_maps_out[(1 << 20) + 4096];
+static volatile int g_maps_lock;
+static unsigned long hexv(const char **pp) {
+    const char *p = *pp; unsigned long v = 0;
+    for (;; p++) {
+        char c = *p;
+        if (c >= '0' && c <= '9') v = v * 16 + (unsigned long)(c - '0');
+        else if (c >= 'a' && c <= 'f') v = v * 16 + (unsigned long)(c - 'a' + 10);
+        else break;
+    }
+    *pp = p; return v;
+}
+static int maps_open(const char *path) {
+    if (!g_main_sp || !proc_is(path, "/maps")) return -1;
+    if (__sync_lock_test_and_set(&g_maps_lock, 1)) return -1;
+    int res = -1;
+    long fd = sys3(SYS_open, (long)path, 0400000, 0);
+    if (fd < 0) { __sync_lock_release(&g_maps_lock); return -1; }
+    long total = 0;
+    for (;;) {
+        long n = sys3(SYS_read, fd, (long)(g_maps_in + total), (long)sizeof(g_maps_in) - 1 - total);
+        if (n < 0) { total = -1; break; }
+        if (n == 0) break;
+        total += n;
+        if (total >= (long)sizeof(g_maps_in) - 1) { total = -1; break; }
+    }
+    sys3(SYS_close, fd, 0, 0);
+    if (total <= 0) goto out;
+    g_maps_in[total] = 0;
+    int changed = 0, found = 0;
+    long o = 0;
+    char *p = g_maps_in;
+    while (*p) {
+        char *line = p, *e = p;
+        while (*e && *e != 0x0a) e++;
+        p = *e ? e + 1 : e;
+        long len = e - line;
+        const char *q = line;
+        unsigned long s0 = hexv(&q), e0 = 0;
+        if (*q == '-') { q++; e0 = hexv(&q); }
+        int holds = s0 <= g_main_sp && g_main_sp < e0;
+        int tagAt = -1;
+        for (long i = 0; i + 7 <= len; i++)
+            if (line[i] == '[' && line[i+1] == 's' && line[i+2] == 't' && line[i+3] == 'a' && line[i+4] == 'c' && line[i+5] == 'k' && line[i+6] == ']') { tagAt = (int)i; break; }
+        if (holds) found = 1;
+        long keep = len;
+        int add = 0;
+        if (tagAt >= 0 && !holds) { keep = tagAt; while (keep > 0 && line[keep-1] == ' ') keep--; changed = 1; }
+        else if (tagAt < 0 && holds) { add = 1; changed = 1; }
+        for (long i = 0; i < keep; i++) g_maps_out[o++] = line[i];
+        if (add) { const char T[] = "                       [stack]"; for (int i = 0; T[i]; i++) g_maps_out[o++] = T[i]; }
+        if (*e) g_maps_out[o++] = 0x0a;
+        if (o > (long)sizeof(g_maps_out) - 128) { changed = 0; break; }
+    }
+    if (!changed || !found) goto out;
+    long m = sys3(SYS_memfd_create, (long)"maps", 0, 0);
+    if (m < 0) goto out;
+    long w = 0;
+    while (w < o) { long n = sys3(SYS_write, m, (long)(g_maps_out + w), o - w); if (n <= 0) break; w += n; }
+    if (w != o) { sys3(SYS_close, m, 0, 0); goto out; }
+    sys3(SYS_lseek, m, 0, 0);
+    res = (int)m;
+out:
+    __sync_lock_release(&g_maps_lock);
+    return res;
 }
 
 EXPORT int open(const char *path, int flags, ...) {
@@ -306,6 +387,8 @@ EXPORT int open(const char *path, int flags, ...) {
     }
     if (path && !(flags & 3) && path[0] == '/' && path[1] == 'p') {
         int fd = cmdline_open(path);
+        if (fd >= 0) return fd;
+        fd = maps_open(path);
         if (fd >= 0) return fd;
     }
     long r = sys3(SYS_open, (long)qt_redirect(path, b, sizeof(b)), flags | 0400000 /* O_LARGEFILE */, mode);
