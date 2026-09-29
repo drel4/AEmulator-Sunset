@@ -72,7 +72,6 @@ AEmulator는 [원작자](https://t.me/istratiit_ech)의 HTC Desire HD·HTC One M
 AEmulator로 추억의 휴대폰을 되살렸다면 개발을 후원할 수 있습니다:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 링크
 

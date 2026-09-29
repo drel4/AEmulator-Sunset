@@ -74,7 +74,6 @@ AEmulator از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازن�
 اگر AEmulator گوشی محبوبتان را برگرداند، می‌توانید از توسعه حمایت کنید:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 پیوندها
 

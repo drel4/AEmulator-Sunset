@@ -72,7 +72,6 @@ O AEmulator nasceu dos emuladores de HTC Desire HD e HTC One M7 do [autor origin
 Se o AEmulator trouxe de volta um celular querido, você pode apoiar o desenvolvimento:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Links
 

@@ -72,7 +72,6 @@ AEmulator ist aus den Emulatoren für HTC Desire HD und HTC One M7 [des Original
 Wenn AEmulator dir ein geliebtes Handy zurückgebracht hat, kannst du die Entwicklung unterstützen:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Links
 

@@ -72,7 +72,6 @@ AEmulator phát triển từ trình giả lập HTC Desire HD và HTC One M7 c�
 Nếu AEmulator mang lại chiếc điện thoại bạn yêu thích, bạn có thể ủng hộ phát triển:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Liên kết
 

@@ -72,7 +72,6 @@ AEmulator, [ilk geliştiricinin](https://t.me/istratiit_ech) HTC Desire HD ve HT
 AEmulator sevdiğiniz bir telefonu geri getirdiyse geliştirmeyi destekleyebilirsiniz:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Bağlantılar
 

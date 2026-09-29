@@ -72,7 +72,6 @@ AEmulator は[オリジナル作者](https://t.me/istratiit_ech)の HTC Desire H
 AEmulator で思い出のスマホがよみがえったら、開発を支援できます：
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 リンク
 

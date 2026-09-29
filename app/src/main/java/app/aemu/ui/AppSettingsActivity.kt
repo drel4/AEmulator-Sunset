@@ -85,7 +85,6 @@ object Links {
     const val AUTHOR = "https://github.com/uxazu"
     const val ORIGINAL = "https://t.me/istratiit_ech"
     const val DONATE = "https://dalink.to/uxazu"
-    const val TON = "UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V"
 }
 
 class AppSettingsActivity : ComponentActivity() {
@@ -196,7 +195,6 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             item {
                 Section(stringResource(R.string.as_support)) {
                     Row_(Icons.Rounded.Favorite, stringResource(R.string.as_donate), "dalink.to/uxazu") { open(Links.DONATE) }
-                    Row_(Icons.Rounded.ContentCopy, stringResource(R.string.as_ton), Links.TON, mono = true) { copy(Links.TON) }
                 }
             }
         }

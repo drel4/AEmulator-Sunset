@@ -72,7 +72,6 @@ AEmulator вырос из эмуляторов HTC Desire HD и HTC One M7 [пе
 Если AEmulator вернул вам любимый телефон, можно поддержать разработку:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Ссылки
 

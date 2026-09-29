@@ -15,7 +15,6 @@ window.AEMU_CONFIG = {
     "channel": "https://t.me/aemulatorofficial",
     "author": "https://github.com/uxazu",
     "original": "https://t.me/istratiit_ech",
-    "donate": "https://dalink.to/uxazu",
-    "ton": "UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V"
+    "donate": "https://dalink.to/uxazu"
   }
 };

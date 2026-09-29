@@ -72,7 +72,6 @@ AEmulator [मूल लेखक](https://t.me/istratiit_ech) के HTC Desire
 अगर AEmulator ने आपका प्यारा फ़ोन लौटा दिया, तो आप विकास में मदद कर सकते हैं:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 लिंक
 

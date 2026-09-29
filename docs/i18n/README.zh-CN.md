@@ -72,7 +72,6 @@ AEmulator 源自[原作者](https://t.me/istratiit_ech)的 HTC Desire HD 与 HTC
 如果 AEmulator 让你心爱的手机重获新生，欢迎支持开发：
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 链接
 

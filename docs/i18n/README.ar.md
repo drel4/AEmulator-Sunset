@@ -74,7 +74,6 @@ cd aemulator
 إن أعاد إليك AEmulator هاتفًا أحببته، يمكنك دعم التطوير:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 روابط
 
