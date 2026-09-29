@@ -67,14 +67,13 @@ cd aemulator
 
 ## 🙏 شكر وتقدير
 
-نشأ AEmulator من محاكيات HTC Desire HD وHTC One M7 التي صنعها [المطوّر الأصلي](https://t.me/istratii_tech)، ولولا محركه ما وُجد هذا المشروع.
+نشأ AEmulator من محاكيات HTC Desire HD وHTC One M7 التي صنعها [المطوّر الأصلي](https://t.me/istratiit_ech)، ولولا محركه ما وُجد هذا المشروع.
 
 ## 💙 ادعم المشروع
 
 إن أعاد إليك AEmulator هاتفًا أحببته، يمكنك دعم التطوير:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 روابط
@@ -83,7 +82,7 @@ cd aemulator
 - 💬 المنتدى: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 قناة تيليجرام: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 المطوّر: [uxazu](https://github.com/uxazu)
-- 🧬 المطوّر الأصلي: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 المطوّر الأصلي: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 الترخيص
 

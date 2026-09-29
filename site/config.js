@@ -14,9 +14,8 @@ window.AEMU_CONFIG = {
     "forum": "https://aeforum.uxazuu.space/",
     "channel": "https://t.me/aemulatorofficial",
     "author": "https://github.com/uxazu",
-    "original": "https://t.me/istratii_tech",
+    "original": "https://t.me/istratiit_ech",
     "donate": "https://dalink.to/uxazu",
-    "usdt": "TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF",
     "ton": "UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V"
   }
 };

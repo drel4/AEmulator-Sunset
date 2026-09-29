@@ -65,14 +65,13 @@ cd aemulator
 
 ## 🙏 Ghi công
 
-AEmulator phát triển từ trình giả lập HTC Desire HD và HTC One M7 của [tác giả gốc](https://t.me/istratii_tech) — không có engine của anh ấy thì không có dự án này.
+AEmulator phát triển từ trình giả lập HTC Desire HD và HTC One M7 của [tác giả gốc](https://t.me/istratiit_ech) — không có engine của anh ấy thì không có dự án này.
 
 ## 💙 Ủng hộ dự án
 
 Nếu AEmulator mang lại chiếc điện thoại bạn yêu thích, bạn có thể ủng hộ phát triển:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Liên kết
@@ -81,7 +80,7 @@ Nếu AEmulator mang lại chiếc điện thoại bạn yêu thích, bạn có 
 - 💬 Diễn đàn: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Kênh Telegram: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Tác giả: [uxazu](https://github.com/uxazu)
-- 🧬 Tác giả gốc: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 Tác giả gốc: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 Giấy phép
 

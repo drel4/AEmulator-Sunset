@@ -83,9 +83,8 @@ object Links {
     const val GITHUB = "https://github.com/uxazu/aemulator"
     const val CHANNEL = "https://t.me/aemulatorofficial"
     const val AUTHOR = "https://github.com/uxazu"
-    const val ORIGINAL = "https://t.me/istratii_tech"
+    const val ORIGINAL = "https://t.me/istratiit_ech"
     const val DONATE = "https://dalink.to/uxazu"
-    const val USDT = "TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF"
     const val TON = "UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V"
 }
 
@@ -189,7 +188,7 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
                     Row_(Icons.Rounded.Public, stringResource(R.string.as_site), "aemulator.gt.tc") { open(Links.SITE) }
                     Row_(Icons.Rounded.Send, stringResource(R.string.as_channel), "@aemulatorofficial") { open(Links.CHANNEL) }
                     Row_(Icons.Rounded.Person, stringResource(R.string.as_author), "uxazu") { open(Links.AUTHOR) }
-                    Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratii_tech") { open(Links.ORIGINAL) }
+                    Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratiit_ech") { open(Links.ORIGINAL) }
                     Row_(Icons.Rounded.Code, stringResource(R.string.as_github), "github.com/uxazu/aemulator") { open(Links.GITHUB) }
                 }
             }
@@ -197,7 +196,6 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             item {
                 Section(stringResource(R.string.as_support)) {
                     Row_(Icons.Rounded.Favorite, stringResource(R.string.as_donate), "dalink.to/uxazu") { open(Links.DONATE) }
-                    Row_(Icons.Rounded.ContentCopy, stringResource(R.string.as_usdt), Links.USDT, mono = true) { copy(Links.USDT) }
                     Row_(Icons.Rounded.ContentCopy, stringResource(R.string.as_ton), Links.TON, mono = true) { copy(Links.TON) }
                 }
             }

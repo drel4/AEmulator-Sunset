@@ -65,14 +65,13 @@ cd aemulator
 
 ## 🙏 Teşekkürler
 
-AEmulator, [ilk geliştiricinin](https://t.me/istratii_tech) HTC Desire HD ve HTC One M7 emülatörlerinden doğdu — onun motoru olmadan bu proje olmazdı.
+AEmulator, [ilk geliştiricinin](https://t.me/istratiit_ech) HTC Desire HD ve HTC One M7 emülatörlerinden doğdu — onun motoru olmadan bu proje olmazdı.
 
 ## 💙 Projeyi destekleyin
 
 AEmulator sevdiğiniz bir telefonu geri getirdiyse geliştirmeyi destekleyebilirsiniz:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Bağlantılar
@@ -81,7 +80,7 @@ AEmulator sevdiğiniz bir telefonu geri getirdiyse geliştirmeyi destekleyebilir
 - 💬 Forum: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram kanalı: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Geliştirici: [uxazu](https://github.com/uxazu)
-- 🧬 İlk geliştirici: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 İlk geliştirici: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 Lisans
 

@@ -67,14 +67,13 @@ cd aemulator
 
 ## 🙏 سپاس
 
-AEmulator از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازندهٔ نخست](https://t.me/istratii_tech) رشد کرد — بدون موتور او این پروژه وجود نداشت.
+AEmulator از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازندهٔ نخست](https://t.me/istratiit_ech) رشد کرد — بدون موتور او این پروژه وجود نداشت.
 
 ## 💙 حمایت از پروژه
 
 اگر AEmulator گوشی محبوبتان را برگرداند، می‌توانید از توسعه حمایت کنید:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 پیوندها
@@ -83,7 +82,7 @@ AEmulator از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازن�
 - 💬 انجمن: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 کانال تلگرام: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 سازنده: [uxazu](https://github.com/uxazu)
-- 🧬 سازندهٔ نخست: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 سازندهٔ نخست: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 مجوز
 

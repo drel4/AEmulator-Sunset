@@ -65,14 +65,13 @@ cd aemulator
 
 ## 🙏 Credits
 
-AEmulator grew out of the HTC Desire HD and HTC One M7 emulators by [the original author](https://t.me/istratii_tech) — their engine made this project possible.
+AEmulator grew out of the HTC Desire HD and HTC One M7 emulators by [the original author](https://t.me/istratiit_ech) — their engine made this project possible.
 
 ## 💙 Support the project
 
 If AEmulator brought back a phone you loved, you can support development:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Links
@@ -81,7 +80,7 @@ If AEmulator brought back a phone you loved, you can support development:
 - 💬 Forum: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram channel: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Author: [uxazu](https://github.com/uxazu)
-- 🧬 Original author: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 Original author: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 License
 

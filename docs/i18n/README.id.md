@@ -65,14 +65,13 @@ cd aemulator
 
 ## 🙏 Kredit
 
-AEmulator tumbuh dari emulator HTC Desire HD dan HTC One M7 karya [pembuat asli](https://t.me/istratii_tech) — tanpa mesinnya proyek ini tidak akan ada.
+AEmulator tumbuh dari emulator HTC Desire HD dan HTC One M7 karya [pembuat asli](https://t.me/istratiit_ech) — tanpa mesinnya proyek ini tidak akan ada.
 
 ## 💙 Dukung proyek
 
 Jika AEmulator mengembalikan ponsel kesayangan Anda, Anda bisa mendukung pengembangan:
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 Tautan
@@ -81,7 +80,7 @@ Jika AEmulator mengembalikan ponsel kesayangan Anda, Anda bisa mendukung pengemb
 - 💬 Forum: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Kanal Telegram: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 Pembuat: [uxazu](https://github.com/uxazu)
-- 🧬 Pembuat asli: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 Pembuat asli: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 Lisensi
 

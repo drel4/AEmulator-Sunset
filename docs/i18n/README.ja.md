@@ -65,14 +65,13 @@ cd aemulator
 
 ## 🙏 クレジット
 
-AEmulator は[オリジナル作者](https://t.me/istratii_tech)の HTC Desire HD・HTC One M7 エミュレーターから生まれました。そのエンジンなしにこのプロジェクトはありません。
+AEmulator は[オリジナル作者](https://t.me/istratiit_ech)の HTC Desire HD・HTC One M7 エミュレーターから生まれました。そのエンジンなしにこのプロジェクトはありません。
 
 ## 💙 プロジェクトを支援
 
 AEmulator で思い出のスマホがよみがえったら、開発を支援できます：
 
 - 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
-- 💵 USDT (TRC20): `TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF`
 - 💎 TON: `UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V`
 
 ## 🔗 リンク
@@ -81,7 +80,7 @@ AEmulator で思い出のスマホがよみがえったら、開発を支援で�
 - 💬 フォーラム: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
 - 📣 Telegram チャンネル: [@aemulatorofficial](https://t.me/aemulatorofficial)
 - 👤 作者: [uxazu](https://github.com/uxazu)
-- 🧬 オリジナル作者: [t.me/istratii_tech](https://t.me/istratii_tech)
+- 🧬 オリジナル作者: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 ライセンス
 
