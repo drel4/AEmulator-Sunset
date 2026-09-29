@@ -339,9 +339,11 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 glUp(); glDone = true
             }
             // 4.2+: заглушка bluetooth_manager до зиготы (system_server с ro.kernel.qemu=1 свою не поднимает)
-            if (svc.name == "zygote" && img.api >= 17 && engine == Engine.KK && File(paths.root, "system/framework/aemu-stubs.jar").isFile) {
+            if (svc.name == "zygote" && img.api >= 9 && engine == Engine.KK && File(paths.root, "system/framework/aemu-stubs.jar").isFile) {
+                // 2.3–4.1 look up "bluetooth" instead; without it BluetoothAdapter is null and the vendor's Bluetooth apps crash
+                val btName = if (img.api >= 17) "bluetooth_manager" else "bluetooth"
                 startService(GuestService("aemu-bt", listOf("/system/bin/app_process",
-                    "-Djava.class.path=/system/framework/aemu-stubs.jar", "/system/bin", "app.aemu.stub.BtStub"), optional = true))
+                    "-Djava.class.path=/system/framework/aemu-stubs.jar", "/system/bin", "app.aemu.stub.BtStub", btName), optional = true))
             }
             // 5.0–7.x: a registered network, otherwise ConnectivityService says "no active network" and browsers stay offline
             if (svc.name == "zygote" && img.api in 21..25 && engine == Engine.KK && File(paths.root, "system/framework/aemu-stubs.jar").isFile) {
@@ -524,10 +526,31 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
     private fun afterBoot() {
         val r = guestRunner
-        r.run(listOf("/system/bin/svc", "power", "stayon", "true"), 60_000)
+        r.run(listOf("/system/bin/sh", "-c", "export PATH=/system/bin:/system/xbin:\$PATH; svc power stayon true"), 60_000)
         TreeFixer(ctx, paths, img, ::log).noScreenSleep()
+        disableBrokenComponents()
         val img2 = img.copy(lastBootMs = bootDoneAt - bootAt, bootCount = img.bootCount + 1)
         ImageStore.save(ctx, img2)
+    }
+
+    /**
+     * 2.3–4.1 Google network location (in Play services and in Maps) calls TelephonyRegistry.listen with notifyNow at
+     * start: the reply of that call is lost between the nested oneway callback and the reply, and the service dies with
+     * "Unknown exception code" and a "has stopped" dialog on every boot. Nothing here needs network location.
+     */
+    private fun disableBrokenComponents() {
+        if (img.api !in 9..16) return
+        val marker = File(paths.root, "data/.aemu-components-disabled2")
+        if (marker.isFile) return
+        val list = listOf(
+            "com.google.android.location/com.google.android.location.NetworkLocationService",
+            "com.google.android.location/com.google.android.location.internal.server.NetworkLocationService",
+            "com.google.android.apps.maps/com.google.android.location.internal.server.NetworkLocationService",
+            "com.google.android.apps.maps/com.google.android.location.NetworkLocationService",
+        )
+        // PATH of 2.3–4.x starts with /sbin: the pm script's "app_process" is then looked up there and qemu gives up
+        for (c in list) runCatching { guestRunner.run(listOf("/system/bin/sh", "-c", "export PATH=/system/bin:/system/xbin:\$PATH; pm disable $c"), 120_000) }
+        runCatching { marker.writeText("1") }
     }
 
     /** qemu maps a guest path into the tree only if the file exists there, so the shim's request file is pre-made */
