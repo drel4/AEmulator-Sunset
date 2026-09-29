@@ -80,14 +80,38 @@ class TreeFixer(
         // 4. заслонки ядра: /dev/binder как каталог, группы планировщика
         File(root, "dev/binder").takeIf { it.isDirectory }?.let { wipe(it) }
         File(root, "dev/cpuctl").takeIf { it.exists() }?.let { wipe(it) }
-        log("подготовка прошивки: убрано в сторону вендорских модулей: $n")
+        log("firmware prep: vendor modules set aside: $n")
     }
 
     // ---------------------------------------------------------------- перед каждым запуском
 
+    /**
+     * Precompiled code of 5.0+ system apps and of the framework (the odex files in oat/arm and framework/arm) is the only copy: the jars
+     * and apks are stripped. installd's dexopt on a fresh /data replaced or unlinked those files inside /system
+     * (a real /system is read-only), and the next boot died in system_server with "No original dex files found".
+     * Taking the write bit away makes such writes fail harmlessly; ImageStore.wipe gives it back before deleting.
+     */
+    private fun protectOat() {
+        val sys = File(root, "system")
+        var n = 0
+        fun lock(d: File) {
+            d.listFiles()?.forEach { f -> if (f.isFile) { if (f.canWrite()) { f.setWritable(false, false); n++ } } else if (f.isDirectory) lock(f) }
+            d.setWritable(false, false)
+        }
+        File(sys, "framework").listFiles()?.filter { it.isDirectory && (it.name == "oat" || it.name == "arm" || it.name == "arm64") }?.forEach { lock(it) }
+        for (top in listOf("app", "priv-app")) File(sys, top).listFiles()?.forEach { app ->
+            File(app, "oat").takeIf { it.isDirectory }?.let { lock(it) }
+        }
+        if (n > 0) log("oat files write-protected: $n")
+    }
+
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        protectOat()
+        fixThemeXml()
+        parkWhetstone()
+        swapMtkAudioHal()
         eglConfig(img.settings.gpu)
         makeDataDirs()
         makeUserZeroLink()
@@ -97,8 +121,113 @@ class TreeFixer(
         audioPolicy()
         qtaguid()
         vendorChecks()
+        scriptShebangs()
+        samsungEfs()
         for (n in LOGS) File(root, "dev/log/$n").let { if (!it.isFile) { it.parentFile?.mkdirs(); it.createNewFile() } }
         makeFb()
+    }
+
+    /**
+     * Скрипты am/pm/input/monkey… в старых прошивках начинаются с «# Script…» без #!. Ядро на такой
+     * execve отвечает ENOEXEC и mksh запускает файл сам, а qemu вместо этого падает «Exec format error».
+     */
+    private fun scriptShebangs() {
+        for (dir in listOf("system/bin", "system/xbin")) {
+            val files = File(root, dir).listFiles() ?: continue
+            for (f in files) {
+                if (!f.isFile || f.length() > 64_000 || java.nio.file.Files.isSymbolicLink(f.toPath())) continue
+                val head = runCatching { f.inputStream().use { s -> ByteArray(2).also { s.read(it) } } }.getOrNull() ?: continue
+                if (head[0] != '#'.code.toByte() || head[1] == '!'.code.toByte()) continue
+                runCatching { f.writeBytes("#!/system/bin/sh\n".toByteArray() + f.readBytes()) }
+            }
+        }
+    }
+
+    /**
+     * Samsung: без /efs/FactoryApp/factorymode = ON прошивка считает себя заводской и поверх всего
+     * рисует таблицу «PDA / CSC / RF Cal Date…», а часть служб работает в режиме заводского теста.
+     */
+    private fun samsungEfs() {
+        val efs = File(root, "efs")
+        if (!efs.isDirectory) return
+        val dir = File(efs, "FactoryApp").apply { mkdirs() }
+        for (n in listOf("factorymode", "keystr")) {
+            val f = File(dir, n)
+            if (runCatching { f.readText().trim() }.getOrNull() != "ON") runCatching { f.writeText("ON") }
+        }
+    }
+
+    private fun qcomAudioFlinger(): Boolean = runCatching {
+        val af = File(root, "system/lib/libaudioflinger.so")
+        af.isFile && String(af.readBytes(), Charsets.ISO_8859_1).contains("setFmVolume")
+    }.getOrDefault(false)
+
+    /**
+     * MediaTek 4.x: libaudioflinger loads the primary HAL from /system/lib/libaudio.primary.default.so
+     * (AudioMTKHardware, which needs the MTK sound driver — silent here). Park it as libaudio.mtk.so and put
+     * our HAL there; it forwards the DcRemove filter AudioFlinger links from that library to the original.
+     */
+    private fun swapMtkAudioHal() {
+        if (engine != Engine.KK || img.api < 17) return
+        val lib = File(root, "system/lib/libaudio.primary.default.so")
+        val orig = File(root, "system/lib/libaudio.mtk.so")
+        if (!orig.isFile) {
+            if (!lib.isFile || !isMtkAudio(root)) return
+            if (!lib.renameTo(orig)) return
+        }
+        val asset = "engines/kk/audio.primary.mtk.so"
+        val size = runCatching { ctx.assets.openFd(asset).use { it.length } }.getOrDefault(-1L)
+        if (lib.isFile && lib.length() == size && sameContent(asset, lib)) return
+        runCatching {
+            ctx.assets.open(asset).use { i -> lib.outputStream().use { o -> i.copyTo(o) } }
+            lib.setReadable(true, false)
+            log("audio: MediaTek HAL replaced with the emulator HAL")
+        }.onFailure { log("audio: MediaTek HAL swap failed: ${it.message}") }
+    }
+
+    /**
+     * MIUI 8 reads system/media/theme/theme_compatibility.xml while zygote preloads classes. Some builds ship it with
+     * nested comments ("<!-- <!-- ...") that Android's strict XML parser rejects; ThemeCompatibility and MiuiResources
+     * then fail to initialise in every process and the system never finishes booting (black screen). Double hyphens
+     * inside comments are separated so the file parses.
+     */
+    private fun fixThemeXml() {
+        val f = File(root, "system/media/theme/theme_compatibility.xml")
+        if (!f.isFile || f.length() > 4_000_000) return
+        runCatching {
+            val s = f.readText()
+            if (!s.contains("<!-- <!--")) return
+            val out = StringBuilder(s.length)
+            var i = 0
+            while (true) {
+                val a = s.indexOf("<!--", i)
+                if (a < 0) { out.append(s, i, s.length); break }
+                out.append(s, i, a + 4)
+                val e = s.indexOf("-->", a + 4)
+                if (e < 0) { out.append(s, a + 4, s.length); break }
+                out.append(s.substring(a + 4, e).replace("--", "- -")).append("-->")
+                i = e + 3
+            }
+            f.writeText(out.toString())
+            log("theme_compatibility.xml: nested comments fixed")
+        }
+    }
+
+    /**
+     * MIUI 8: ActivityManagerService calls MIUI's Whetstone service (an app process) while holding its own lock, and that
+     * process in turn waits for the same lock. The watchdog then restarts system_server over and over and the boot never
+     * finishes. Whetstone only does background-power bookkeeping, so its package is set aside.
+     */
+    private fun parkWhetstone() {
+        val apk = File(root, "system/app/Whetstone.apk")
+        if (!apk.isFile || !File(root, "system/app/miuisystem.apk").isFile) return
+        runCatching {
+            val dir = File(root, "system/.aemu-parked").apply { mkdirs() }
+            if (apk.renameTo(File(dir, "Whetstone.apk"))) {
+                File(root, "data/dalvik-cache/system@app@Whetstone.apk@classes.dex").delete()
+                log("MIUI: Whetstone package set aside (deadlock with the activity manager)")
+            }
+        }
     }
 
     private fun installEngineFiles() {
@@ -133,11 +262,25 @@ class TreeFixer(
             if (text.contains("libion.so") || text.contains("ion_alloc")) {
                 val parked = File(root, "system/.aemu-parked/system#lib#hw#gralloc.default.so.ion")
                 parked.parentFile?.mkdirs()
-                if (romGralloc.renameTo(parked)) log("gralloc прошивки работает через ION — заменён на gralloc движка")
+                if (romGralloc.renameTo(parked)) log("firmware gralloc uses ION, replaced with engine gralloc")
             }
         }
         var copied = 0
-        for ((from, to) in copies + listOf("@libaemushim.so" to "system/lib/libaemushim.so")) {
+        // 7.0+ libEGL on a qemu kernel (qemu.gles=1) only tries the "emulation" driver name
+        val nougat = if (img.api >= 24 && copies.any { it.second == "system/lib/egl/libGLES_bridge.so" })
+            listOf("libGLES_split.so" to "system/lib/egl/libGLES_emulation.so") else emptyList()
+        // 7.0+ without the GPU bridge: libEGL would still find the bridge by scanning egl/, so it is not there at all
+        val noBridge = img.api >= 24 && !img.settings.gpu
+        if (noBridge) {
+            for (n in listOf("libGLES_bridge.so", "libGLES_emulation.so")) File(root, "system/lib/egl/$n").delete()
+            // a scan skips libGLES_android.so; in "vendor software renderer" mode (qemu.gles=2) libEGL asks for
+            // libGLES_swiftshader.so, which here is the stock software renderer
+            val sw = File(root, "system/lib/egl/libGLES_swiftshader.so")
+            if (!sw.exists() && !isLink(sw) && File(root, "system/lib/egl/libGLES_android.so").isFile)
+                runCatching { Os.symlink("libGLES_android.so", sw.path) }
+        }
+        for ((from, to) in (copies + nougat).filter { !noBridge || !it.second.startsWith("system/lib/egl/libGLES_") } +
+            listOf("@libaemushim.so" to "system/lib/libaemushim.so")) {
             val dst = File(root, to)
             // gralloc движка — только если в прошивке своего нет
             if (from == "gralloc.default.so" && dst.isFile) continue
@@ -145,9 +288,17 @@ class TreeFixer(
             // звуковой HAL стенда разложен под AudioFlinger HTC; остальным 4.2+ — вариант с раскладкой AOSP.
             // У Samsung свой audio_stream_out (лишние слоты) — с ним AOSP-вариант роняет mediaserver,
             // поэтому там остаётся исходный: выход не открывается, система работает без звука.
-            val htcLike = img.skin.contains("HTC", true) || img.skin.contains("TouchWiz", true) || img.skin.contains("Samsung", true)
-            val name = if (from == "audio.primary.default.so" && img.api >= 17 && !htcLike)
-                "audio.primary.aosp.so" else from
+            // Samsung 4.3 AudioFlinger uses the KitKat slots (verified on I9300 XXUGNJ2: init_check 0x44,
+            // open_output_stream 0x6c, stream write 0x40), so only 4.1–4.2 TouchWiz keeps the stand HAL
+            val samsung = img.skin.contains("TouchWiz", true) || img.skin.contains("Samsung", true)
+            val htcLike = img.skin.contains("HTC", true) || (samsung && img.api < 18)
+            val name = when {
+                from != "audio.primary.default.so" || htcLike -> from
+                // 4.0 has its own audio_hw_device layout; Qualcomm CAF builds add set_fm_volume/open_output_session
+                img.api in 14..15 -> if (qcomAudioFlinger()) "audio.primary.ics-qcom.so" else "audio.primary.ics.so"
+                img.api >= 16 -> "audio.primary.aosp.so"
+                else -> from
+            }
             val asset = if (name.startsWith("@")) "engines/common/${name.drop(1)}" else "engines/${engine.id}/$name"
             val size = runCatching { ctx.assets.openFd(asset).use { it.length } }.getOrDefault(-1L)
             // одинаковый размер ещё не значит тот же файл (правки движка на месте, варианты HAL) — сверяем CRC
@@ -159,30 +310,34 @@ class TreeFixer(
                 dst.setReadable(true, false)
                 dst.setExecutable(true, false)
                 copied++
-            }.onFailure { log("нет ${from.removePrefix("@")} в наборе движка: ${it.message}") }
+            }.onFailure { log("${from.removePrefix("@")} missing from engine set: ${it.message}") }
         }
         // вендорские драйверы RenderScript (Adreno, Mali…) лезут в GPU; без них libRS берёт процессорный
         for (dir in listOf("system/lib", "vendor/lib", "system/vendor/lib")) {
             File(root, dir).listFiles()?.filter { it.name.startsWith("libRSDriver_") }?.forEach { f ->
                 val parked = File(root, "system/.aemu-parked/${f.relativeTo(root).path.replace('/', '#')}")
                 parked.parentFile?.mkdirs()
-                if (f.renameTo(parked)) log("RenderScript: убран вендорский драйвер ${f.name}")
+                if (f.renameTo(parked)) log("RenderScript: removed vendor driver ${f.name}")
             }
         }
         // netfilter в эмуляторе нет: iptables всегда падает, а netd 4.x (Samsung) считает это фатальным
         // для NetworkManagementService/ConnectivityService — ставим пустую программу, родную прячем
         val trueSize = runCatching { ctx.assets.openFd("engines/common/aemu_true.so").use { it.length } }.getOrDefault(-1L)
-        for (n in listOf("iptables", "ip6tables")) {
-            val f = File(root, "system/bin/$n")
+        // MIUI: invoke-as runs FirewallService's iptables loop as root; under qemu that shell never sees its
+        // children exit, so ConnectivityService (and the whole boot) hangs in CommandLineUtils.waitFor
+        val fakes = listOf("bin/iptables", "bin/ip6tables") + if (img.skin.contains("MIUI", true)) listOf("xbin/invoke-as") else emptyList()
+        for (rel in fakes) {
+            val n = rel.substringAfter('/')
+            val f = File(root, "system/$rel")
             if (!f.exists() && !isLink(f) || trueSize < 0 || (!isLink(f) && f.length() == trueSize)) continue
             runCatching {
-                val parked = File(root, "system/.aemu-parked/system#bin#$n")
+                val parked = File(root, "system/.aemu-parked/system#${rel.replace('/', '#')}")
                 parked.parentFile?.mkdirs()
                 if (isLink(f)) Os.remove(f.absolutePath) else if (!parked.exists()) f.renameTo(parked) else f.delete()
                 ctx.assets.open("engines/common/aemu_true.so").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
                 f.setReadable(true, false); f.setExecutable(true, false)
                 copied++
-            }.onFailure { log("$n не заменился: ${it.message}") }
+            }.onFailure { log("$n not replaced: ${it.message}") }
         }
         // камера 2.3: заглушка вместо вендорской libcamera.so, которая лезет в /dev/msm_camera
         val cam = File(root, "system/lib/libcamera.so")
@@ -201,7 +356,7 @@ class TreeFixer(
                 }
             }
         }
-        if (copied > 0) log("файлы движка ${engine.id}: обновлено $copied")
+        if (copied > 0) log("engine ${engine.id} files updated: $copied")
     }
 
     /** Направляет загрузчик EGL прошивки на GL-мост (или на программный растеризатор). */
@@ -229,7 +384,7 @@ class TreeFixer(
                             ctx.assets.open("engines/kk/libGLES_split.so").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
                             f.setReadable(true, false); f.setExecutable(true, false)
                         }
-                    }.onFailure { log("GL: переходник не разложился: ${it.message}") }
+                    }.onFailure { log("GL: shim failed to install: ${it.message}") }
                     // часть загрузчиков (Samsung 4.3) берут последнюю строку, остальные — строку с impl=1
                     cfg.writeText("0 0 android\n0 1 aemu\n")
                 } else {
@@ -263,9 +418,9 @@ class TreeFixer(
         val drvb = File(root, "system/lib/libmtk_drvb.so")
         if (drvb.isFile) {
             val n = ElfPatch.returnZero(drvb, setOf("mtk_drvb_basechk", "platform_init", "platform_advchk", "drvb_ext_input"))
-            if (n > 0) log("MediaTek DRVB: проверка платформы отключена ($n функц.)")
+            if (n > 0) log("MediaTek DRVB: platform check disabled ($n func.)")
         }
-    }.onFailure { log("MediaTek DRVB: не вышло — ${it.message}") }
+    }.onFailure { log("MediaTek DRVB: failed: ${it.message}") }
 
     private fun qtaguid() = runCatching {
         val d = File(root, "data/.aemu_qtaguid").apply { mkdirs() }
@@ -291,11 +446,14 @@ class TreeFixer(
             val f = File(root, d)
             if (!f.isDirectory && f.mkdirs()) made++
         }
-        if (made > 0) log("созданы каталоги, которые делает init: $made")
+        if (made > 0) log("created init directories: $made")
     }
 
     private fun makeUserZeroLink() {
-        if (img.api < 17) return
+        if (img.api < 14) return // ICS installd creates /data/user/0 too; an absolute link points at the host /data
+        // 7.0+: vold prepares the device-encrypted per-user dirs; without it installd cannot create app DE storage
+        if (img.api >= 24) for (d in listOf("data", "user_de/0", "misc_ce/0", "misc_de/0", "system_ce/0", "system_de/0", "media/0", "misc/profiles/cur/0", "misc/profiles/ref"))
+            File(root, "data/$d").mkdirs()
         val user = File(root, "data/user").apply { mkdirs() }
         val zero = File(user, "0")
         val cur = runCatching { Os.readlink(zero.absolutePath) }.getOrNull()
@@ -336,6 +494,10 @@ class TreeFixer(
             "usb/type" to "USB", "usb/online" to "0",
         )
         for ((rel, v) in bat) File(base, rel).let { if (!it.isFile) { it.parentFile?.mkdirs(); it.writeText(v + "\n") } }
+        healthdRelativeSysfs(base)
+        personalityNoop()
+        parkNfc()
+        mainStackMaps()
         val power = File(root, "sys/power").apply { mkdirs() }
         for (n in listOf("state", "wake_lock", "wake_unlock", "autosleep")) File(power, n).let { if (!it.isFile) it.createNewFile(); it.setWritable(true, false) }
         // узлы питания, которые открывает libhardware_legacy именно этой прошивки (Samsung: dvfslock_ctrl…):
@@ -346,10 +508,17 @@ class TreeFixer(
                 val text = String(lib.readBytes(), Charsets.ISO_8859_1)
                 for (m in Regex("/sys/(power|android_power)/[a-z_0-9]+").findAll(text)) {
                     val rel = m.value.removePrefix("/")
-                    if (rel.contains("wait_for_fb")) continue // блокирующее чтение — обычный файл вызвал бы холостой цикл
+                    if (rel.contains("wait_for_fb")) continue // handled below
                     File(root, rel).let { f -> if (!f.exists()) { f.parentFile?.mkdirs(); f.createNewFile(); f.setWritable(true, false) } }
                 }
             }
+        }
+        // SurfaceFlinger's DisplayEventThread loops sleep→wake: missing nodes make it spin at 100% CPU (EBADF).
+        // wake answers at once; sleep is a FIFO with no writer, so the read blocks forever and the screen stays on.
+        runCatching {
+            File(power, "wait_for_fb_wake").let { if (!it.isFile) it.writeText("awake") }
+            val sleep = File(power, "wait_for_fb_sleep")
+            if (!sleep.exists()) android.system.Os.mkfifo(sleep.absolutePath, "666".toInt(8))
         }
         // подсветка экрана: LightsService пишет сюда яркость
         val bl = File(root, "sys/class/leds/lcd-backlight").apply { mkdirs() }
@@ -445,7 +614,7 @@ class TreeFixer(
                 |}
                 |""".trimMargin()
             if (cur.takeIf { it.isFile }?.readText() != text) cur.writeText(text)
-        }.onFailure { log("звук: audio_policy.conf не записался: ${it.message}") }
+        }.onFailure { log("audio: failed to write audio_policy.conf: ${it.message}") }
     }
 
     /** Кадровый буфер — обычный файл, qemu отвечает на ioctl FBIOGET_* от гостя. */
@@ -453,13 +622,14 @@ class TreeFixer(
         val s = img.settings
         val (w, h) = if (engine == Engine.GB) 480 to 800 else s.width to s.height
         // двойная буферизация: гость листает страницы через FBIOPAN_DISPLAY
-        val need = w.toLong() * h * 2 * 2
+        // qemu reports smem_len = two 32-bit pages (TWRP draws BGRA_8888); mmap past the file end would SIGBUS
+        val need = w.toLong() * h * 4 * 2
         val f = paths.fb
         if (f.isFile && f.length() == need) return
         f.parentFile?.mkdirs()
         RandomAccessFile(f, "rw").use { it.setLength(need) }
         runCatching { File(root, "dhd.fbgeom").writeText("$w $h\n") }
-        log("кадровый буфер: ${w}x$h")
+        log("framebuffer: ${w}x$h")
     }
 
     /**
@@ -498,10 +668,10 @@ class TreeFixer(
             }
             if (rows > 0) {
                 paths.owners.appendText(sb.toString())
-                log("владельцы файлов восстановлены: пакетов $pkgs, записей $rows")
+                log("file owners restored: $pkgs packages, $rows entries")
             }
             stamp.writeText(done.joinToString("\n", postfix = "\n"))
-        }.onFailure { log("владельцы: ${it.message}") }
+        }.onFailure { log("owners: ${it.message}") }
     }
 
     /** Пропустить миграцию PRE_BOOT_COMPLETED (4.x): под эмуляцией она занимает минуты. */
@@ -547,16 +717,170 @@ class TreeFixer(
                 put(if (img.api >= 17) "global" else "secure", "install_non_market_apps", "1")
                 put("secure", "install_non_market_apps", "1")
                 if (img.api >= 17) put("global", "verifier_verify_adb_installs", "0")
+                // мастер первого запуска считаем пройденным: иначе он остаётся «домашним экраном»,
+                // и кнопка «Домой» открывает его (у Samsung — чёрный экран на минуты)
+                put(if (img.api >= 17) "global" else "secure", "device_provisioned", "1")
+                put("secure", "user_setup_complete", "1")
             }
-        }.onFailure { log("настройки: база не открылась: ${it.message}") }
+        }.onFailure { log("settings: database failed to open: ${it.message}") }
+        disableSetupWizards()
+    }
+
+    /** Отключает пакеты мастеров первого запуска в package-restrictions.xml (enabled="2" = выключен). */
+    private fun disableSetupWizards() {
+        val f = File(root, "data/system/users/0/package-restrictions.xml")
+        if (!f.isFile) return
+        // packages.xml, а не packages.list: в списке нет пакетов с общим системным uid (мастер Samsung)
+        val pkgs = runCatching { File(root, "data/system/packages.xml").readText() }.getOrNull() ?: return
+        val targets = SETUP_WIZARDS.filter { pkgs.contains("<package name=\"$it\"") }
+        if (targets.isEmpty()) return
+        var xml = runCatching { f.readText() }.getOrNull() ?: return
+        var changed = false
+        for (p in targets) {
+            val open = Regex("<pkg name=\"${Regex.escape(p)}\"([^>]*?)(/?)>")
+            val m = open.find(xml)
+            if (m == null) {
+                xml = xml.replace("</package-restrictions>", "    <pkg name=\"$p\" enabled=\"2\" />\n</package-restrictions>")
+                changed = true
+            } else if (!m.groupValues[1].contains("enabled=\"2\"")) {
+                val attrs = m.groupValues[1].replace(Regex(" enabled=\"\\d\""), "")
+                xml = xml.replaceRange(m.range, "<pkg name=\"$p\"$attrs enabled=\"2\"${m.groupValues[2]}>")
+                changed = true
+            }
+        }
+        if (changed) runCatching { f.writeText(xml); log("setup wizard disabled: ${targets.joinToString()}") }
+    }
+
+    /**
+     * Static healthd (5.0+) checks the battery files with faccessat, which the stand's qemu does not map into the
+     * guest root: it tests the phone's real /sys and finds no battery. Its path constant becomes the relative
+     * "sys/class/power_supply" (resolved from the services' working directory, run/, where sys links to root/sys).
+     */
+    private fun healthdRelativeSysfs(base: File) {
+        if (img.api < 21) return
+        runCatching {
+            val link = File(paths.bin, "sys")
+            paths.bin.mkdirs()
+            if (!isLink(link)) { wipe(link); Os.symlink(File(root, "sys").absolutePath, link.path) }
+            val hd = File(root, "sbin/healthd").takeIf { it.isFile } ?: return
+            val d = hd.readBytes()
+            val from = "/sys/class/power_supply".toByteArray()
+            val to = "sys/class/power_supply".toByteArray() + 0
+            var n = 0
+            var i = 0
+            while (i <= d.size - from.size) {
+                if (d[i] == from[0] && (0 until from.size).all { d[i + it] == from[it] }) { System.arraycopy(to, 0, d, i, to.size); n++; i += from.size } else i++
+            }
+            if (n > 0) { hd.writeBytes(d); log("healthd: battery sysfs path made relative ($n)") }
+        }.onFailure { log("healthd patch failed: ${it.message}") }
+        if (!base.isDirectory) log("no fake power_supply")
+    }
+
+    /**
+     * bionic 6.0+ starts every 32-bit process with personality(PER_LINUX32) and aborts ("error setting PER_LINUX32
+     * personality") when it fails — and it does on phones without AArch32 (Snapdragon 8 Elite…), qemu passes the
+     * call to the host kernel. The personality syscall stub (mov ip,r7; mov r7,#136; swi 0) gets "mov r0,#0"
+     * instead of the swi, in libc.so and in static binaries (healthd, ueventd…). Done once per image.
+     */
+    private fun personalityNoop() {
+        if (img.api < 23) return
+        val stamp = File(root, ".aemu-personality")
+        if (stamp.isFile && runCatching { stamp.readText().trim().toInt() }.getOrDefault(0) > 0) return
+        val files = listOf(File(root, "system/lib/libc.so")) +
+            listOf("sbin", "system/bin", "system/xbin").flatMap { File(root, it).listFiles().orEmpty().toList() }
+        var n = 0
+        for (f in files) {
+            if (!f.isFile || isLink(f) || f.length() > 8_000_000 || f.length() < 1024) continue
+            runCatching {
+                val d = f.readBytes()
+                if (d[0] != 0x7f.toByte() || d[1] != 'E'.code.toByte()) return@runCatching
+                val b = java.nio.ByteBuffer.wrap(d).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                var hit = false
+                var i = 0
+                while (i + 12 <= d.size) {
+                    // mov ip, r7 ; mov r7, #136 (6.0) or ldr r7, [pc, #x] holding 136 (7.x) ; swi #0
+                    if (b.getInt(i) == 0xe1a0c007.toInt() && b.getInt(i + 8) == 0xef000000.toInt()) {
+                        val w = b.getInt(i + 4)
+                        val nr = when {
+                            w == 0xe3a07088.toInt() -> 136
+                            w and 0xfffff000.toInt() == 0xe59f7000.toInt() ->
+                                (i + 4 + 8 + (w and 0xfff)).takeIf { it + 4 <= d.size }?.let { b.getInt(it) } ?: -1
+                            else -> -1
+                        }
+                        if (nr == 136) { b.putInt(i + 8, 0xe3a00000.toInt()); hit = true }   // swi #0 → mov r0, #0
+                    }
+                    i += 4
+                }
+                if (hit) { f.writeBytes(d); n++ }
+            }
+        }
+        log("personality(PER_LINUX32) made a no-op in $n files")
+        runCatching { stamp.writeText("$n\n") }
+    }
+
+    /**
+     * bionic 6.0 finds the main thread's stack in /proc/self/task/<pid>/maps; qemu only emulates /proc/self/maps,
+     * so the guest parses the host's 64-bit map and ART gets random stack bounds ("Check failed: &stack_variable >
+     * stack_end", then SIGSEGV in zygote). The format string in libc.so becomes "/proc/self/maps".
+     */
+    /**
+     * 5.0+: the NFC app's own watchdog aborts it while the vendor NFC stack initialises under qemu; that
+     * persistent crash loops the whole system. There is no NFC to offer, so the app is moved out of the way.
+     */
+    private fun parkNfc() {
+        // 7.0+ zygote: the shim shows qemu's /dhd.owners descriptor under this whitelisted name; after fork
+        // zygote reopens it by that path, which has to lead back to the same table
+        if (img.api >= 24) runCatching {
+            val link = File(root, "system/framework/aemu-owners.jar")
+            if (!isLink(link)) { link.delete(); Os.symlink(paths.owners.absolutePath, link.path) }
+        }
+        if (img.api < 21) return
+        val parked = File(root, "system/.aemu-parked").apply { mkdirs() }
+        for (dir in listOf("system/app", "system/priv-app")) File(root, dir).listFiles()?.filter { it.name.startsWith("Nfc") }?.forEach { f ->
+            val dst = File(parked, f.relativeTo(root).path.replace('/', '#'))
+            if (f.renameTo(dst)) log("parked ${f.name}")
+        }
+    }
+
+    private fun mainStackMaps() {
+        if (img.api < 23) return
+        val libc = File(root, "system/lib/libc.so")
+        runCatching {
+            val d = libc.readBytes()
+            val from = "/proc/self/task/%d/maps".toByteArray()
+            val i = indexOf(d, from)
+            if (i < 0) return
+            val to = "/proc/self/maps".toByteArray()
+            for (k in from.indices) d[i + k] = if (k < to.size) to[k] else 0
+            libc.writeBytes(d)
+            log("libc: main thread stack read from /proc/self/maps")
+        }.onFailure { log("libc maps patch failed: ${it.message}") }
+    }
+
+    private fun indexOf(d: ByteArray, p: ByteArray): Int {
+        var i = 0
+        while (i <= d.size - p.size) {
+            if (d[i] == p[0] && (1 until p.size).all { d[i + it] == p[it] }) return i
+            i++
+        }
+        return -1
     }
 
     private fun isLink(f: File) = runCatching { OsConstants.S_ISLNK(Os.lstat(f.absolutePath).st_mode) }.getOrDefault(false)
     private fun wipe(f: File) = ImageStore.wipe(f)
 
     companion object {
+        /** Мастера первого запуска: Samsung, Google, AOSP, MIUI, HTC, Sony */
+        val SETUP_WIZARDS = listOf(
+            "com.sec.android.app.SecSetupWizard", "com.google.android.setupwizard", "com.android.provision",
+            "com.miui.provision", "com.htc.setupwizard", "com.sonyericsson.setupwizard", "com.sonymobile.setupwizard",
+            // вход в Google-аккаунт на 2.x–4.x больше не работает (старые протоколы входа Google закрыл):
+            // его экран не рисуется, запрещает «Домой», и «Контакты» при первом запуске запирают в нём систему
+            "com.google.android.gsf.login",
+        )
         /** Прошивка MediaTek, где AudioFlinger связан с собственной звуковой библиотекой MTK (/dev/eac). */
         fun isMtkAudio(root: File): Boolean {
+            if (File(root, "system/lib/libaudio.mtk.so").isFile) return true   // already swapped for our HAL
             val f = File(root, "system/lib/libaudio.primary.default.so")
             if (!f.isFile || f.length() > 20_000_000) return false
             return runCatching { String(f.readBytes(), Charsets.ISO_8859_1).contains("AudioMTKHardware") }.getOrDefault(false)

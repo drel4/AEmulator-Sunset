@@ -18,7 +18,12 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -45,6 +50,8 @@ private val RESOLUTIONS = listOf(
     Res("540×960", 540, 960, 240),
     Res("720×1280", 720, 1280, 320),
 )
+
+private val RAM_STEPS = listOf(0, 256, 512, 768, 1024, 1536, 2048, 3072, 4096)
 
 @Composable
 fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -> Unit) {
@@ -75,6 +82,12 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
                         ) { Text(r.label) }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    NumField(stringResource(R.string.vs_width), s.width, Modifier.weight(1f)) { s = s.copy(width = it.coerceIn(240, 2160) and 0x7ffffffe) }
+                    NumField(stringResource(R.string.vs_height), s.height, Modifier.weight(1f)) { s = s.copy(height = it.coerceIn(320, 3840) and 0x7ffffffe) }
+                    NumField(stringResource(R.string.vs_dpi), s.density, Modifier.weight(1f)) { s = s.copy(density = it.coerceIn(96, 640)) }
+                }
                 Text(stringResource(R.string.vs_screen_hint), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
             }
@@ -84,9 +97,41 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             Toggle(stringResource(R.string.vs_gpu), stringResource(R.string.vs_gpu_sub), s.gpu) { s = s.copy(gpu = it) }
             if (img.api >= 14) Toggle(stringResource(R.string.vs_hwui), stringResource(R.string.vs_hwui_sub), s.hwui) { s = s.copy(hwui = it) }
             Toggle(stringResource(R.string.vs_jit), stringResource(R.string.vs_jit_sub), s.jit) { s = s.copy(jit = it) }
+            if (img.api >= 21) Toggle(stringResource(R.string.vs_fulldex), stringResource(R.string.vs_fulldex_sub), s.fullDexopt) { s = s.copy(fullDexopt = it) }
             if (img.api < 14) Toggle(stringResource(R.string.vs_legacy), stringResource(R.string.vs_legacy_sub), s.legacyEngine) { s = s.copy(legacyEngine = it) }
+            val ramIdx = RAM_STEPS.indexOf(s.ramMb).coerceAtLeast(0)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.vs_ram)) },
+                supportingContent = {
+                    Column {
+                        Text(if (s.ramMb == 0) stringResource(R.string.vs_ram_auto) else "${s.ramMb} MB")
+                        Slider(value = ramIdx.toFloat(), onValueChange = { s = s.copy(ramMb = RAM_STEPS[it.toInt()]) },
+                            valueRange = 0f..RAM_STEPS.lastIndex.toFloat(), steps = RAM_STEPS.size - 2)
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
             Toggle(stringResource(R.string.vs_lowram), stringResource(R.string.vs_lowram_sub), s.lowRam) { s = s.copy(lowRam = it) }
             Toggle(stringResource(R.string.vs_proxy), stringResource(R.string.vs_proxy_sub), s.netProxy) { s = s.copy(netProxy = it) }
+
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.vs_radio_title), style = MaterialTheme.typography.titleMedium)
+            Toggle(stringResource(R.string.vs_radio), stringResource(R.string.vs_radio_sub), s.radio) { s = s.copy(radio = it) }
+            if (s.radio) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = s.imei, onValueChange = { v -> s = s.copy(imei = v.filter(Char::isDigit).take(15)) },
+                    label = { Text("IMEI") }, placeholder = { Text(VmSettings.DEFAULT_IMEI) }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
+                TextButton(onClick = { s = s.copy(imei = VmSettings.randomImei()) }) { Text(stringResource(R.string.vs_random)) }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.vs_advanced), style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(value = s.qemuArgs, onValueChange = { s = s.copy(qemuArgs = it) },
+                label = { Text(stringResource(R.string.vs_qemu_args)) }, supportingText = { Text(stringResource(R.string.vs_qemu_args_sub)) },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
+
+            Spacer(Modifier.height(8.dp))
+            RecoverySection(img)
 
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.vs_controls), style = MaterialTheme.typography.titleMedium)
@@ -110,4 +155,61 @@ internal fun Toggle(title: String, sub: String, on: Boolean, set: (Boolean) -> U
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+@Composable
+private fun NumField(label: String, value: Int, modifier: Modifier, set: (Int) -> Unit) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    OutlinedTextField(value = text, onValueChange = { v -> text = v.filter(Char::isDigit).take(4); text.toIntOrNull()?.let(set) },
+        label = { Text(label) }, singleLine = true, modifier = modifier,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+}
+
+/** Recovery of this firmware: stock one from the import, or a custom recovery.img (TWRP, OrangeFox, CWM…). */
+@Composable
+private fun RecoverySection(img: GuestImage) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val paths = remember(img.id) { app.aemu.core.VmPaths(ctx, img.id) }
+    var status by remember { mutableStateOf(recoveryStatus(paths)) }
+    var busy by remember { mutableStateOf(false) }
+    val failed = stringResource(R.string.vs_recovery_failed)
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true
+        Thread {
+            val ok = runCatching {
+                val data = ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                app.aemu.core.RecoveryImage.install(paths, data) {}
+            }.getOrDefault(false)
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                busy = false
+                status = recoveryStatus(paths)
+                if (!ok) android.widget.Toast.makeText(ctx, failed, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+    Text(stringResource(R.string.vs_recovery), style = MaterialTheme.typography.titleMedium)
+    ListItem(
+        headlineContent = { Text(status ?: stringResource(R.string.vs_recovery_none)) },
+        supportingContent = { Text(stringResource(R.string.vs_recovery_sub)) },
+        trailingContent = {
+            TextButton(enabled = !busy, onClick = { pick.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.vs_recovery_install)) }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+private fun recoveryStatus(paths: app.aemu.core.VmPaths): String? {
+    if (!app.aemu.core.RecoveryImage.installed(paths)) return null
+    val dir = app.aemu.core.RecoveryImage.dir(paths)
+    val prop = runCatching { java.io.File(dir, "default.prop").readText() }.getOrDefault("")
+    val twrp = Regex("""ro\.twrp\.version=(\S+)""").find(prop)?.groupValues?.get(1)
+    return when {
+        twrp != null -> "TWRP $twrp"
+        java.io.File(dir, "twres").isDirectory -> "TWRP"
+        java.io.File(dir, "sbin/orangefox.sh").exists() || prop.contains("orangefox", true) -> "OrangeFox"
+        prop.contains("cwm", true) || java.io.File(dir, "res/images/icon_clockwork.png").exists() -> "ClockworkMod"
+        else -> "Stock recovery"
+    }
 }

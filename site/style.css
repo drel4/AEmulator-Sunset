@@ -396,23 +396,33 @@ h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; }
 [dir="rtl"] .hero__word--accent .squiggle { transform: scaleX(-1); }
 
 /* ---------- Форум ---------- */
-.m3-btn--forum { background: linear-gradient(135deg, #ff8a3d, #ff5e62); color: #fff; box-shadow: 0 6px 20px -8px rgba(255, 94, 98, .7); }
-.m3-btn--forum:hover { background: linear-gradient(135deg, #ff9a52, #ff6f73); }
-.forum-card { position: relative; overflow: hidden; display: flex; gap: 32px; align-items: center; padding: 48px; border-radius: var(--r-l, 28px);
-  background: linear-gradient(135deg, #ff7a45 0%, #ff4f6d 55%, #c2336f 100%); color: #fff; isolation: isolate; }
-.forum-card::before, .forum-card::after { content: ''; position: absolute; z-index: -1; border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; background: rgba(255, 255, 255, .12); pointer-events: none; }
+/* Forum — M3 Expressive: tertiary tonal roles, shape morph on hover/press, cookie-shaped icon */
+.m3-btn--forum { background: var(--tertiary-container); color: var(--on-tertiary-container);
+  transition: border-radius var(--dur-m) var(--ease-spring), background var(--dur-s) var(--ease-emph), transform var(--dur-s) var(--ease-emph); }
+.m3-btn--forum:hover { background: color-mix(in srgb, var(--tertiary-container) 88%, var(--on-tertiary-container)); border-radius: var(--r-m); }
+.m3-btn--forum:active { border-radius: var(--r-xs); transform: scale(.97); }
+.forum-card { position: relative; overflow: hidden; display: flex; gap: 32px; align-items: center; padding: 48px; border-radius: var(--r-xl);
+  background: var(--tertiary-container); color: var(--on-tertiary-container); isolation: isolate;
+  transition: border-radius var(--dur-l) var(--ease-spring); }
+.forum-card:hover { border-radius: 56px var(--r-m) 56px var(--r-m); }
+.forum-card::before, .forum-card::after { content: ''; position: absolute; z-index: -1; border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; background: color-mix(in srgb, var(--tertiary) 14%, transparent); pointer-events: none; }
 .forum-card::before { width: 320px; height: 320px; top: -150px; right: -90px; animation: blobDrift2 18s ease-in-out infinite alternate; }
 .forum-card::after { width: 260px; height: 260px; bottom: -150px; left: 30%; animation: blobDrift1 22s ease-in-out infinite alternate; }
-.forum-card__icon { flex: none; display: grid; place-items: center; width: 112px; height: 112px; border-radius: 36% 64% 58% 42% / 44% 40% 60% 56%; background: rgba(255, 255, 255, .2); }
-.forum-card__icon .material-symbols-rounded { font-size: 60px; }
-.forum-card h2 { color: #fff; margin-bottom: 10px; }
-.forum-card p { font-size: 1.1rem; opacity: .94; margin-bottom: 24px; max-width: 60ch; }
-.forum-card__btn { color: #d2365f; }
+.forum-card__icon { flex: none; display: grid; place-items: center; width: 112px; height: 112px; background: var(--tertiary); color: var(--tertiary-container);
+  clip-path: path('M56 0c8 0 13 7 20 9s15-1 21 4 4 14 8 20 11 10 11 18-7 13-9 20 1 15-4 21-14 4-20 8-10 11-18 11-13-7-20-9-15 1-21-4-4-14-8-20S0 64 0 56s7-13 9-20-1-15 4-21 14-4 20-8S48 0 56 0Z');
+  transition: transform var(--dur-l) var(--ease-spring); }
+.forum-card:hover .forum-card__icon { transform: rotate(45deg); }
+.forum-card:hover .forum-card__icon .material-symbols-rounded { transform: rotate(-45deg); }
+.forum-card__icon .material-symbols-rounded { font-size: 56px; transition: transform var(--dur-l) var(--ease-spring); }
+.forum-card h2 { color: inherit; margin-bottom: 10px; }
+.forum-card p { font-size: 1.1rem; opacity: .9; margin-bottom: 24px; max-width: 60ch; }
+.forum-card__btn { background: var(--tertiary); color: var(--tertiary-container); transition: border-radius var(--dur-m) var(--ease-spring); }
+.forum-card:hover .forum-card__btn { border-radius: var(--r-m); }
 .forum-card:hover .forum-card__btn .material-symbols-rounded { transform: translate(2px, -2px); }
-.forum-card__url { display: block; margin-top: 12px; opacity: .8; font-weight: 600; letter-spacing: .02em; }
-.contact-card--forum { background: linear-gradient(135deg, #ff8a3d, #ff5e62); color: #fff; }
+.forum-card__url { display: block; margin-top: 12px; opacity: .75; font-weight: 600; letter-spacing: .02em; }
+.contact-card--forum { background: var(--tertiary-container); color: var(--on-tertiary-container); }
 @media (max-width: 720px) {
   .forum-card { flex-direction: column; align-items: flex-start; padding: 32px 22px; gap: 20px; }
-  .forum-card__icon { width: 80px; height: 80px; }
+  .forum-card__icon { width: 112px; height: 112px; transform: scale(.72); transform-origin: left center; }
   .forum-card__icon .material-symbols-rounded { font-size: 44px; }
 }

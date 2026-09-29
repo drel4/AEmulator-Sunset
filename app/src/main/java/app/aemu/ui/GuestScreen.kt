@@ -29,6 +29,19 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
     @Volatile var fps = 0f
         private set
     @Volatile var rings = 0L
+    /** 2 = the guest flips between two pages by panning (recovery's minui); show the one it wrote last */
+    var pages = 1
+    /** pixel format of fb0: 0 = RGB565, 1 = RGBA/RGBX_8888, 2 = BGRA_8888 (TWRP); a change remaps the file */
+    @Volatile var format = 0
+        set(v) {
+            if (field == v) return
+            field = v
+            mappedIno = -1
+            poke()
+        }
+    private val pageHash = LongArray(2)
+    private var argb: IntArray? = null
+    private var page = 0
 
     private var bmp: Bitmap? = null
     private var buf: MappedByteBuffer? = null
@@ -62,23 +75,36 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
     private fun tick() {
         if (passthrough) return
         val f = fb ?: return
-        val pixels = w.toLong() * h * 2
+        val pixels = w.toLong() * h * (if (format == 0) 2 else 4)
         if (buf != null) {
             val ino = runCatching { android.system.Os.stat(f.absolutePath).st_ino }.getOrDefault(0L)
-            if (ino != mappedIno) { runCatching { raf?.close() }; raf = null; buf = null; bmp = null; lastHash = 0 }
+            if (ino != mappedIno || mappedIno == -1L) { runCatching { raf?.close() }; raf = null; buf = null; bmp = null; lastHash = 0 }
         }
         if (buf == null) {
             if (!f.isFile || f.length() < pixels) return
             raf = RandomAccessFile(f, "r")
-            buf = raf!!.channel.map(FileChannel.MapMode.READ_ONLY, 0, pixels)
+            val span = if (pages == 2 && f.length() >= pixels * 2) pixels * 2 else pixels
+            buf = raf!!.channel.map(FileChannel.MapMode.READ_ONLY, 0, span)
             mappedIno = runCatching { android.system.Os.stat(f.absolutePath).st_ino }.getOrDefault(0L)
-            bmp = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
+            bmp = Bitmap.createBitmap(w, h, if (format == 0) Bitmap.Config.RGB_565 else Bitmap.Config.ARGB_8888)
         }
         val b = buf ?: return
         val bitmap = bmp ?: return
-        var hash = 0L
-        val last = pixels.toInt() - 4
-        var i = 0
+        val two = b.capacity() >= pixels * 2
+        if (two) {
+            // two pages: follow the one whose content changed most recently
+            for (pg in 0..1) {
+                var hh = 0L
+                var j = (pg * pixels).toInt()
+                val end = j + pixels.toInt() - 4
+                while (j <= end) { hh = 31 * hh + b.getInt(j); j += 2048 }
+                if (hh != pageHash[pg]) { pageHash[pg] = hh; page = pg }
+            }
+        }
+        val base = if (two) (page * pixels).toInt() else 0
+        var hash = page.toLong()
+        val last = base + pixels.toInt() - 4
+        var i = base
         while (i <= last) { hash = 31 * hash + b.getInt(i); i += 2048 }
         val rung = rings != ringSeen
         ringSeen = rings
@@ -86,8 +112,20 @@ class GuestScreen(ctx: Context, private val w: Int, private val h: Int) : View(c
         val force = quiet > 30
         if (rung || hash != lastHash || force) {
             if (force) quiet = 0
-            b.rewind()
-            bitmap.copyPixelsFromBuffer(b)
+            if (format == 0) {
+                b.limit(base + pixels.toInt()); b.position(base)
+                bitmap.copyPixelsFromBuffer(b)
+                b.clear()
+            } else {
+                // 32-bit: the guest's alpha byte is padding (TWRP leaves 0), so force it opaque; RGBA swaps R and B
+                val n = w * h
+                val px = argb?.takeIf { it.size == n } ?: IntArray(n).also { argb = it }
+                val ib = b.duplicate().order(java.nio.ByteOrder.LITTLE_ENDIAN).position(base).let { (it as java.nio.ByteBuffer).asIntBuffer() }
+                ib.get(px, 0, n)
+                if (format == 2) for (k in 0 until n) px[k] = px[k] or -0x1000000
+                else for (k in 0 until n) { val v = px[k]; px[k] = -0x1000000 or ((v and 0xff) shl 16) or (v and 0xff00) or ((v shr 16) and 0xff) }
+                bitmap.setPixels(px, 0, w, 0, 0, w, h)
+            }
             if (hash != lastHash || rung) {
                 quiet = 0
                 lastHash = hash

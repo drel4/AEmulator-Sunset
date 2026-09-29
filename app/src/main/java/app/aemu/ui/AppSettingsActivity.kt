@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonGroupDefaults
@@ -58,7 +59,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import app.aemu.update.AppUpdateManager
+import app.aemu.update.ReleaseInfo
+import app.aemu.update.UpdateState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,10 +90,8 @@ object Links {
     const val GITHUB = "https://github.com/uxazu/aemulator"
     const val CHANNEL = "https://t.me/aemulatorofficial"
     const val AUTHOR = "https://github.com/uxazu"
-    const val ORIGINAL = "https://t.me/istratii_tech"
+    const val ORIGINAL = "https://t.me/istratiit_ech"
     const val DONATE = "https://dalink.to/uxazu"
-    const val USDT = "TN5cZFQ6BKPKCJZiUqEQKaifaEdtNUqaBF"
-    const val TON = "UQCDtAs_DWUUKStpnHBOBo72VA7C044PPo1asfpq6vQHAF-V"
 }
 
 class AppSettingsActivity : ComponentActivity() {
@@ -116,6 +121,51 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
     var defaults by remember { mutableStateOf(AppPrefs.defaults(ctx)) }
     var theme by remember { mutableStateOf(AppPrefs.theme(ctx)) }
     var dynamic by remember { mutableStateOf(AppPrefs.dynamicColor(ctx)) }
+    val scope = rememberCoroutineScope()
+    var autoUpdates by remember { mutableStateOf(AppPrefs.autoCheckUpdates(ctx)) }
+    var updateState by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
+    var downloadJob by remember { mutableStateOf<Job?>(null) }
+
+    fun checkForUpdates() {
+        updateState = UpdateState.Checking
+        scope.launch {
+            val res = AppUpdateManager.checkLatestRelease()
+            res.fold(
+                onSuccess = { rel ->
+                    if (rel != null) {
+                        if (AppUpdateManager.isNewerVersion(rel.versionName, BuildConfig.VERSION_NAME)) {
+                            updateState = UpdateState.Available(rel)
+                        } else {
+                            updateState = UpdateState.UpToDate(BuildConfig.VERSION_NAME, rel.tagName)
+                        }
+                    } else {
+                        updateState = UpdateState.UpToDate(BuildConfig.VERSION_NAME, "")
+                    }
+                },
+                onFailure = { err ->
+                    updateState = UpdateState.Error(err.localizedMessage ?: "Ошибка сети")
+                }
+            )
+        }
+    }
+
+    fun startDownload(rel: ReleaseInfo) {
+        updateState = UpdateState.Downloading(rel, 0f, 0L, rel.sizeBytes)
+        downloadJob = scope.launch {
+            try {
+                val file = AppUpdateManager.downloadApk(ctx, rel) { progress, downloaded, total ->
+                    updateState = UpdateState.Downloading(rel, progress, downloaded, total)
+                }
+                updateState = UpdateState.ReadyToInstall(rel, file)
+                AppUpdateManager.installApk(ctx, file)
+            } catch (e: Exception) {
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    updateState = UpdateState.Error(e.localizedMessage ?: "Ошибка загрузки")
+                }
+            }
+        }
+    }
+
     fun open(url: String) = runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     fun copy(text: String) {
         (ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("address", text))
@@ -139,6 +189,26 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { AboutCard() }
+
+            item {
+                Section(stringResource(R.string.as_updates)) {
+                    Toggle(
+                        stringResource(R.string.as_auto_updates),
+                        stringResource(R.string.as_auto_updates_sub),
+                        autoUpdates
+                    ) {
+                        autoUpdates = it
+                        AppPrefs.setAutoCheckUpdates(ctx, it)
+                    }
+                    Row_(
+                        Icons.Rounded.SystemUpdate,
+                        stringResource(R.string.as_check_updates),
+                        stringResource(R.string.as_check_updates_sub, BuildConfig.VERSION_NAME)
+                    ) {
+                        checkForUpdates()
+                    }
+                }
+            }
 
             item {
                 Section(stringResource(R.string.as_appearance)) {
@@ -189,7 +259,7 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
                     Row_(Icons.Rounded.Public, stringResource(R.string.as_site), "aemulator.gt.tc") { open(Links.SITE) }
                     Row_(Icons.Rounded.Send, stringResource(R.string.as_channel), "@aemulatorofficial") { open(Links.CHANNEL) }
                     Row_(Icons.Rounded.Person, stringResource(R.string.as_author), "uxazu") { open(Links.AUTHOR) }
-                    Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratii_tech") { open(Links.ORIGINAL) }
+                    Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratiit_ech") { open(Links.ORIGINAL) }
                     Row_(Icons.Rounded.Code, stringResource(R.string.as_github), "github.com/uxazu/aemulator") { open(Links.GITHUB) }
                 }
             }
@@ -197,8 +267,6 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             item {
                 Section(stringResource(R.string.as_support)) {
                     Row_(Icons.Rounded.Favorite, stringResource(R.string.as_donate), "dalink.to/uxazu") { open(Links.DONATE) }
-                    Row_(Icons.Rounded.ContentCopy, stringResource(R.string.as_usdt), Links.USDT, mono = true) { copy(Links.USDT) }
-                    Row_(Icons.Rounded.ContentCopy, stringResource(R.string.as_ton), Links.TON, mono = true) { copy(Links.TON) }
                 }
             }
         }
@@ -228,6 +296,18 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             confirmButton = { TextButton(onClick = { langDialog = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+
+    UpdateDialog(
+        state = updateState,
+        onDismiss = { updateState = UpdateState.Idle },
+        onStartDownload = ::startDownload,
+        onCancelDownload = {
+            downloadJob?.cancel()
+            updateState = UpdateState.Idle
+        },
+        onInstall = { file -> AppUpdateManager.installApk(ctx, file) },
+        onOpenUrl = { url -> open(url) }
+    )
 }
 
 @Composable

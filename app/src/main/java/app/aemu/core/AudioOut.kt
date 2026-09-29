@@ -13,14 +13,20 @@ import java.io.FileInputStream
  * Звук гостя. Гостевой HAL (audio.primary.default.so из набора движка) пишет PCM
  * 48 кГц/стерео/16 бит в FIFO /dev/eac, а мы отдаём его в AudioTrack телефона.
  */
-class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, private val rate: Int = RATE) {
+class AudioOut(
+    private val paths: VmPaths,
+    private val log: (String) -> Unit,
+    private val rate: Int = RATE,
+    /** guest PCM channel; MediaTek keeps /dev/eac for its own driver, so ours is /dev/aemu_pcm there */
+    private val dev: String = "dev/eac",
+) {
     @Volatile private var thread: Thread? = null
     @Volatile private var stop = false
     @Volatile var played = 0L
         private set
     @Volatile var muted = false
 
-    val fifo: File get() = File(paths.root, "dev/eac")
+    val fifo: File get() = File(paths.root, dev)
 
     fun makeFifo() {
         val f = fifo
@@ -29,13 +35,13 @@ class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, pr
         f.parentFile?.mkdirs()
         f.delete()
         runCatching { Os.mkfifo(f.absolutePath, "666".toInt(8)) }
-            .onFailure { log("звук: канал не создался: ${it.message}") }
+            .onFailure { log("audio: channel not created: ${it.message}") }
     }
 
     @Synchronized
     fun start() {
         if (thread?.isAlive == true) return
-        if (!fifo.exists()) { log("звук: канала нет"); return }
+        if (!fifo.exists()) { log("audio: no channel"); return }
         stop = false
         thread = Thread({ pump() }, "aemu-audio").apply { isDaemon = true; start() }
     }
@@ -67,14 +73,14 @@ class AudioOut(private val paths: VmPaths, private val log: (String) -> Unit, pr
                         .setBufferSizeInBytes(bufSize)
                         .setTransferMode(AudioTrack.MODE_STREAM)
                         .build().also { it.play() }
-                }.onFailure { log("звук: вывод не открылся: ${it.message}") }.getOrNull()
+                }.onFailure { log("audio: output failed to open: ${it.message}") }.getOrNull()
             }
             ins.use { s ->
                 while (!stop) {
                     val n = try { s.read(buf) } catch (e: Exception) { -1 }
                     if (n < 0) break
                     if (n == 0) continue
-                    if (played == 0L) log("звук пошёл")
+                    if (played == 0L) log("audio started")
                     val t = track
                     if (t != null && !muted) {
                         var off = 0

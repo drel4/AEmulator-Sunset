@@ -21,7 +21,7 @@ class SparseSource(private val parts: List<RandomSource>) : RandomSource {
         for ((pi, src) in parts.withIndex()) {
             val h = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN)
             src.read(0, h); h.flip()
-            if (h.getInt(0) != MAGIC) throw IOException("не sparse-образ")
+            if (h.getInt(0) != MAGIC) throw IOException("not a sparse image")
             val fileHdr = h.getShort(8).toInt() and 0xffff
             val chunkHdr = h.getShort(10).toInt() and 0xffff
             val blk = h.getInt(12).toLong()
@@ -44,7 +44,7 @@ class SparseSource(private val parts: List<RandomSource>) : RandomSource {
                         chunks.add(Chunk(out, sz, FILL, pi, 0, f.getInt(0)))
                     }
                     DONT_CARE, CRC -> {}
-                    else -> throw IOException("неизвестный чанк 0x${type.toString(16)}")
+                    else -> throw IOException("unknown chunk 0x${type.toString(16)}")
                 }
                 out += sz
                 off += total

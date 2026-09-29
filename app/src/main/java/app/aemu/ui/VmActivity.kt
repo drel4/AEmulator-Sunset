@@ -4,6 +4,38 @@ import app.aemu.R
 import androidx.compose.ui.res.stringResource
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.rounded.BatteryStd
+import androidx.compose.material.icons.rounded.InstallMobile
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Screenshot
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Sms
+import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.Lan
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
@@ -114,7 +146,9 @@ class VmActivity : ComponentActivity() {
             restartProcess(img.id)
             return
         }
-        vm = if (cur != null && cur.img.id == img.id) cur else GuestVm(applicationContext, img).also { VmHost.vm = it }
+        vm = if (cur != null && cur.img.id == img.id) cur
+            else GuestVm(applicationContext, img).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
+        vm.onPower = { reboot, reason -> runOnUiThread { if (reboot) rebootVm(reason == "recovery") else stopVm() } }
         val s = vm.settings
         if (s.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -129,9 +163,11 @@ class VmActivity : ComponentActivity() {
         })
         guest = GuestScreen(this, gw, gh).apply {
             input = vm.input
-            fb = vm.paths.fb
+            fb = if (vm.recoveryMode) app.aemu.core.RecoveryImage.fb(vm.paths) else vm.paths.fb
+            if (vm.recoveryMode) pages = 2
         }
-        val useBridge = vm.engine == Engine.KK && s.gpu
+        // 5.0+ renders through the standalone glserverd into fb0 (see GuestVm.glUp), shown like the software path
+        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode && vm.img.api < 21
         surfaceView.visibility = if (useBridge) View.VISIBLE else View.GONE
         guest.passthrough = useBridge
         box.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
@@ -166,6 +202,7 @@ class VmActivity : ComponentActivity() {
         vm.onState { st -> runOnUiThread { state = st } }
         vm.onLog { line -> runOnUiThread { logLines.add(line); if (logLines.size > 400) logLines.removeRange(0, logLines.size - 400) } }
         guest.start()
+        loadMenuOffset()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { vm.input.press(InputService.KEY_BACK) }
@@ -183,10 +220,26 @@ class VmActivity : ComponentActivity() {
         if (!app.aemu.BuildConfig.DEBUG) return
         val rx = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
+                // --es keys "116d 115 116u": raw guest key codes, d/u = down/up only, bare = press
+                i.getStringExtra("keys")?.let { ks ->
+                    thread {
+                        for (k in ks.split(' ').filter { it.isNotBlank() }) {
+                            val code = k.trimEnd('d', 'u').toIntOrNull() ?: continue
+                            when { k.endsWith("d") -> vm.input.key(code, true); k.endsWith("u") -> vm.input.key(code, false)
+                                else -> { vm.input.key(code, true); Thread.sleep(80); vm.input.key(code, false) } }
+                            Thread.sleep(150)
+                        }
+                    }
+                    return
+                }
+                if (i.hasExtra("adb")) { if (i.getBooleanExtra("adb", false)) vm.adb.start() else vm.adb.stop(); return }
                 val cmd = i.getStringExtra("cmd") ?: return
+                // своё имя файла на каждую команду: медленная предыдущая команда не затрёт ответ
+                val name = i.getStringExtra("out")?.takeIf { it.matches(Regex("[A-Za-z0-9_.-]+")) } ?: "shell.out"
                 thread {
                     val out = runCatching { vm.guestShell(cmd, 120_000) }.getOrElse { it.toString() }
-                    java.io.File(vm.paths.bin, "shell.out").writeText(out)
+                    val tmp = java.io.File(vm.paths.bin, "$name.tmp")
+                    tmp.writeText(out + "\n<<done>>\n"); tmp.renameTo(java.io.File(vm.paths.bin, name))
                 }
             }
         }
@@ -232,8 +285,176 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private fun restartProcess(id: String) {
-        val i = Intent(this, VmActivity::class.java).putExtra(EXTRA_ID, id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private enum class Dlg { NONE, SMS, CALL, BATTERY, ADB, DEVICE }
+
+    // position of the floating menu button, kept across launches
+    private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
+    private var menuOffset by mutableStateOf(Offset.Zero)
+    private fun loadMenuOffset() { menuOffset = Offset(uiPrefs.getFloat("menu_x", 0f), uiPrefs.getFloat("menu_y", 0f)) }
+    private fun saveMenuOffset() { uiPrefs.edit().putFloat("menu_x", menuOffset.x).putFloat("menu_y", menuOffset.y).apply() }
+
+    private fun toast(msg: String) = runOnUiThread { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
+
+    private fun guestAsync(cmd: String, done: ((String) -> Unit)? = null) {
+        thread { val out = runCatching { vm.guestShell(cmd, 60_000) }.getOrElse { it.toString() }; done?.invoke(out) }
+    }
+
+    /** Quote for the guest's /system/bin/sh. */
+    private fun q(s: String) = "'" + s.replace("'", "'\\''") + "'"
+
+    private fun pasteToGuest() {
+        val text = getSystemService(ClipboardManager::class.java).primaryClip?.getItemAt(0)?.coerceToText(this)?.toString().orEmpty()
+        if (text.isEmpty()) { toast(getString(R.string.m_clip_empty)); return }
+        // `input text` treats spaces as separators; %s is its escape for a space
+        guestAsync("input text " + q(text.replace(" ", "%s")))
+    }
+
+    private fun screenshot() {
+        val name = "aemu-" + java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date()) + ".png"
+        val dir = vm.img.sdcardPath.trimEnd('/') + "/Pictures"
+        guestAsync("mkdir -p $dir; screencap -p $dir/$name && echo OK") { out ->
+            toast(if (out.contains("OK")) getString(R.string.m_screenshot_saved, "$dir/$name") else getString(R.string.m_failed))
+        }
+    }
+
+    // APK picked on the host: copied into the shared card folder, then installed by the guest's package manager
+    private val pickApk = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val dir = app.aemu.core.Sdcard.hostDir(vm.paths)
+        if (dir == null) { toast(getString(R.string.m_failed)); return@registerForActivityResult }
+        toast(getString(R.string.m_install_apk_start))
+        thread {
+            val ok = runCatching {
+                contentResolver.openInputStream(uri)!!.use { i -> java.io.File(dir, "aemu-install.apk").outputStream().use { o -> i.copyTo(o) } }
+            }.isSuccess
+            if (!ok) { toast(getString(R.string.m_failed)); return@thread }
+            val out = runCatching { vm.guestShell("pm install -r " + vm.img.sdcardPath.trimEnd('/') + "/aemu-install.apk", 300_000) }.getOrElse { it.toString() }
+            toast(out.trim().lines().lastOrNull { it.isNotBlank() }?.take(200) ?: getString(R.string.m_failed))
+        }
+    }
+
+    private fun sendSms(from: String, body: String) {
+        // no live modem: the message is written straight into the SMS provider inbox
+        val cmd = "content insert --uri content://sms/inbox --bind address:s:${q(from)} --bind body:s:${q(body)} " +
+            "--bind read:i:0 --bind date:l:${System.currentTimeMillis()}"
+        guestAsync(cmd) { out -> toast(if (out.isBlank()) getString(R.string.m_sms_sent) else out.trim().take(200)) }
+    }
+
+    @Composable
+    private fun SmsDialog(onDone: () -> Unit) {
+        var from by remember { mutableStateOf("+10000000000") }
+        var body by remember { mutableStateOf("Hello from AEmulator") }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_sms)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(from, { from = it }, label = { Text(stringResource(R.string.m_sms_from)) }, singleLine = true)
+                    OutlinedTextField(body, { body = it }, label = { Text(stringResource(R.string.m_sms_body)) })
+                }
+            },
+            confirmButton = { Button(onClick = { sendSms(from, body); onDone() }) { Text(stringResource(R.string.m_send)) } },
+            dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun DeviceDialog(onDone: () -> Unit) {
+        var airplane by remember { mutableStateOf(false) }
+        var awake by remember { mutableStateOf(false) }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_device)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_airplane), Modifier.weight(1f))
+                        Switch(airplane, { v ->
+                            airplane = v
+                            guestAsync("settings put global airplane_mode_on ${if (v) 1 else 0}; " +
+                                "am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $v")
+                        })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_stay_awake), Modifier.weight(1f))
+                        Switch(awake, { v ->
+                            awake = v
+                            guestAsync("settings put global stay_on_while_plugged_in ${if (v) 7 else 0}; svc power stayon ${if (v) "true" else "false"}")
+                        })
+                    }
+                }
+            },
+            confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun AdbDialog(onDone: () -> Unit) {
+        var on by remember { mutableStateOf(vm.adb.running) }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_adb)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_adb_enable), Modifier.weight(1f))
+                        Switch(on, { v -> if (v) vm.adb.start() else vm.adb.stop(); on = vm.adb.running })
+                    }
+                    if (on) {
+                        val ips = app.aemu.core.AdbServer.addresses()
+                        for (ip in ips.ifEmpty { listOf("127.0.0.1") })
+                            Text("adb connect $ip:${vm.adb.port}", style = MaterialTheme.typography.bodyLarge,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                    }
+                    Text(stringResource(R.string.m_adb_hint), style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = { Button(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun CallDialog(onDone: () -> Unit) {
+        var from by remember { mutableStateOf("+10000000000") }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_call)) },
+            text = { OutlinedTextField(from, { from = it }, label = { Text(stringResource(R.string.m_sms_from)) }, singleLine = true) },
+            confirmButton = { Button(onClick = {
+                if (!vm.ril.ring(from.trim())) toast(getString(R.string.m_failed))
+                onDone()
+            }) { Text(stringResource(R.string.m_call_ring)) } },
+            dismissButton = { OutlinedButton(onClick = onDone) { Text(stringResource(R.string.close)) } })
+    }
+
+    @Composable
+    private fun BatteryDialog(onDone: () -> Unit) {
+        var level by remember { mutableStateOf(80f) }
+        var charging by remember { mutableStateOf(true) }
+        AlertDialog(onDismissRequest = onDone,
+            title = { Text(stringResource(R.string.m_battery)) },
+            text = {
+                Column {
+                    Text("${level.toInt()}%")
+                    Slider(level, { level = it }, valueRange = 0f..100f)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.m_charging), Modifier.weight(1f)); Switch(charging, { charging = it })
+                    }
+                }
+            },
+            confirmButton = { Button(onClick = {
+                guestAsync("dumpsys battery set level ${level.toInt()}; dumpsys battery set ac ${if (charging) 1 else 0}; dumpsys battery set usb 0")
+                onDone()
+            }) { Text(stringResource(R.string.m_apply)) } },
+            dismissButton = { OutlinedButton(onClick = { guestAsync("dumpsys battery reset"); onDone() }) { Text(stringResource(R.string.m_reset)) } })
+    }
+
+    private fun rebootVm(recovery: Boolean = false) {
+        val id = vm.img.id
+        thread {
+            vm.stop()
+            VmHost.vm = null
+            // the GL bridge cannot come up twice in one process, so a reboot restarts the :vm process
+            runOnUiThread { restartProcess(id, recovery) }
+        }
+    }
+
+    private fun restartProcess(id: String, recovery: Boolean = false) {
+        val i = Intent(this, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val pi = android.app.PendingIntent.getActivity(this, 1, i, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_CANCEL_CURRENT)
         (getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 400, pi)
         finishAndRemoveTask()
@@ -246,9 +467,11 @@ class VmActivity : ComponentActivity() {
     private fun Overlay() {
         var showLog by remember { mutableStateOf(false) }
         var menu by remember { mutableStateOf(false) }
+        var dialog by remember { mutableStateOf(Dlg.NONE) }
+        val running = state == GuestVm.State.RUNNING
         var seconds by remember { mutableStateOf(0L) }
         var frames by remember { mutableStateOf(0L) }
-        LaunchedEffect(Unit) { while (true) { seconds = vm.bootSeconds(); frames = if (vm.glInApp) dev.lk.m7sense.GlBridge.frames() else guest.rings; delay(500) } }
+        LaunchedEffect(Unit) { while (true) { if (vm.recoveryMode) guest.format = vm.recoveryFormat; seconds = vm.bootSeconds(); frames = if (vm.glInApp) dev.lk.m7sense.GlBridge.frames() else guest.rings; delay(500) } }
         // как только гость начал рисовать — карточку убираем, остаётся маленький индикатор
         val drawing = frames > 30
         Box(Modifier.fillMaxSize()) {
@@ -275,33 +498,78 @@ class VmActivity : ComponentActivity() {
                 LogPanel(onClose = { showLog = false })
             }
 
-            // верхняя кнопка меню
-            Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)) {
+            // top menu button (hidden while the log is open so it does not cover the log toolbar); drag to move it
+            if (!showLog) Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
+                .offset { IntOffset(menuOffset.x.roundToInt(), menuOffset.y.roundToInt()) }
+                .pointerInput(Unit) {
+                    detectDragGestures(onDragEnd = { saveMenuOffset() }) { ch, d -> ch.consume(); menuOffset += d }
+                }) {
                 FilledTonalIconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.menu))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.log)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) },
                         onClick = { menu = false; showLog = true })
+                    HorizontalDivider()
                     DropdownMenuItem(text = { Text(stringResource(R.string.vol_up)) }, leadingIcon = { Icon(Icons.Rounded.VolumeUp, null) },
                         onClick = { vm.input.press(InputService.KEY_VOLUMEUP) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.vol_down)) }, leadingIcon = { Icon(Icons.Rounded.VolumeDown, null) },
                         onClick = { vm.input.press(InputService.KEY_VOLUMEDOWN) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.power)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_power_menu)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
+                        onClick = { menu = false; vm.input.press(InputService.KEY_POWER, 1500) })
+                    // long-press Menu makes 2.x–4.x call InputMethodManager.toggleSoftInput: the firmware's own keyboard
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_keyboard)) }, leadingIcon = { Icon(Icons.Rounded.Keyboard, null) },
+                        enabled = running, onClick = { menu = false; vm.input.press(InputService.KEY_MENU, 1000) })
+                    HorizontalDivider()
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_paste)) }, leadingIcon = { Icon(Icons.Rounded.ContentPaste, null) },
+                        enabled = running, onClick = { menu = false; pasteToGuest() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_sms)) }, leadingIcon = { Icon(Icons.Rounded.Sms, null) },
+                        enabled = running, onClick = { menu = false; dialog = Dlg.SMS })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_call)) }, leadingIcon = { Icon(Icons.Rounded.Call, null) },
+                        enabled = running, onClick = { menu = false; dialog = Dlg.CALL })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_battery)) }, leadingIcon = { Icon(Icons.Rounded.BatteryStd, null) },
+                        enabled = running && vm.img.api >= 19, onClick = { menu = false; dialog = Dlg.BATTERY })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_install_apk)) }, leadingIcon = { Icon(Icons.Rounded.InstallMobile, null) },
+                        enabled = running, onClick = { menu = false; pickApk.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_device)) }, leadingIcon = { Icon(Icons.Rounded.Tune, null) },
+                        enabled = running && vm.img.api >= 17, onClick = { menu = false; dialog = Dlg.DEVICE })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_adb)) }, leadingIcon = { Icon(Icons.Rounded.Lan, null) },
+                        enabled = running, onClick = { menu = false; dialog = Dlg.ADB })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_screenshot)) }, leadingIcon = { Icon(Icons.Rounded.Screenshot, null) },
+                        enabled = running, onClick = { menu = false; screenshot() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_settings)) }, leadingIcon = { Icon(Icons.Rounded.Settings, null) },
+                        enabled = running, onClick = { menu = false; guestAsync("am start -a android.settings.SETTINGS") })
+                    HorizontalDivider()
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_reboot)) }, leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
+                        onClick = { menu = false; rebootVm() })
+                    DropdownMenuItem(text = { Text(stringResource(if (vm.recoveryMode) R.string.m_reboot_system else R.string.m_reboot_recovery)) },
+                        leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
+                        enabled = vm.recoveryMode || app.aemu.core.RecoveryImage.installed(vm.paths),
+                        onClick = { menu = false; rebootVm(!vm.recoveryMode) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.shutdown)) }, leadingIcon = { Icon(Icons.Rounded.Close, null) },
                         onClick = { menu = false; stopVm() })
                 }
             }
 
+            when (dialog) {
+                Dlg.SMS -> SmsDialog { dialog = Dlg.NONE }
+                Dlg.CALL -> CallDialog { dialog = Dlg.NONE }
+                Dlg.BATTERY -> BatteryDialog { dialog = Dlg.NONE }
+                Dlg.ADB -> AdbDialog { dialog = Dlg.NONE }
+                Dlg.DEVICE -> DeviceDialog { dialog = Dlg.NONE }
+                Dlg.NONE -> {}
+            }
+
             // панель кнопок Android
-            if (vm.settings.showNavBar) {
+            if (vm.settings.showNavBar && !showLog) {
                 HorizontalFloatingToolbar(
                     expanded = true,
                     modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 6.dp),
                 ) {
                     IconButton(onClick = { vm.input.press(InputService.KEY_BACK) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
-                    IconButton(onClick = { vm.input.press(InputService.KEY_HOME) }) { Icon(Icons.Rounded.Circle, stringResource(R.string.home)) }
+                    IconButton(onClick = { vm.input.press(vm.input.homeCode) }) { Icon(Icons.Rounded.Circle, stringResource(R.string.home)) }
                     if (vm.img.api >= 11) IconButton(onClick = { vm.input.press(InputService.KEY_APPSELECT) }) { Icon(Icons.Rounded.CropSquare, stringResource(R.string.recents)) }
                     IconButton(onClick = { vm.input.press(InputService.KEY_MENU) }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu)) }
                 }
@@ -364,29 +632,61 @@ class VmActivity : ComponentActivity() {
                 delay(1500)
             }
         }
-        Surface(Modifier.fillMaxSize(), color = Color(0xF0101410)) {
+        val list = if (guestTab) guestLines else logLines
+        Surface(Modifier.fillMaxSize(), color = Color(0xF0101410), contentColor = Color(0xFFE2E3DD)) {
             Column(Modifier.statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.log), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    OutlinedButton(onClick = { guestTab = !guestTab }) { Text(if (guestTab) stringResource(R.string.host) else stringResource(R.string.guest_log)) }
-                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.log), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    IconButton(onClick = { copyLog(list.toList()) }) { Icon(Icons.Rounded.ContentCopy, stringResource(R.string.log_copy)) }
+                    IconButton(onClick = { pendingExport = list.toList(); exportLog.launch("aemu-${vm.img.id}-${if (guestTab) "logcat" else "host"}.log") }) {
+                        Icon(Icons.Rounded.Download, stringResource(R.string.log_export))
+                    }
                     FilledTonalIconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.close)) }
                 }
                 Spacer(Modifier.height(8.dp))
-                val list = if (guestTab) guestLines else logLines
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    SegmentedButton(selected = !guestTab, onClick = { guestTab = false }, shape = SegmentedButtonDefaults.itemShape(0, 2)) {
+                        Text(stringResource(R.string.host), maxLines = 1)
+                    }
+                    SegmentedButton(selected = guestTab, onClick = { guestTab = true }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                        Text(stringResource(R.string.guest_log), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
                 val st = rememberLazyListState()
                 LaunchedEffect(list.size) { if (list.isNotEmpty()) st.scrollToItem(list.size - 1) }
-                LazyColumn(state = st, modifier = Modifier.fillMaxSize()) {
-                    items(list) { Text(it, style = Mono, color = Color(0xFFCFE8CF)) }
+                SelectionContainer {
+                    LazyColumn(state = st, modifier = Modifier.fillMaxSize()) {
+                        items(list) { Text(it, style = Mono, color = Color(0xFFCFE8CF)) }
+                    }
                 }
             }
         }
     }
 
+    private var pendingExport: List<String> = emptyList()
+    private val exportLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val lines = pendingExport
+        thread {
+            val ok = runCatching { contentResolver.openOutputStream(uri)!!.bufferedWriter().use { w -> lines.forEach { w.write(it); w.write("\n") } } }.isSuccess
+            runOnUiThread { Toast.makeText(this, if (ok) R.string.log_exported else R.string.log_export_failed, Toast.LENGTH_SHORT).show() }
+        }
+    }
+
+    private fun copyLog(lines: List<String>) {
+        val cm = getSystemService(ClipboardManager::class.java)
+        cm.setPrimaryClip(ClipData.newPlainText("AEmulator log", lines.joinToString("\n")))
+        Toast.makeText(this, R.string.log_copied, Toast.LENGTH_SHORT).show()
+    }
+
     companion object {
         const val EXTRA_ID = "id"
-        fun start(ctx: Context, id: String) {
-            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        const val EXTRA_RECOVERY = "recovery"
+        fun start(ctx: Context, id: String, recovery: Boolean = false) {
+            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 }

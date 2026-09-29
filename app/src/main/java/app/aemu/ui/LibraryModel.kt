@@ -48,7 +48,7 @@ class LibraryModel(app: Application) : AndroidViewModel(app) {
                 if (c.moveToFirst()) c.getString(0) else null
             }
         }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: "firmware"
-        _import.value = ImportState(active = true, file = name, step = "Начинаю")
+        _import.value = ImportState(active = true, file = name, step = "Starting")
         viewModelScope.launch(Dispatchers.IO) {
             val log = ArrayList<String>()
             val imp = Importer(ctx,
@@ -62,13 +62,27 @@ class LibraryModel(app: Application) : AndroidViewModel(app) {
                 val img = raw.copy(settings = raw.settings.copy(gpu = d.gpu, jit = d.jit, netProxy = d.netProxy,
                     showNavBar = d.showNavBar, keepScreenOn = d.keepScreenOn))
                 if (img != raw) ImageStore.save(ctx, img)
-                _import.value = _import.value.copy(active = false, done = img, step = "Готово", progress = 1f)
+                _import.value = _import.value.copy(active = false, done = img, step = "Done", progress = 1f)
             } catch (t: Throwable) {
                 _import.value = _import.value.copy(active = false, error = t.message ?: t.toString())
             } finally {
                 importer = null
                 refresh()
             }
+        }
+    }
+
+    fun clone(src: GuestImage, name: String, copyData: Boolean) {
+        if (_import.value.active) return
+        val ctx = getApplication<Application>()
+        _import.value = ImportState(active = true, file = name, step = "Copying")
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val img = ImageStore.clone(ctx, src, name, copyData) { s -> _import.value = _import.value.copy(step = "Copying $s") }
+                _import.value = _import.value.copy(active = false, done = img, step = "Done", progress = 1f)
+            } catch (t: Throwable) {
+                _import.value = _import.value.copy(active = false, error = t.message ?: t.toString())
+            } finally { refresh() }
         }
     }
 

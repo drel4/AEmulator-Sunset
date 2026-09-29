@@ -23,6 +23,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.rounded.FileOpen
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -64,7 +73,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import app.aemu.BuildConfig
+import app.aemu.update.AppUpdateManager
+import app.aemu.update.ReleaseInfo
+import app.aemu.update.UpdateState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -105,7 +121,7 @@ class MainActivity : ComponentActivity() {
     private fun handleView(i: Intent?) {
         if (i?.action == Intent.ACTION_VIEW) i.data?.let { model.import(it) }
         // ярлыки и автоматизация: am start -a app.aemu.BOOT --es id <образ>
-        if (i?.action == ACTION_BOOT) i.getStringExtra("id")?.let { VmActivity.start(this, it) }
+        if (i?.action == ACTION_BOOT) i.getStringExtra("id")?.let { VmActivity.start(this, it, i.getBooleanExtra("recovery", false)) }
     }
 
     private fun askPermissions() {
@@ -127,7 +143,45 @@ fun Library(model: LibraryModel) {
     var deleteFor by remember { mutableStateOf<GuestImage?>(null) }
     var renameFor by remember { mutableStateOf<GuestImage?>(null) }
     var help by remember { mutableStateOf(false) }
+    var addMenu by remember { mutableStateOf(false) }
+    var containerFrom by remember { mutableStateOf<GuestImage?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    val scope = rememberCoroutineScope()
+    var updateState by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
+    var downloadJob by remember { mutableStateOf<Job?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (app.aemu.AppPrefs.autoCheckUpdates(ctx)) {
+            val now = System.currentTimeMillis()
+            if (now - app.aemu.AppPrefs.lastUpdateCheck(ctx) > 3600_000L) {
+                app.aemu.AppPrefs.setLastUpdateCheck(ctx, now)
+                val res = AppUpdateManager.checkLatestRelease()
+                res.getOrNull()?.let { rel ->
+                    if (AppUpdateManager.isNewerVersion(rel.versionName, BuildConfig.VERSION_NAME)) {
+                        updateState = UpdateState.Available(rel)
+                    }
+                }
+            }
+        }
+    }
+
+    fun startDownload(rel: ReleaseInfo) {
+        updateState = UpdateState.Downloading(rel, 0f, 0L, rel.sizeBytes)
+        downloadJob = scope.launch {
+            try {
+                val file = AppUpdateManager.downloadApk(ctx, rel) { progress, downloaded, total ->
+                    updateState = UpdateState.Downloading(rel, progress, downloaded, total)
+                }
+                updateState = UpdateState.ReadyToInstall(rel, file)
+                AppUpdateManager.installApk(ctx, file)
+            } catch (e: Exception) {
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    updateState = UpdateState.Error(e.localizedMessage ?: "Ошибка загрузки")
+                }
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -142,7 +196,7 @@ fun Library(model: LibraryModel) {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { pick.launch(arrayOf("*/*")) },
+                onClick = { if (images.isEmpty()) pick.launch(arrayOf("*/*")) else addMenu = true },
                 icon = { Icon(Icons.Rounded.Add, null) },
                 text = { Text(stringResource(R.string.add_firmware)) },
                 expanded = images.isEmpty() || !scroll.state.collapsedFraction.let { it > 0.5f },
@@ -156,19 +210,31 @@ fun Library(model: LibraryModel) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item { StorageAccessCard() }
+                item { if (!imp.active) FirmwareFolderCard(onImport = { f -> model.import(android.net.Uri.fromFile(f)) }) }
                 item {
                     AnimatedVisibility(imp.active || imp.error != null || imp.done != null) {
                         ImportCard(imp, onCancel = model::cancelImport, onDismiss = model::dismissImport)
                     }
                 }
-                items(images, key = { it.id }) { img ->
-                    ImageCard(
-                        img,
-                        onStart = { VmActivity.start(ctx, img.id) },
-                        onSettings = { settingsFor = img },
-                        onRename = { renameFor = img },
-                        onDelete = { deleteFor = img },
-                    )
+                // two sections: imported firmwares ("systems") and the containers made from them
+                val systems = images.filter { it.baseId.isEmpty() }
+                val containers = images.filter { it.baseId.isNotEmpty() }
+                for ((title, list) in listOf(R.string.section_systems to systems, R.string.section_containers to containers)) {
+                    if (list.isEmpty()) continue
+                    item(key = "h$title") {
+                        Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+                    }
+                    items(list, key = { it.id }) { img ->
+                        ImageCard(
+                            img,
+                            onStart = { VmActivity.start(ctx, img.id) },
+                            onSettings = { settingsFor = img },
+                            onRename = { renameFor = img },
+                            onDelete = { deleteFor = img },
+                            baseName = images.firstOrNull { it.id == img.baseId }?.name,
+                        )
+                    }
                 }
             }
         }
@@ -178,7 +244,7 @@ fun Library(model: LibraryModel) {
         SettingsSheet(img, onDismiss = { settingsFor = null }, onSave = { s -> model.updateSettings(img, s); settingsFor = null })
     }
     deleteFor?.let { img ->
-        AlertDialog(
+AlertDialog(
             onDismissRequest = { deleteFor = null },
             icon = { Icon(Icons.Rounded.Delete, null) },
             title = { Text(stringResource(R.string.delete_title, img.name)) },
@@ -199,6 +265,103 @@ fun Library(model: LibraryModel) {
         )
     }
     if (help) HelpDialog(onDismiss = { help = false })
+    if (addMenu) AddSheet(images, onDismiss = { addMenu = false },
+        onImport = { addMenu = false; pick.launch(arrayOf("*/*")) },
+        onContainer = { addMenu = false; containerFrom = it })
+    containerFrom?.let { src -> ContainerDialog(src, images, onDismiss = { containerFrom = null },
+        onCreate = { from, name, copy -> containerFrom = null; model.clone(from, name, copy) }) }
+
+    UpdateDialog(
+        state = updateState,
+        onDismiss = { updateState = UpdateState.Idle },
+        onStartDownload = ::startDownload,
+        onCancelDownload = {
+            downloadJob?.cancel()
+            updateState = UpdateState.Idle
+        },
+        onInstall = { file -> AppUpdateManager.installApk(ctx, file) },
+        onOpenUrl = { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
+    )
+}
+
+/** The "+" menu: a firmware file, or a new container of a firmware already here. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddSheet(images: List<GuestImage>, onDismiss: () -> Unit, onImport: () -> Unit, onContainer: (GuestImage) -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ListItem(headlineContent = { Text(stringResource(R.string.add_import)) },
+                supportingContent = { Text(stringResource(R.string.add_import_sub)) },
+                leadingContent = { Icon(Icons.Rounded.FileOpen, null) },
+                modifier = Modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onImport))
+            ListItem(headlineContent = { Text(stringResource(R.string.add_container)) },
+                supportingContent = { Text(stringResource(R.string.add_container_sub)) },
+                leadingContent = { Icon(Icons.Rounded.ContentCopy, null) },
+                modifier = Modifier.clip(MaterialTheme.shapes.large).clickable { images.firstOrNull()?.let(onContainer) })
+        }
+    }
+}
+
+@Composable
+private fun ContainerDialog(src: GuestImage, images: List<GuestImage>, onDismiss: () -> Unit, onCreate: (GuestImage, String, Boolean) -> Unit) {
+    var from by remember { mutableStateOf(src) }
+    var name by remember(from) { mutableStateOf("${from.name} (${images.count { it.baseId == from.id || it.baseId == from.baseId.ifEmpty { "-" } } + 2})") }
+    var copy by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ContentCopy, null) },
+        title = { Text(stringResource(R.string.add_container)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                images.forEach { img ->
+                    Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { from = img }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = from.id == img.id, onClick = { from = img })
+                        Text("${img.name} · ${img.release}", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.name)) }, singleLine = true)
+                Row(Modifier.fillMaxWidth().clickable { copy = !copy }, verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(copy, { copy = it })
+                    Text(stringResource(R.string.container_copy_data))
+                }
+                Text(stringResource(R.string.container_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = { Button(onClick = { onCreate(from, name.trim().ifEmpty { from.name }, copy) }) { Text(stringResource(R.string.container_create)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Firmware found in Internal storage/aemulator/firmware, rescanned whenever the screen comes back. */
+@Composable
+private fun FirmwareFolderCard(onImport: (java.io.File) -> Unit) {
+    var files by remember { mutableStateOf(emptyList<java.io.File>()) }
+    val life = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(life) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) Thread { files = app.aemu.core.FirmwareFolder.list() }.start()
+        }
+        life.lifecycle.addObserver(obs)
+        onDispose { life.lifecycle.removeObserver(obs) }
+    }
+    if (files.isEmpty()) return
+    Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.fw_folder_title), style = MaterialTheme.typography.titleMedium)
+            Text("aemulator/firmware", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            for (f in files.take(8)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(f.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text("${f.length() / 1_048_576} MB", style = MaterialTheme.typography.bodySmall)
+                    }
+                    androidx.compose.material3.FilledTonalButton(onClick = { onImport(f) }) { Text(stringResource(R.string.fw_folder_import)) }
+                }
+            }
+        }
+    }
 }
 
 /** Доступ ко всем файлам: общая папка гостя в «Внутренний накопитель/AEmulator». */
@@ -288,7 +451,7 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
 }
 
 @Composable
-private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit) {
+private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit, baseName: String? = null) {
     val ctx = LocalContext.current
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(20.dp)) {
@@ -307,9 +470,12 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(onClick = {}, label = { Text(img.skin) })
+
                 AssistChip(onClick = {}, label = { Text("${img.settings.width}×${img.settings.height}") })
                 AssistChip(onClick = {}, label = { Text(Formatter.formatShortFileSize(ctx, img.sizeBytes)) })
             }
+            if (baseName != null) Text(stringResource(R.string.container_of, baseName), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (img.lastBootMs > 0) Text(stringResource(R.string.last_boot, (img.lastBootMs / 1000).toInt()), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             img.warnings.firstOrNull()?.let { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }

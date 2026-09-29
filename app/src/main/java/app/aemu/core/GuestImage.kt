@@ -14,6 +14,8 @@ data class VmSettings(
     val hwui: Boolean = true,
     /** JIT Dalvik; без него стабильнее, но медленнее */
     val jit: Boolean = true,
+    /** ART (5.0+): compile apps fully to machine code at install/first boot; off = interpret-only, fast first boot */
+    val fullDexopt: Boolean = false,
     /** частота развёртки гостя, Гц */
     val fbHz: Int = 60,
     /** касаний в секунду, которые шлём гостю */
@@ -27,15 +29,35 @@ data class VmSettings(
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
+    /** guest RAM budget in MB, 0 = automatic */
+    val ramMb: Int = 0,
+    /** emulate the radio (RIL); off = tablet-like firmware without telephony */
+    val radio: Boolean = true,
+    /** IMEI reported by the fake modem; blank = default sample IMEI */
+    val imei: String = "",
+    /** extra qemu options; KEY=VALUE tokens are passed as environment variables */
+    val qemuArgs: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("width", width).put("height", height).put("density", density)
-        .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fbHz", fbHz)
+        .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fullDexopt", fullDexopt).put("fbHz", fbHz)
         .put("touchHz", touchHz).put("netProxy", netProxy).put("lowRam", lowRam)
         .put("showFrame", showFrame).put("showNavBar", showNavBar)
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
+        .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
     companion object {
+        /** Luhn-valid sample IMEI from the standard; the guest has no real modem */
+        const val DEFAULT_IMEI = "490154203237518"
+
+        /** Random Luhn-valid IMEI with a test TAC prefix. */
+        fun randomImei(): String {
+            val d = IntArray(14) { if (it < 2) intArrayOf(3, 5)[it] else (0..9).random() }
+            var sum = 0
+            for (i in 0 until 14) { var x = d[i]; if (i % 2 == 1) { x *= 2; if (x > 9) x -= 9 }; sum += x }
+            return d.joinToString("") + ((10 - sum % 10) % 10)
+        }
+
         fun fromJson(o: JSONObject?): VmSettings {
             if (o == null) return VmSettings()
             val d = VmSettings()
@@ -46,6 +68,7 @@ data class VmSettings(
                 gpu = o.optBoolean("gpu", d.gpu),
                 hwui = o.optBoolean("hwui", d.hwui),
                 jit = o.optBoolean("jit", d.jit),
+                fullDexopt = o.optBoolean("fullDexopt", d.fullDexopt),
                 fbHz = o.optInt("fbHz", d.fbHz),
                 touchHz = o.optInt("touchHz", d.touchHz),
                 netProxy = o.optBoolean("netProxy", d.netProxy),
@@ -55,6 +78,10 @@ data class VmSettings(
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
+                ramMb = o.optInt("ramMb", 0),
+                radio = o.optBoolean("radio", true),
+                imei = o.optString("imei", ""),
+                qemuArgs = o.optString("qemuArgs", ""),
             )
         }
     }
@@ -134,6 +161,8 @@ data class GuestImage(
     val bootCount: Int = 0,
     /** версия анализатора, которым построен профиль; устаревший профиль пересчитывается перед запуском */
     val profileVersion: Int = 0,
+    /** container: id of the image whose /system this one shares (its own /data, card and settings) */
+    val baseId: String = "",
 ) {
     val displayVersion: String get() = "Android $release (API $api)"
 
@@ -156,6 +185,7 @@ data class GuestImage(
         .put("warnings", JSONArray(warnings))
         .put("lastBootMs", lastBootMs).put("bootCount", bootCount)
         .put("profileVersion", profileVersion)
+        .put("baseId", baseId)
 
     companion object {
         fun fromJson(o: JSONObject): GuestImage {
@@ -189,6 +219,7 @@ data class GuestImage(
                 lastBootMs = o.optLong("lastBootMs", 0),
                 bootCount = o.optInt("bootCount", 0),
                 profileVersion = o.optInt("profileVersion", 0),
+                baseId = o.optString("baseId", ""),
             )
         }
     }

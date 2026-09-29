@@ -18,14 +18,25 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.aemu"
         minSdk = 26
         // 28: гостевые бинарники запускаются из каталога данных приложения (W^X для targetSdk>=29)
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
-        versionCode = 1
-        versionName = "0.0.0.1"
+        versionCode = 2
+        versionName = "0.0.0.2"
         ndk { abiFilters += listOf("arm64-v8a") }
+    }
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("standard") {
+            dimension = "distribution"
+            applicationId = "app.aemu"
+        }
+        create("clone") {
+            dimension = "distribution"
+            applicationId = "app.aemu.clone"
+        }
     }
 
     signingConfigs {
@@ -44,6 +55,8 @@ android {
         }
         debug {
             applicationIdSuffix = ""
+            // тот же ключ, что у релиза: отладочная сборка ставится поверх без потери образов
+            if (canSign) signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -88,4 +101,17 @@ dependencies {
     implementation("org.brotli:dec:0.1.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+}
+
+tasks.register<Copy>("copyReleaseApks") {
+    dependsOn("assembleStandardRelease", "assembleCloneRelease")
+    from(layout.buildDirectory.dir("outputs/apk/standard/release")) {
+        include("*.apk")
+        rename { "AEmulator-app.aemu.apk" }
+    }
+    from(layout.buildDirectory.dir("outputs/apk/clone/release")) {
+        include("*.apk")
+        rename { "AEmulator-app.aemu.clone.apk" }
+    }
+    into(rootProject.layout.projectDirectory.dir("release-apks"))
 }

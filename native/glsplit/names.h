@@ -417,10 +417,29 @@ static const char *const kNames[] = {
     "glViewport",
     "glWaitSync",
 };
+#define IDX_eglChooseConfig 2
 #define IDX_eglCreateContext 5
+#define IDX_eglCreateImageKHR 6
+#define IDX_eglCreatePbufferSurface 8
+#define IDX_eglCreateWindowSurface 11
+#define IDX_eglGetConfigAttrib 16
+#define IDX_eglGetProcAddress 23
 #define IDX_eglMakeCurrent 30
+#define IDX_eglSwapBuffers 39
 #define IDX_glBindBuffer 53
+#define IDX_glBindTexture 61
+#define IDX_glBufferData 74
+#define IDX_glBufferSubData 75
+#define IDX_glDeleteBuffers 109
+#define IDX_glDeleteTextures 119
+#define IDX_glDisableVertexAttribArray 130
+#define IDX_glDrawArrays 132
+#define IDX_glDrawElements 135
+#define IDX_glEGLImageTargetTexture2DOES 142
+#define IDX_glEnableVertexAttribArray 145
+#define IDX_glGenBuffers 164
 #define IDX_glPixelStorei 292
 #define IDX_glTexImage2D 345
 #define IDX_glTexSubImage2D 355
+#define IDX_glVertexAttribPointer 412
 static const unsigned char kEs2Only[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,1,0,1,0,1,0,1,1,0,1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1,1,0,0,1,1,1,0,0,1,0,1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,1,0,0,1,1,0,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,0,1,0,0,0,0,1,0,1,1,0,1,0,1,1,0,1,0,0,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,1,1,0,1,1,0,0,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0,1,0,1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,1,1,1,0,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1};

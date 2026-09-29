@@ -30,7 +30,7 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val cmd = b.getInt()
         val name = cstr(body, 4, 32)
         val value = cstr(body, 36, 92)
-        if (cmd == 1) apply(name, value) else log("свойства: неизвестная команда $cmd")
+        if (cmd == 1) apply(name, value) else log("props: unknown command $cmd")
     }
 
     /** Разворачивает область из шаблона образа и подмешивает сохранённые persist.*. */
@@ -40,14 +40,15 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val tpl = paths.propsTemplate
         val f = paths.props
         if (!tpl.isFile) {
-            log("свойства: нет шаблона ${tpl.name}")
+            log("props: no template ${tpl.name}")
             return false
         }
         f.parentFile?.mkdirs()
         tpl.copyTo(f, overwrite = true)
+        rootOwned(f)
         val a = PropArea.open(f)
         if (a == null) {
-            log("свойства: область не распознана")
+            log("props: area not recognized")
             return false
         }
         area = a
@@ -61,7 +62,7 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         // наши значения важнее сохранённых гостем
         for ((k, v) in overrides) a.put(k, v)
         writes = 0; rejects = 0
-        log("свойства: записей ${a.count}, свободно ${a.room()}" + if (n > 0) ", сохранённых persist.* $n" else "")
+        log("props: ${a.count} entries, ${a.room()} free" + if (n > 0) ", saved persist.* $n" else "")
         return true
     }
 
@@ -76,13 +77,13 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         if (name.isEmpty()) { rejects++; return }
         if (name.startsWith("ctl.")) {
             val what = name.removePrefix("ctl.")
-            onCtl?.invoke(what == "start" || what == "restart", value) ?: log("свойства: ctl.$what=$value (служб нет)")
+            onCtl?.invoke(what == "start" || what == "restart", value) ?: log("props: ctl.$what=$value (no services)")
             return
         }
         if (name.startsWith("ro.") && get(name) != null) { rejects++; return }
         if (!put(name, value)) {
             rejects++
-            log("свойства: не записал $name=$value (места нет?)")
+            log("props: failed to write $name=$value (out of space?)")
             return
         }
         writes++
@@ -109,9 +110,22 @@ class PropService(private val paths: VmPaths, private val log: (String) -> Unit)
         val dst = File(paths.bin, "props.$name")
         return runCatching {
             src.copyTo(dst, overwrite = true)
+            rootOwned(dst)
             PropArea.open(dst)?.use { a -> extra.forEach { (k, v) -> a.put(k, v) } }
             dst
         }.getOrNull()
+    }
+
+    /**
+     * The area is a fresh file every boot, and its inode may be one the owners table (dev, ino → uid) still
+     * maps to an app: 7.0+ libc refuses a property area not owned by root, and every process then sees no
+     * properties. A later row wins, so the file is pinned to root here.
+     */
+    private fun rootOwned(f: File) {
+        runCatching {
+            val st = android.system.Os.lstat(f.absolutePath)
+            paths.owners.appendText(String.format("%016x %016x %08x %08x\n", st.st_dev, st.st_ino, 0, 0))
+        }
     }
 
     private fun cstr(b: ByteArray, at: Int, max: Int): String {

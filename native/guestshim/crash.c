@@ -154,7 +154,7 @@ static void dump_current(const char *title, u32 addr, u32 *regs) {
     g_sp = regs[13]; g_stack_end = 0;
     load_maps();
     put("*** "); put(title); put(" pid "); putdec((u32)cr_sys3(SYS_getpid, 0, 0, 0));
-    put(" tid "); putdec((u32)cr_sys3(SYS_gettid, 0, 0, 0)); put(" адрес "); puthex(addr); flush_line();
+    put(" tid "); putdec((u32)cr_sys3(SYS_gettid, 0, 0, 0)); put(" addr "); puthex(addr); flush_line();
     put("pc "); puthex(regs[15]); put(" "); put_sym(regs[15]); flush_line();
     put("lr "); puthex(regs[14]); put(" "); put_sym(regs[14]); flush_line();
     for (int r = 0; r < 13; r += 4) {
@@ -174,7 +174,7 @@ static void dump_current(const char *title, u32 addr, u32 *regs) {
         flush_line();
         shown++;
     }
-    put("*** конец"); flush_line();
+    put("*** end"); flush_line();
     if (g_logfd >= 0) cr_sys3(SYS_close, g_logfd, 0, 0);
 }
 
@@ -224,7 +224,7 @@ static void usr2_handler(int sig, void *info, void *ucv) {
         }
     }
     while (__sync_lock_test_and_set(&g_dump_lock, 1)) { }
-    dump_current("стек потока", 0, regs);
+    dump_current("thread stack", 0, regs);
     __sync_lock_release(&g_dump_lock);
 }
 

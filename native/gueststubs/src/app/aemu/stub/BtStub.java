@@ -19,6 +19,13 @@ import java.lang.reflect.Method;
  * /system/bin app.aemu.stub.BtStub
  */
 public class BtStub extends Binder {
+    private final String descriptor;
+
+    BtStub(String name) {
+        // 2.3–4.1: BluetoothAdapter talks to the "bluetooth" service (IBluetooth); 4.2+ to "bluetooth_manager"
+        descriptor = "bluetooth".equals(name) ? "android.bluetooth.IBluetooth" : "android.bluetooth.IBluetoothManager";
+    }
+
     private static final int FIRST_CALL = 1, LAST_CALL = 0x00ffffff;
 
     @Override
@@ -36,7 +43,7 @@ public class BtStub extends Binder {
     }
 
     @Override
-    public String getInterfaceDescriptor() { return "android.bluetooth.IBluetoothManager"; }
+    public String getInterfaceDescriptor() { return descriptor; }
 
     public static void main(String[] args) throws Exception {
         String name = args.length > 0 ? args[0] : "bluetooth_manager";
@@ -47,7 +54,7 @@ public class BtStub extends Binder {
             return;
         }
         Method add = sm.getMethod("addService", String.class, IBinder.class);
-        add.invoke(null, name, new BtStub());
+        add.invoke(null, name, new BtStub(name));
         System.out.println("aemu-bt: служба " + name + " зарегистрирована");
         // пул потоков binder поднимает app_process; главный поток просто живёт
         Object lock = new Object();

@@ -64,9 +64,67 @@ object ImageStore {
         wipe(VmPaths(ctx, id).dir)
     }
 
+    /**
+     * New container of [src]'s firmware: a full own copy of the root including /system (flashing in one container
+     * never touches another), a fresh /data (factory reset: apps, settings and accounts start empty; dalvik-cache is kept
+     * so the first boot is quick) or a full copy of it, its own memory-card folder and settings.
+     */
+    fun clone(ctx: Context, src: GuestImage, name: String, copyData: Boolean, progress: (String) -> Unit): GuestImage {
+        val from = VmPaths(ctx, src.id)
+        val need = du(from.root) + du(File(from.root, "system").canonicalFile).takeIf { File(from.root, "system").canonicalPath != File(from.root, "system").path } .let { it ?: 0 }
+        val free = imagesDir(ctx).usableSpace
+        if (need + (200L shl 20) > free) error("not enough space: need ${need shr 20} MB, free ${free shr 20} MB")
+        val id = newId(ctx)
+        val to = VmPaths(ctx, id)
+        try {
+            to.root.mkdirs()
+            val skipData = setOf("data", "system", "user", "property", "anr", "tombstones", "backup", "misc/wifi", "misc/keystore",
+                "local/tmp", "app", "app-private", "app-asec")
+            fun copy(a: File, b: File, rel: String) {
+                val st = runCatching { Os.lstat(a.path) }.getOrNull() ?: return
+                when {
+                    android.system.OsConstants.S_ISLNK(st.st_mode) -> runCatching { Os.symlink(Os.readlink(a.path), b.path) }
+                    android.system.OsConstants.S_ISDIR(st.st_mode) -> {
+                        b.mkdirs()
+                        for (c in a.list().orEmpty()) {
+                            val r = if (rel.isEmpty()) c else "$rel/$c"
+                            if (rel.isEmpty() && (c == "dev" || c == "proc")) continue
+                            if (rel.isEmpty() && c == "system") progress("system")
+                            if (!copyData && r.startsWith("data/") && r.removePrefix("data/") in skipData) { File(b, c).mkdirs(); continue }
+                            if (rel.isEmpty() && c == "data") progress("data")
+                            copy(File(a, c), File(b, c), r)
+                        }
+                    }
+                    android.system.OsConstants.S_ISREG(st.st_mode) -> {
+                        a.inputStream().use { i -> b.outputStream().use { i.copyTo(it, 1 shl 16) } }
+                        runCatching { Os.chmod(b.path, st.st_mode and 0xfff) }
+                    }
+                }
+            }
+            progress("root")
+            // an older container's /system may be a link to its original: copy what it points to
+            val sys = File(from.root, "system").canonicalFile
+            copy(from.root, to.root, "")
+            if (runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(File(to.root, "system").path).st_mode) }.getOrDefault(false)) {
+                File(to.root, "system").delete(); copy(sys, File(to.root, "system"), "system")
+            }
+            File(to.root, "dev").mkdirs()
+            // ownership table is keyed by inode: the fresh copy gets its own on first boot
+            if (!copyData) { File(to.root, "dhd.owners").delete(); File(to.root, "dhd.owners.seeded").delete() }
+            listOf("props.base").forEach { n -> File(from.dir, n).takeIf { it.isFile }?.copyTo(File(to.dir, n), true) }
+            val img = src.copy(id = id, name = name, baseId = src.id, createdAt = System.currentTimeMillis(),
+                lastBootMs = 0, bootCount = 0, sizeBytes = du(to.dir))
+            save(ctx, img)
+            return img
+        } catch (t: Throwable) {
+            wipe(to.dir)
+            throw t
+        }
+    }
+
     fun wipe(f: File) {
         val isLink = runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(f.path).st_mode) }.getOrDefault(false)
-        if (!isLink && f.isDirectory) f.listFiles()?.forEach { wipe(it) }
+        if (!isLink && f.isDirectory) { f.setWritable(true, true); f.listFiles()?.forEach { wipe(it) } }
         f.delete()
     }
 

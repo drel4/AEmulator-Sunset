@@ -27,6 +27,9 @@ extern int usleep(unsigned long us);
 #define ENOSYS 38
 #define EINVAL 22
 
+#ifndef AEMU_PCM_DEV
+#define AEMU_PCM_DEV "/dev/eac"
+#endif
 #define RATE 48000
 #define CHANNELS_STEREO 3        /* AUDIO_CHANNEL_OUT_STEREO */
 #define FORMAT_PCM16 1           /* AUDIO_FORMAT_PCM_16_BIT */
@@ -82,9 +85,11 @@ struct audio_stream_out {
     int (*set_volume)(struct audio_stream_out *s, float left, float right);
     long (*write)(struct audio_stream_out *s, const void *buf, size_t bytes);
     int (*get_render_position)(const struct audio_stream_out *s, uint32_t *frames);
+#ifndef AEMU_ICS
     int (*get_next_write_timestamp)(const struct audio_stream_out *s, int64_t *ts);
     /* 4.4: офлоад и точное положение — не поддерживаем (NULL, AudioFlinger это проверяет) */
     fnp set_callback, pause, resume, drain, flush, get_presentation_position;
+#endif
 };
 
 /* ---- audio_hw_device (KitKat) ---- */
@@ -94,22 +99,45 @@ struct audio_hw_device {
     int (*init_check)(const struct audio_hw_device *d);
     int (*set_voice_volume)(struct audio_hw_device *d, float v);
     int (*set_master_volume)(struct audio_hw_device *d, float v);
+#ifdef AEMU_QCOM
+    int (*set_fm_volume)(struct audio_hw_device *d, float v);   /* Qualcomm CAF (libaudioflinger has setFmVolume) */
+#endif
+#ifndef AEMU_ICS
     int (*get_master_volume)(struct audio_hw_device *d, float *v);
+#endif
     int (*set_mode)(struct audio_hw_device *d, int mode);
     int (*set_mic_mute)(struct audio_hw_device *d, int state);
-    int (*get_mic_mute)(const struct audio_hw_device *d, int *state);
+    int (*get_mic_mute)(const struct audio_hw_device *d, unsigned char *state);
     int (*set_parameters)(struct audio_hw_device *d, const char *kv);
     char *(*get_parameters)(const struct audio_hw_device *d, const char *keys);
+#ifdef AEMU_ICS
+    /* Android 4.0: format/channels/rate passed as separate in-out pointers, no stream handle */
+    size_t (*get_input_buffer_size)(const struct audio_hw_device *d, uint32_t rate, int format, int channels);
+    int (*open_output_stream)(struct audio_hw_device *d, uint32_t devices, int *format, uint32_t *channels,
+                              uint32_t *rate, struct audio_stream_out **out);
+#else
     size_t (*get_input_buffer_size)(const struct audio_hw_device *d, const struct audio_config *c);
     int (*open_output_stream)(struct audio_hw_device *d, int handle, uint32_t devices, int flags,
                               struct audio_config *c, struct audio_stream_out **out);
+#endif
+#ifdef AEMU_QCOM
+    int (*open_output_session)(struct audio_hw_device *d, uint32_t devices, int *format, int session,
+                               struct audio_stream_out **out);  /* CAF LPA/tunnel output */
+#endif
     void (*close_output_stream)(struct audio_hw_device *d, struct audio_stream_out *s);
+#ifdef AEMU_ICS
+    int (*open_input_stream)(struct audio_hw_device *d, uint32_t devices, int *format, uint32_t *channels,
+                             uint32_t *rate, int acoustics, void **in);
+#else
     int (*open_input_stream)(struct audio_hw_device *d, int handle, uint32_t devices,
                              struct audio_config *c, void **in);
+#endif
     void (*close_input_stream)(struct audio_hw_device *d, void *in);
     int (*dump)(const struct audio_hw_device *d, int fd);
+#ifndef AEMU_ICS
     int (*set_master_mute)(struct audio_hw_device *d, int mute);
     int (*get_master_mute)(struct audio_hw_device *d, int *mute);
+#endif
 };
 
 struct out {
@@ -150,7 +178,7 @@ static long o_write(struct audio_stream_out *st, const void *buf, size_t bytes) 
     struct out *o = (struct out *)st;
     /* O_RDWR: открытие FIFO не ждёт читателя (O_WRONLY ждал бы — и микшер AudioFlinger вставал бы,
        а за ним system_server в AudioSystem.setParameters); O_NONBLOCK: полный канал не вешает микшер */
-    if (o->fd < 0) o->fd = open("/dev/eac", O_RDWR | O_NONBLOCK);
+    if (o->fd < 0) o->fd = open(AEMU_PCM_DEV, O_RDWR | O_NONBLOCK);
     unsigned long frame_us = (unsigned long)(bytes / 4) * 1000000UL / RATE;
     int played = 0;
     if (o->fd >= 0) {
@@ -194,19 +222,41 @@ static int d_float_nosys(struct audio_hw_device *d, float v) { (void)d; (void)v;
 static int d_get_master_volume(struct audio_hw_device *d, float *v) { (void)d; (void)v; return -ENOSYS; }
 static int d_set_mode(struct audio_hw_device *d, int m) { (void)d; (void)m; return 0; }
 static int d_set_mic_mute(struct audio_hw_device *d, int s) { (void)d; (void)s; return 0; }
-static int d_get_mic_mute(const struct audio_hw_device *d, int *s) { (void)d; if (s) *s = 0; return 0; }
+/* bool *state in audio.h: a 4-byte store clobbers the caller's stack (MediaTek AudioFlinger keeps its hardware-lock
+   Autolock right after the flag and then never unlocks it; the next setParameters hangs system_server) */
+static int d_get_mic_mute(const struct audio_hw_device *d, unsigned char *s) { (void)d; if (s) *s = 0; return 0; }
 static int d_set_params(struct audio_hw_device *d, const char *kv) { (void)d; (void)kv; return 0; }
 static char *d_get_params(const struct audio_hw_device *d, const char *k) { (void)d; (void)k; return (char *)calloc(1, 1); }
+#ifdef AEMU_ICS
+static size_t d_in_bufsize(const struct audio_hw_device *d, uint32_t r, int f, int ch) { (void)d; (void)r; (void)f; (void)ch; return 0; }
+#else
 static size_t d_in_bufsize(const struct audio_hw_device *d, const struct audio_config *c) { (void)d; (void)c; return 0; }
+#endif
+#ifdef AEMU_QCOM
+static int d_open_session(struct audio_hw_device *d, uint32_t dev, int *f, int ses, struct audio_stream_out **out) {
+    (void)d; (void)dev; (void)f; (void)ses;
+    if (out) *out = 0;
+    return -ENOSYS;   /* no hardware decoder: AudioFlinger falls back to the software mixer */
+}
+#endif
 static int d_dump(const struct audio_hw_device *d, int fd) { (void)d; (void)fd; return 0; }
 static int d_set_master_mute(struct audio_hw_device *d, int m) { (void)d; (void)m; return -ENOSYS; }
 static int d_get_master_mute(struct audio_hw_device *d, int *m) { (void)d; (void)m; return -ENOSYS; }
 
+#ifdef AEMU_ICS
+static int d_open_out(struct audio_hw_device *d, uint32_t devices, int *format, uint32_t *channels,
+                      uint32_t *rate, struct audio_stream_out **out) {
+    (void)d;
+    if (format) *format = FORMAT_PCM16;
+    if (channels) *channels = CHANNELS_STEREO;
+    if (rate) *rate = RATE;
+#else
 static int d_open_out(struct audio_hw_device *d, int handle, uint32_t devices, int flags,
                       struct audio_config *c, struct audio_stream_out **out) {
     (void)d; (void)handle; (void)flags;
     /* поддерживаем ровно один формат; AudioFlinger сам приводит микшер к нему */
     if (c) { c->sample_rate = RATE; c->channel_mask = CHANNELS_STEREO; c->format = FORMAT_PCM16; }
+#endif
     struct out *o = (struct out *)calloc(1, sizeof(struct out));
     if (!o) return -12;
     o->fd = -1;
@@ -229,7 +279,9 @@ static int d_open_out(struct audio_hw_device *d, int handle, uint32_t devices, i
     o->s.set_volume = o_volume;
     o->s.write = o_write;
     o->s.get_render_position = o_render_pos;
+#ifndef AEMU_ICS
     o->s.get_next_write_timestamp = o_next_ts;
+#endif
     *out = &o->s;
     return 0;
 }
@@ -241,13 +293,24 @@ static void d_close_out(struct audio_hw_device *d, struct audio_stream_out *s) {
     free(s);
 }
 
+#ifdef AEMU_ICS
+static int d_open_in(struct audio_hw_device *d, uint32_t dev, int *f, uint32_t *ch, uint32_t *r, int ac, void **in) {
+    (void)d; (void)dev; (void)f; (void)ch; (void)r; (void)ac;
+#else
 static int d_open_in(struct audio_hw_device *d, int h, uint32_t dev, struct audio_config *c, void **in) {
     (void)d; (void)h; (void)dev; (void)c;
+#endif
     if (in) *in = 0;
     return -ENOSYS;   /* микрофона у эмулятора нет */
 }
 static void d_close_in(struct audio_hw_device *d, void *in) { (void)d; (void)in; }
 
+#ifdef AEMU_MTK
+/* MediaTek extends audio_hw_device with vendor calls (SetAudioCommand, VoiceUnlock...) after the AOSP slots;
+   AudioFlinger calls them under its hardware lock. Give it a zeroed tail of harmless stubs. */
+#define MTK_EXTRA 48
+static long d_mtk_stub(void) { return 0; }
+#endif
 static int d_close(struct hw_device *dev) { free(dev); return 0; }
 
 static int hal_open(const struct hw_module *m, const char *id, struct hw_device **dev) {
@@ -256,17 +319,32 @@ static int hal_open(const struct hw_module *m, const char *id, struct hw_device 
         if (id[i] != want[i]) return -EINVAL;
         if (!id[i]) break;
     }
+    #ifdef AEMU_MTK
+    struct audio_hw_device *d = (struct audio_hw_device *)calloc(1, sizeof(struct audio_hw_device) + MTK_EXTRA * sizeof(void *));
+    if (d) { void **x = (void **)(d + 1); for (int i = 0; i < MTK_EXTRA; i++) x[i] = (void *)d_mtk_stub; }
+#else
     struct audio_hw_device *d = (struct audio_hw_device *)calloc(1, sizeof(struct audio_hw_device));
+#endif
     if (!d) return -12;
     d->common.tag = 0x48574454;          /* HARDWARE_DEVICE_TAG */
+#ifdef AEMU_ICS
+    d->common.version = 0;               /* 4.0: no device API versioning */
+#else
     d->common.version = 0x0200;          /* AUDIO_DEVICE_API_VERSION_2_0 */
+#endif
     d->common.module = (struct hw_module *)m;
     d->common.close = d_close;
     d->get_supported_devices = d_devices;
     d->init_check = (int (*)(const struct audio_hw_device *))d_zero;
     d->set_voice_volume = d_float_nosys;
     d->set_master_volume = d_float_nosys;
+#ifdef AEMU_QCOM
+    d->set_fm_volume = d_float_nosys;
+    d->open_output_session = d_open_session;
+#endif
+#ifndef AEMU_ICS
     d->get_master_volume = d_get_master_volume;
+#endif
     d->set_mode = d_set_mode;
     d->set_mic_mute = d_set_mic_mute;
     d->get_mic_mute = d_get_mic_mute;
@@ -278,8 +356,10 @@ static int hal_open(const struct hw_module *m, const char *id, struct hw_device 
     d->open_input_stream = d_open_in;
     d->close_input_stream = d_close_in;
     d->dump = d_dump;
+#ifndef AEMU_ICS
     d->set_master_mute = d_set_master_mute;
     d->get_master_mute = d_get_master_mute;
+#endif
     *dev = &d->common;
     return 0;
 }
@@ -295,3 +375,36 @@ __attribute__((visibility("default"))) struct hw_module HMI = {
     .author = "AEmulator",
     .methods = &g_methods,
 };
+
+#ifdef AEMU_MTK
+/*
+ * MediaTek: libaudioflinger takes the primary HAL straight from /system/lib/libaudio.primary.default.so
+ * (its HMI) and also links the DcRemove filter from it. This build replaces that library: HMI is our HAL,
+ * DcRemove calls go to the vendor original, renamed to libaudio.mtk.so by the emulator.
+ */
+extern void *dlopen(const char *name, int flags);
+extern void *dlsym(void *h, const char *name);
+static const char *const k_dc[] = {
+    "_ZN7android8DcRemoveC1Ev", "_ZN7android8DcRemoveD1Ev", "_ZN7android8DcRemove4initEjjj",
+    "_ZN7android8DcRemove7processEPKvjPv", "_ZN7android8DcRemove5closeEv",
+};
+static void *g_dc[5];
+static void dc_trap(void) { __builtin_trap(); }
+__attribute__((used)) static void *dc_resolve(unsigned i) {
+    if (!g_dc[i]) {
+        static void *h;
+        if (!h) h = dlopen("/system/lib/libaudio.mtk.so", 0);
+        g_dc[i] = h ? dlsym(h, k_dc[i]) : 0;
+        if (!g_dc[i]) g_dc[i] = (void *)dc_trap;
+    }
+    return g_dc[i];
+}
+#define DC_STUB(sym, idx) \
+    __asm__(".text\n.global " sym "\n.type " sym ",%function\n.thumb_func\n" sym ":\n" \
+            "push {r0-r3, lr}\nmovs r0, #" #idx "\nbl dc_resolve\nmov r12, r0\npop {r0-r3, lr}\nbx r12\n");
+DC_STUB("_ZN7android8DcRemoveC1Ev", 0)
+DC_STUB("_ZN7android8DcRemoveD1Ev", 1)
+DC_STUB("_ZN7android8DcRemove4initEjjj", 2)
+DC_STUB("_ZN7android8DcRemove7processEPKvjPv", 3)
+DC_STUB("_ZN7android8DcRemove5closeEv", 4)
+#endif

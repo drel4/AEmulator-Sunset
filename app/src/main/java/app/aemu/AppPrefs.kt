@@ -38,6 +38,8 @@ object AppPrefs {
 
     private fun sp(ctx: Context) = ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
+    fun prefs(ctx: Context) = sp(ctx)
+
     fun language(ctx: Context): String = sp(ctx).getString("lang", "") ?: ""
     fun setLanguage(ctx: Context, tag: String) = sp(ctx).edit().putString("lang", tag).apply()
 
@@ -46,6 +48,12 @@ object AppPrefs {
 
     fun dynamicColor(ctx: Context): Boolean = sp(ctx).getBoolean("dynamic", false)
     fun setDynamicColor(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("dynamic", v).apply()
+
+    fun autoCheckUpdates(ctx: Context): Boolean = sp(ctx).getBoolean("auto_check_updates", true)
+    fun setAutoCheckUpdates(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("auto_check_updates", v).apply()
+
+    fun lastUpdateCheck(ctx: Context): Long = sp(ctx).getLong("last_update_check", 0L)
+    fun setLastUpdateCheck(ctx: Context, v: Long) = sp(ctx).edit().putLong("last_update_check", v).apply()
 
     /** Умолчания, которые получает только что импортированная система. */
     fun defaults(ctx: Context): VmSettings {

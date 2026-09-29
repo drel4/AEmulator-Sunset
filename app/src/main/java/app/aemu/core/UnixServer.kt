@@ -55,7 +55,7 @@ class UnixServer(
             }, "$name-accept").apply { isDaemon = true; start() }
             true
         } catch (e: Throwable) {
-            log("$name: сокет не поднялся: $e")
+            log("$name: socket failed: $e")
             false
         }
     }

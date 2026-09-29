@@ -7,8 +7,10 @@ import app.aemu.core.GuestImage
 import app.aemu.core.ImageStore
 import app.aemu.core.TreeFixer
 import app.aemu.core.VmPaths
+import app.aemu.core.RecoveryImage
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipFile
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
@@ -43,6 +45,7 @@ class Importer(
     private lateinit var root: File
     private val tmp = File(ctx.cacheDir, "import").apply { mkdirs() }
     private var ramdisk: List<BootImage.CpioEntry>? = null
+    private var recovery: ByteArray? = null
     private val symlinks = ArrayList<Pair<String, String>>() // (цель, путь ссылки в госте)
     private val perms = ArrayList<Triple<String, Int, Boolean>>() // (путь, режим, рекурсивно-файлы)
     private var files = 0
@@ -56,8 +59,8 @@ class Importer(
         root = paths.root
         root.mkdirs()
         try {
-            onProgress("Открываю $name", 0f)
-            val pfd = ctx.contentResolver.openFileDescriptor(uri, "r") ?: throw IOException("не открылся файл")
+            onProgress("Opening $name", 0f)
+            val pfd = ctx.contentResolver.openFileDescriptor(uri, "r") ?: throw IOException("file failed to open")
             pfd.use {
                 val ch = FileInputStream(pfd.fileDescriptor).channel
                 val seekable = runCatching { ch.position(0); ch.size() > 0 }.getOrDefault(false)
@@ -68,14 +71,17 @@ class Importer(
                     t.delete()
                 }
             }
-            if (!gotSystem || !File(root, "system/build.prop").isFile) throw IOException("в файле не нашлось системного раздела Android (system/build.prop)")
+            // build.prop is optional: some dumps/ports lack it, Analyzer infers the version from the tree
+            if (!File(root, "system/framework").isDirectory && !File(root, "system/build.prop").isFile)
+                throw IOException("no Android system partition found in file")
             finishTree()
-            onProgress("Изучаю прошивку", 0.97f)
+            recovery?.let { runCatching { RecoveryImage.install(paths, it, log) } }
+            onProgress("Analyzing firmware", 0.97f)
             val img = Analyzer(ctx, paths, ramdisk).analyze(id, name)
             TreeFixer(ctx, paths, img, log).sanitize()
             ImageStore.save(ctx, img.copy(sizeBytes = ImageStore.du(paths.dir)))
-            onProgress("Готово", 1f)
-            log("импорт: файлов $files, ${bytes shr 20} МБ")
+            onProgress("Done", 1f)
+            log("import: $files files, ${bytes shr 20} MB")
             return ImageStore.get(ctx, id)!!
         } catch (t: Throwable) {
             ImageStore.delete(ctx, id)
@@ -94,7 +100,10 @@ class Importer(
         val h = ByteArray(head.remaining()).also { head.get(it) }
         when {
             h.size > 4 && h[0] == 'P'.code.toByte() && h[1] == 'K'.code.toByte() && h[2].toInt() == 3 && h[3].toInt() == 4 -> {
-                if (ch != null) importZip(ch, name, depth) else throw IOException("zip без произвольного доступа")
+                if (ch != null) importZip(ch, name, depth) else throw IOException("zip without random access")
+            }
+            h.size > 6 && h[0] == '7'.code.toByte() && h[1] == 'z'.code.toByte() && h[2] == 0xBC.toByte() && h[3] == 0xAF.toByte() -> {
+                if (ch != null) importSevenZ(ch, name, depth) else throw IOException("7z without random access")
             }
             SparseSource.probe(src) -> importImage(SparseSource(listOf(src)), "system")
             Ext4Reader.probe(src) -> importImage(src, "system")
@@ -104,7 +113,7 @@ class Importer(
             h[0] == 0xfd.toByte() && h[1] == '7'.code.toByte() -> importTarStream(XZInputStream(streamOf(src)), name, depth)
             h[0] == 'B'.code.toByte() && h[1] == 'Z'.code.toByte() && h[2] == 'h'.code.toByte() -> importTarStream(BZip2CompressorInputStream(streamOf(src)), name, depth)
             String(h, 0, 8, Charsets.ISO_8859_1) == "ANDROID!" -> takeBoot(readAllFrom(src))
-            else -> throw IOException("неизвестный формат файла «$name»")
+            else -> throw IOException("unknown file format \"$name\"")
         }
     }
 
@@ -127,6 +136,8 @@ class Importer(
     }
 
     private var zipChannel: FileChannel? = null
+    /** partition images spilled out of a nested zip, imported only after that zip's temp file is gone (disk peak) */
+    private var deferred: MutableList<Pair<File, String>>? = null
 
     private fun importZip(ch: FileChannel, name: String, depth: Int) {
         val zip = ZipFile.builder().setSeekableByteChannel(ch).get()
@@ -146,12 +157,12 @@ class Importer(
         // прошивка, упакованная вместе с папкой (Имя/META-INF/…, Имя/system/…): папку-обёртку снимаем
         val wrap = entries.firstOrNull { it.name.endsWith("META-INF/com/google/android/updater-script") }
             ?.name?.substringBefore("META-INF/")?.takeIf { it.isNotEmpty() && it.count { c -> c == '/' } == 1 } ?: ""
-        if (wrap.isNotEmpty()) log("архив с папкой-обёрткой «${wrap.trimEnd('/')}»")
+        if (wrap.isNotEmpty()) log("archive with wrapper folder \"${wrap.trimEnd('/')}\"")
         val names = entries.map { it.name.removePrefix(wrap) }.toSet()
         val datBr = entries.firstOrNull { it.name.matches(Regex("(.*/)?system\\.new\\.dat(\\.br)?")) }
         val sparseChunks = entries.filter { it.name.matches(Regex("(.*/)?system\\.img_sparsechunk\\.\\d+")) }.sortedBy { it.name.substringAfterLast('.').toInt() }
         for (e in entries) {
-            if (cancelled) throw IOException("отменено")
+            if (cancelled) throw IOException("cancelled")
             val n = e.name.replace('\\', '/').removePrefix(wrap)
             val base = n.substringAfterLast('/')
             when {
@@ -162,14 +173,13 @@ class Importer(
                     gotSystem = true
                 }
                 base.equals("boot.img", true) -> zip.getInputStream(e).use { takeBoot(it.readBytes()) }
+                base.equals("recovery.img", true) && e.size < 64_000_000 -> zip.getInputStream(e).use { recovery = it.readBytes() }
                 base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
                     withEntrySource(zip, e) { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "system") }
                 base.matches(Regex("(?i)vendor(\\.ext4)?\\.img")) ->
                     withEntrySource(zip, e) { runCatching { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "vendor") } }
                 base.lowercase().endsWith(".zip") && (base.startsWith("image-") || depth == 0 && e.size > 50_000_000) -> {
-                    val t = spillEntry(zip, e)
-                    FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
-                    t.delete()
+                    handleNestedZip(spillEntry(zip, e), base, depth)
                 }
                 base.matches(Regex("(?i).*\\.(tar|tar\\.md5|md5|tgz|tar\\.gz)")) 
                     // Odin: AP/PDA/CODE — система, BL/KERNEL/HOME — ядро с рамдиском; модем и CSC не нужны
@@ -181,13 +191,13 @@ class Importer(
                 }
             }
             done += maxOf(0L, e.size)
-            onProgress("Распаковываю: $base", 0.9f * done / total)
+            onProgress("Extracting: $base", 0.9f * done / total)
         }
         if (datBr != null && !gotSystem) {
             val listName = datBr.name.substringBeforeLast("system.new.dat") + "system.transfer.list"
-            val listE = entries.firstOrNull { it.name == listName } ?: throw IOException("нет system.transfer.list")
+            val listE = entries.firstOrNull { it.name == listName } ?: throw IOException("system.transfer.list missing")
             val list = zip.getInputStream(listE).use { String(it.readBytes()) }
-            onProgress("Собираю system.img из OTA", 0.5f)
+            onProgress("Building system.img from OTA", 0.5f)
             val raw = File(tmp, "system.raw")
             zip.getInputStream(datBr).use { s ->
                 val data = if (datBr.name.endsWith(".br")) BrotliInputStream(BufferedInputStream(s, 1 shl 20)) else s
@@ -201,7 +211,44 @@ class Importer(
             val chans = parts.map { FileChannel.open(it.toPath(), StandardOpenOption.READ) }
             try { importImage(SparseSource(chans.map { ChannelSource(it) }), "system") } finally { chans.forEach { it.close() }; parts.forEach { it.delete() } }
         }
-        if (!names.any { it.startsWith("system/") } && !gotSystem) log("в архиве $name системы не нашлось")
+        if (!names.any { it.startsWith("system/") } && !gotSystem) log("no system found in archive $name")
+    }
+
+    /** 7z: entries are read in order (solid archives cannot seek); interesting ones are unpacked like their zip twins */
+    private fun importSevenZ(ch: FileChannel, name: String, depth: Int) {
+        SevenZFile.builder().setSeekableByteChannel(ch).get().use { z ->
+            val nested = ArrayList<Pair<File, String>>()
+            while (true) {
+                if (cancelled) throw IOException("cancelled")
+                val e = z.nextEntry ?: break
+                if (e.isDirectory) continue
+                val n = e.name.replace('\\', '/')
+                val base = n.substringAfterLast('/')
+                val stream = z.getInputStream(e)
+                when {
+                    n.contains("__MACOSX/") || base.startsWith("._") -> {}
+                    n.startsWith("system/") -> { writeFile(n, stream, null); gotSystem = true }
+                    base.equals("boot.img", true) -> takeBoot(stream.readBytes())
+                    base.equals("recovery.img", true) && e.size < 64_000_000 -> recovery = stream.readBytes()
+                    base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
+                        nested.add(spill(stream, base) to "system")
+                    base.matches(Regex("(?i).*\\.(zip|tar|tar\\.md5|md5|tgz|tar\\.gz)")) && e.size > 20_000_000 &&
+                        !base.startsWith("MODEM") && !base.startsWith("CP_") && !base.contains("CSC") ->
+                        nested.add(spill(stream, base) to "archive")
+                }
+                onProgress("Extracting: $base", 0.5f)
+            }
+            for ((f, kind) in nested) {
+                try {
+                    FileChannel.open(f.toPath(), StandardOpenOption.READ).use { c ->
+                        val src = ChannelSource(c)
+                        if (kind == "system") importImage(if (SparseSource.probe(src)) SparseSource(listOf(src)) else src, "system")
+                        else handle(src, c, f.name, depth + 1)
+                    }
+                } finally { f.delete() }
+            }
+            if (!gotSystem && nested.isEmpty()) log("no system found in archive $name")
+        }
     }
 
     private fun withEntrySource(zip: ZipFile, e: ZipArchiveEntry, block: (RandomSource) -> Unit) {
@@ -212,8 +259,30 @@ class Importer(
             if (e.dataOffset > 0) { block(ChannelSource(ch, e.dataOffset, e.size)); return }
         }
         val t = spillEntry(zip, e)
+        deferred?.let { d -> d.add(t to e.name); return }
         FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> block(ChannelSource(c)) }
         t.delete()
+    }
+
+    /** a nested zip: its images are copied out first, the zip deleted, then the images unpacked */
+    private fun handleNestedZip(t: File, base: String, depth: Int) {
+        val outer = deferred
+        val mine = ArrayList<Pair<File, String>>()
+        deferred = mine
+        try {
+            FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
+        } finally { deferred = outer; t.delete() }
+        try {
+            for ((f, entry) in mine) {
+                val part = if (entry.substringAfterLast('/').lowercase().startsWith("vendor")) "vendor" else "system"
+                FileChannel.open(f.toPath(), StandardOpenOption.READ).use { c ->
+                    val src = ChannelSource(c)
+                    val img = if (SparseSource.probe(src)) SparseSource(listOf(src)) else src
+                    if (part == "vendor") runCatching { importImage(img, part) } else importImage(img, part)
+                }
+                f.delete()
+            }
+        } finally { mine.forEach { it.first.delete() } }
     }
 
     private fun spillEntry(zip: ZipFile, e: ZipArchiveEntry): File = zip.getInputStream(e).use { spill(it, e.name.substringAfterLast('/')) }
@@ -228,7 +297,7 @@ class Importer(
         val tar = TarArchiveInputStream(s, "UTF-8")
         var fullRoot: Boolean? = null
         while (true) {
-            if (cancelled) throw IOException("отменено")
+            if (cancelled) throw IOException("cancelled")
             val e: TarArchiveEntry = tar.nextEntry ?: break
             var n = e.name.removePrefix("./").trimStart('/')
             if (n.isEmpty()) continue
@@ -245,12 +314,11 @@ class Importer(
                     t.delete()
                 }
                 base.matches(Regex("(?i)(boot\\.img|zImage|kernel)(\\.lz4)?")) && e.isFile -> takeBoot(maybeLz4(tar, base).readBytes())
+                base.matches(Regex("(?i)recovery\\.img(\\.lz4)?")) && e.isFile && e.size < 64_000_000 -> recovery = maybeLz4(tar, base).readBytes()
                 base.matches(Regex("(?i).*\\.(tar|tar\\.md5)")) && e.isFile && e.size > 20_000_000 -> importTarStream(tar.nonClosing(), base, depth + 1)
                 // factory-образы Google: tgz → image-*.zip → system.img/boot.img; Samsung: zip внутри tar
                 base.lowercase().endsWith(".zip") && e.isFile && e.size > 20_000_000 -> {
-                    val t = spill(tar.nonClosing(), base)
-                    FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) }
-                    t.delete()
+                    handleNestedZip(spill(tar.nonClosing(), base), base, depth)
                 }
                 n.matches(Regex("^(system|data|dev|sbin|vendor|etc)(/.*)?$")) || n.matches(Regex("^[^/]+\\.rc$")) || n == "default.prop" || n.startsWith("dhd.") -> {
                     // файлы корня (рамдиск, dhd.*) берём, только если архив — целое дерево rootfs
@@ -275,7 +343,7 @@ class Importer(
                     }
                 }
             }
-            if (files % 200 == 0) onProgress("Распаковываю: $base", -1f)
+            if (files % 200 == 0) onProgress("Extracting: $base", -1f)
         }
     }
 
@@ -294,10 +362,10 @@ class Importer(
 
     private fun importImage(src: RandomSource, mount: String) {
         val fs = Ext4Reader(src)
-        onProgress("Читаю образ $mount (ext4, блок ${fs.blockSize})", -1f)
+        onProgress("Reading image $mount (ext4, block ${fs.blockSize})", -1f)
         var n = 0
         fs.walk { path, node ->
-            if (cancelled) throw IOException("отменено")
+            if (cancelled) throw IOException("cancelled")
             val rel = "$mount/$path"
             val f = File(root, rel)
             when {
@@ -313,15 +381,15 @@ class Importer(
             if (++n % 150 == 0) onProgress("$mount: ${path.substringAfterLast('/')}", -1f)
         }
         if (mount == "system") gotSystem = true
-        log("образ $mount: объектов $n")
+        log("image $mount: $n objects")
     }
 
     private fun takeBoot(data: ByteArray) {
         if (ramdisk != null) return
         val rd = runCatching { BootImage.ramdisk(data) }.getOrNull()
-        if (rd.isNullOrEmpty()) { log("boot: рамдиск не распознан"); return }
+        if (rd.isNullOrEmpty()) { log("boot: ramdisk not recognized"); return }
         ramdisk = rd
-        log("boot: рамдиск, файлов ${rd.size}")
+        log("boot: ramdisk, ${rd.size} files")
     }
 
     // ------------------------------------------------------------------ файлы, ссылки, права
@@ -362,7 +430,7 @@ class Importer(
             val i = a.indexOf(key)
             if (i > 0 && i + 1 < a.size) a[i + 1].toIntOrNull(8)?.let { perms.add(Triple(a[0], it, m.groupValues[1].isNotEmpty())) }
         }
-        log("updater-script: ссылок ${symlinks.size}, прав ${perms.size}")
+        log("updater-script: ${symlinks.size} symlinks, ${perms.size} perms")
     }
 
     /** Ссылки (с переводом абсолютных целей в относительные), права, служебные ссылки корня. */
@@ -412,7 +480,7 @@ class Importer(
         rootLink("etc", "system/etc")
         rootLink("bin", "system/bin")
         runCatching { File(root, "system/etc/mtab").let { if (!it.exists() && !isLink(it)) Os.symlink("../../proc/mounts", it.absolutePath) } }
-        log("ссылок создано: $made")
+        log("symlinks created: $made")
     }
 
     private fun isLink(f: File) = runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(f.absolutePath).st_mode) }.getOrDefault(false)
@@ -440,7 +508,7 @@ class Importer(
                 if (runCatching { Os.symlink("toolbox", File(bin, a).absolutePath) }.isSuccess) made++
             }
         }
-        if (made > 0) log("ссылок sh/toolbox создано: $made (в архиве их не было)")
+        if (made > 0) log("sh/toolbox symlinks created: $made (missing from archive)")
     }
 
     private fun relTarget(link: String, target: String): String {
