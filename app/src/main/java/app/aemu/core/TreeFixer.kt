@@ -109,6 +109,8 @@ class TreeFixer(
         if (owners) seedOwners()
         installEngineFiles()
         protectOat()
+        fixThemeXml()
+        parkWhetstone()
         swapMtkAudioHal()
         eglConfig(img.settings.gpu)
         makeDataDirs()
@@ -181,6 +183,51 @@ class TreeFixer(
             lib.setReadable(true, false)
             log("audio: MediaTek HAL replaced with the emulator HAL")
         }.onFailure { log("audio: MediaTek HAL swap failed: ${it.message}") }
+    }
+
+    /**
+     * MIUI 8 reads system/media/theme/theme_compatibility.xml while zygote preloads classes. Some builds ship it with
+     * nested comments ("<!-- <!-- ...") that Android's strict XML parser rejects; ThemeCompatibility and MiuiResources
+     * then fail to initialise in every process and the system never finishes booting (black screen). Double hyphens
+     * inside comments are separated so the file parses.
+     */
+    private fun fixThemeXml() {
+        val f = File(root, "system/media/theme/theme_compatibility.xml")
+        if (!f.isFile || f.length() > 4_000_000) return
+        runCatching {
+            val s = f.readText()
+            if (!s.contains("<!-- <!--")) return
+            val out = StringBuilder(s.length)
+            var i = 0
+            while (true) {
+                val a = s.indexOf("<!--", i)
+                if (a < 0) { out.append(s, i, s.length); break }
+                out.append(s, i, a + 4)
+                val e = s.indexOf("-->", a + 4)
+                if (e < 0) { out.append(s, a + 4, s.length); break }
+                out.append(s.substring(a + 4, e).replace("--", "- -")).append("-->")
+                i = e + 3
+            }
+            f.writeText(out.toString())
+            log("theme_compatibility.xml: nested comments fixed")
+        }
+    }
+
+    /**
+     * MIUI 8: ActivityManagerService calls MIUI's Whetstone service (an app process) while holding its own lock, and that
+     * process in turn waits for the same lock. The watchdog then restarts system_server over and over and the boot never
+     * finishes. Whetstone only does background-power bookkeeping, so its package is set aside.
+     */
+    private fun parkWhetstone() {
+        val apk = File(root, "system/app/Whetstone.apk")
+        if (!apk.isFile || !File(root, "system/app/miuisystem.apk").isFile) return
+        runCatching {
+            val dir = File(root, "system/.aemu-parked").apply { mkdirs() }
+            if (apk.renameTo(File(dir, "Whetstone.apk"))) {
+                File(root, "data/dalvik-cache/system@app@Whetstone.apk@classes.dex").delete()
+                log("MIUI: Whetstone package set aside (deadlock with the activity manager)")
+            }
+        }
     }
 
     private fun installEngineFiles() {
