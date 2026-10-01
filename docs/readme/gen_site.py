@@ -22,7 +22,11 @@ def main():
     out = {}
     for code, name, flag in data.LANGS:
         t = dict(T[code])
-        t["steps"] = [md(x.format(repo=data.REPO)) for x in t["steps"]]
+        # AEmulator Sunset: omit the inherited, unaffiliated forum step.
+        steps = [t["steps"][0], *t["steps"][2:]]
+        t["steps"] = [md(x.format(repo=data.REPO)) for x in steps]
+        for key in ("fw_title", "fw_intro", "forum", "forum_open"):
+            t.pop(key, None)
         t["feats"] = [md(x) for x in t["feats"]]
         t["credits_text"] = md(t["credits_text"].format(orig=data.ORIGINAL))
         t["build_text"] = md(t["build_text"])
