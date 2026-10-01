@@ -236,11 +236,18 @@ class TreeFixer(
     }
 
     private fun installCameraHal() {
-        if (!img.settings.camera || engine != Engine.KK || img.api !in 14..25) return
+        val enabled = img.settings.camera && engine == Engine.KK && img.api in 14..25
+        val destination = File(root, "system/lib/hw/camera.aemu_host.so")
+        if (!enabled) {
+            if (CameraHalFallback.configure(root, destination, false)) log("camera: restored previous default HAL slot")
+            return
+        }
         // Dedicated loader variant: never overwrite a stock camera.default/vendor HAL.
         val asset = "engines/common/camera.aemu_host.so"
-        val destination = File(root, "system/lib/hw/camera.aemu_host.so")
-        if (destination.isFile && sameContent(asset, destination)) return
+        if (destination.isFile && sameContent(asset, destination)) {
+            if (CameraHalFallback.configure(root, destination, img.api <= 20)) log("camera: legacy default HAL fallback installed")
+            return
+        }
         val backup = File(root, "system/.aemu-parked/system#lib#hw#camera.aemu_host.so")
         runCatching {
             if (destination.exists() || isLink(destination)) {
@@ -252,6 +259,7 @@ class TreeFixer(
             ctx.assets.open(asset).use { input -> destination.outputStream().use { input.copyTo(it) } }
             destination.setReadable(true, false); destination.setExecutable(true, false)
             log("camera: standard HAL1 host-camera bridge installed")
+            if (CameraHalFallback.configure(root, destination, img.api <= 20)) log("camera: legacy default HAL fallback installed")
         }.onFailure { error("camera HAL installation failed: ${it.message}") }
     }
 

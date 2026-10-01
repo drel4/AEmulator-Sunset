@@ -2,8 +2,10 @@
 
 ARM32 standard HAL1 module, module/device version 1.0. Independent of Sony or
 Samsung sensor drivers. `TreeFixer` installs it only with the per-ROM opt-in;
-`ro.hardware.camera=aemu_host` selects it. Existing stock modules and firmware
-APKs/ODEX remain untouched by this camera implementation.
+`ro.hardware.camera=aemu_host` selects it on newer ROM loaders. Older API 14–20
+loaders ignore that class property; a reversible `camera.default.so` fallback
+is installed as well. Existing default files/symlinks are backed up and restored
+when camera access is disabled. Firmware APKs/ODEX are never patched.
 
 Transport: `/dev/aemu_camera` Unix socket, 16-byte little-endian `CAM1` request
 (operation, lens index, JPEG quality). Operations: 0 metadata, 1 preview stream,
@@ -31,6 +33,10 @@ ROM's bin/linker, lib/libc.so, lib/libdl.so. Files are copied into a temporary
 fixture; no ROM binaries are distributed. Checks the actual HAL's dlopen and
 ARM ABI, then preview/JPEG callbacks with a fake host transport. This does not
 exercise Camera2 hardware, the AEmulator QEMU/Binder engine or stock camera UI.
+If stock libhardware/libcutils/liblog (and their libstdc++/libm dependencies) are
+supplied too, it first reproduces the legacy loader's failure with only the class
+property, then verifies successful `hw_get_module` selection via the default
+fallback. This caught the sunset.12 integration gap that dlopen alone missed.
 
 The fixture needs a root-mapped read-only property area before Bionic startup.
 The isolated PID namespace also avoids old recursive-mutex thread-ID overflow
@@ -43,3 +49,9 @@ Device/module/gralloc offsets are checked at ARM compilation. Xperia ZR's
 decompiled CameraService uses count/info at 0x80/0x84 and device ops at 0x40.
 Sony's separate extension service and proprietary commands are not implemented;
 passing the core ABI tests does not prove the Sony/Samsung stock apps work.
+
+Loader references: [KitKat hardware.c](https://raw.githubusercontent.com/aosp-mirror/platform_hardware_libhardware/android-4.4.2_r1/hardware.c)
+uses global hardware/board/platform/arch variants followed by `default`;
+[Lollipop hardware.c](https://raw.githubusercontent.com/aosp-mirror/platform_hardware_libhardware/android-5.0.0_r1/hardware.c)
+adds the per-class `ro.hardware.camera` lookup. The ZR's stock libhardware
+matches the old path, verified by the optional loader integration test.

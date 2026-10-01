@@ -1,6 +1,6 @@
 #!/bin/sh
 # Optional integration check with user-supplied KitKat ROM binaries, never distributed.
-# AEMU_TEST_SYSTEM_DIR must contain bin/linker, lib/libc.so, lib/libdl.so.
+# Optional loader test also uses stock libhardware.so, libcutils.so, liblog.so.
 set -eu
 NDK=${NDK:-$ANDROID_NDK_HOME}
 BIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -23,3 +23,14 @@ cd "$TEST_DIR"
 # mutex overflow on busy Linux servers. Neither namespace changes the host's uid/PIDs.
 unshare -Urpf bash -c 'exec 30<"$1/properties"; ANDROID_PROPERTY_WORKSPACE=30,65536 timeout 20s qemu-arm -L "$1" -E LD_LIBRARY_PATH="$1/system/lib" "$1/bionic-probe" "$2"' -- "$TEST_DIR" "$HAL"
 unshare -Urpf bash -c 'exec 30<"$1/properties"; ANDROID_PROPERTY_WORKSPACE=30,65536 timeout 25s qemu-arm -L "$1" -E LD_LIBRARY_PATH="$1/system/lib" "$1/hal-smoke"' -- "$TEST_DIR"
+if [ -f "$AEMU_TEST_SYSTEM_DIR/lib/libhardware.so" ]; then
+    cp "$AEMU_TEST_SYSTEM_DIR/lib/libhardware.so" "$AEMU_TEST_SYSTEM_DIR/lib/libcutils.so" "$AEMU_TEST_SYSTEM_DIR/lib/liblog.so" "$TEST_DIR/system/lib/"
+    for library in libstdc++.so libm.so; do
+        if [ -f "$AEMU_TEST_SYSTEM_DIR/lib/$library" ]; then cp "$AEMU_TEST_SYSTEM_DIR/lib/$library" "$TEST_DIR/system/lib/"; fi
+    done
+    mkdir -p "$TEST_DIR/system/lib/hw"
+    cp "$HAL" "$TEST_DIR/system/lib/hw/camera.aemu_host.so"
+    unshare -Urpf bash -c 'exec 30<"$1/properties"; ANDROID_PROPERTY_WORKSPACE=30,65536 timeout 20s qemu-arm -L "$1" -E LD_LIBRARY_PATH="$1/system/lib" "$1/bionic-probe" "$1/system/lib/hw/camera.aemu_host.so" "$1/system/lib/libhardware.so" missing' -- "$TEST_DIR"
+    ln -s camera.aemu_host.so "$TEST_DIR/system/lib/hw/camera.default.so"
+    unshare -Urpf bash -c 'exec 30<"$1/properties"; ANDROID_PROPERTY_WORKSPACE=30,65536 timeout 20s qemu-arm -L "$1" -E LD_LIBRARY_PATH="$1/system/lib" "$1/bionic-probe" /system/lib/hw/camera.aemu_host.so "$1/system/lib/libhardware.so"' -- "$TEST_DIR"
+fi

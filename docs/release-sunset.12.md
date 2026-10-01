@@ -1,5 +1,11 @@
 # AEmulator Sunset 0.0.0.3-sunset.12
 
+**Known camera-discovery bug on older ROMs:** Xperia Android 4.4 ignores the
+class-specific loader property used by this build and reports zero cameras.
+Use [sunset.13](https://github.com/drel4/AEmulator-Sunset/releases/tag/v0.0.0.3-sunset.13)
+for the reversible legacy HAL fallback. Install the same variant and fully
+restart the VM; no ROM reimport or wipe is needed.
+
 **First experimental host-camera bridge for standard ARM32 HAL1 ROMs.**
 Opt-in, disabled by default. Adds rear/front host-camera enumeration (at most
 one of each), 640×480 NV21 preview and JPEG photographs. Uses Camera2 on the
