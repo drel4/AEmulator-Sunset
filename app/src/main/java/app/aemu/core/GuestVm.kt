@@ -272,7 +272,10 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         overrides["persist.sys.timezone"] = gmtZone()
         if (!props.prepare(overrides)) error("property area not ready")
         fixer.skipPreBoot(props)
-        fixer.restoreSonySetupFlow()
+        // Do not let the older Sony migration un-provision data completed by the explicit option.
+        if (SetupWizardOption.restoreSonyFlow(s.skipSetupWizard,
+                File(paths.root, "data/system/aemu-setup-skip.properties").isFile))
+            fixer.restoreSonySetupFlow()
         fixer.noScreenSleep()
         props.onSet = { k, v -> onProp(k, v) }
         props.onCtl = { start, svc -> onCtl(start, svc) }
@@ -369,6 +372,19 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         }
         if (!glDone) glUp()
         log("system started: ${alive().joinToString()}")
+        if (SetupWizardOption.runHelper(settings.skipSetupWizard,
+                File(paths.root, "data/system/aemu-setup-skip.properties").isFile)) {
+            val setupRunner = guestRunner
+            Thread({
+                if (!stopping) runCatching {
+                    val (code, output) = setupRunner.run(listOf("/system/bin/app_process",
+                        "-Djava.class.path=/system/framework/aemu-setup.jar", "/system/bin",
+                        "app.aemu.setup.SetupCtl", if (settings.skipSetupWizard) "skip" else "restore"), 180_000,
+                        mapOf("DHD_UID" to "1000", "DHD_GID" to "1000"))
+                    log("setup option: exit=$code ${output.trim()}")
+                }.onFailure { log("setup option failed: ${it.message}") }
+            }, "setup-option").start()
+        }
         watchdog()
     }
 

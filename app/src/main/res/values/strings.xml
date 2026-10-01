@@ -180,4 +180,6 @@
     <string name="vs_camera">Host camera (experimental)</string>
     <string name="vs_camera_sub">HAL1 ROMs: 640×480 preview and photos, rear/front camera. Requires permission and a full VM restart. Camera closes when AEmulator is backgrounded; reopen the guest camera app. No video recording.</string>
     <string name="camera_permission_denied">Camera permission denied. The ROM will boot without host-camera access; grant permission in Android app settings and fully restart the VM to retry.</string>
+    <string name="vs_skip_setup">Skip setup wizard</string>
+    <string name="vs_skip_setup_sub">Mark setup complete and disable recognized setup apps on next full boot. Turning off does not reset completed setup. OEM support may vary.</string>
 </resources>

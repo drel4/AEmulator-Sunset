@@ -108,6 +108,11 @@ class TreeFixer(
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        File(root, "system/framework/aemu-setup.jar").let { dst ->
+            dst.parentFile?.mkdirs()
+            ctx.assets.open("engines/common/aemu-setup.jar").use { src -> dst.outputStream().use { src.copyTo(it) } }
+            dst.setReadable(true, false)
+        }
         installCameraHal()
         protectOat()
         fixThemeXml()
@@ -797,24 +802,26 @@ class TreeFixer(
                 put(if (img.api >= 17) "global" else "secure", "install_non_market_apps", "1")
                 put("secure", "install_non_market_apps", "1")
                 if (img.api >= 17) put("global", "verifier_verify_adb_installs", "0")
-                // мастер первого запуска считаем пройденным: иначе он остаётся «домашним экраном»,
-                // и кнопка «Домой» открывает его (у Samsung — чёрный экран на минуты)
-                if (!hasSonySetupFlow()) {
-                    put(if (img.api >= 17) "global" else "secure", "device_provisioned", "1")
+                // Preserve the older-engine behavior; the explicit live-provider option starts at API 16.
+                if (img.api < 16 && !hasSonySetupFlow()) {
+                    put("secure", "device_provisioned", "1")
                     put("secure", "user_setup_complete", "1")
                 }
             }
         }.onFailure { log("settings: database failed to open: ${it.message}") }
-        disableSetupWizards()
+        disableLegacyGoogleLogin()
     }
 
-    /** Отключает пакеты мастеров первого запуска в package-restrictions.xml (enabled="2" = выключен). */
-    private fun disableSetupWizards() {
+    /** Existing legacy Google sign-in workaround; independent of the setup-skip option. */
+    private fun disableLegacyGoogleLogin() {
         val f = File(root, "data/system/users/0/package-restrictions.xml")
         if (!f.isFile) return
         // packages.xml, а не packages.list: в списке нет пакетов с общим системным uid (мастер Samsung)
         val pkgs = runCatching { File(root, "data/system/packages.xml").readText() }.getOrNull() ?: return
-        val targets = SETUP_WIZARDS.filter {
+        val legacy = if (img.api < 16) listOf("com.sec.android.app.SecSetupWizard",
+            "com.google.android.setupwizard", "com.android.provision", "com.miui.provision",
+            "com.htc.setupwizard", "com.sonyericsson.setupwizard", "com.sonymobile.setupwizard") else emptyList()
+        val targets = (legacy + "com.google.android.gsf.login").filter {
             pkgs.contains("<package name=\"$it\"") && !(hasSonySetupFlow() && it == SonySetupPolicy.PACKAGE)
         }
         if (targets.isEmpty()) return
@@ -832,7 +839,7 @@ class TreeFixer(
                 changed = true
             }
         }
-        if (changed) runCatching { f.writeText(xml); log("setup wizard disabled: ${targets.joinToString()}") }
+        if (changed) runCatching { f.writeText(xml); log("legacy Google login disabled: ${targets.joinToString()}") }
     }
 
     /**
@@ -954,14 +961,6 @@ class TreeFixer(
     private fun wipe(f: File) = ImageStore.wipe(f)
 
     companion object {
-        /** Мастера первого запуска: Samsung, Google, AOSP, MIUI, HTC, Sony */
-        val SETUP_WIZARDS = listOf(
-            "com.sec.android.app.SecSetupWizard", "com.google.android.setupwizard", "com.android.provision",
-            "com.miui.provision", "com.htc.setupwizard", "com.sonyericsson.setupwizard", "com.sonymobile.setupwizard",
-            // вход в Google-аккаунт на 2.x–4.x больше не работает (старые протоколы входа Google закрыл):
-            // его экран не рисуется, запрещает «Домой», и «Контакты» при первом запуске запирают в нём систему
-            "com.google.android.gsf.login",
-        )
         /** Прошивка MediaTek, где AudioFlinger связан с собственной звуковой библиотекой MTK (/dev/eac). */
         fun isMtkAudio(root: File): Boolean {
             if (File(root, "system/lib/libaudio.mtk.so").isFile) return true   // already swapped for our HAL
