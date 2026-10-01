@@ -89,11 +89,6 @@ S = {
     "as_orig": "Ursprünglicher Autor",
     "as_orig_sub": "Schöpfer der Desire-HD- und One-M7-Emulatoren, aus denen das Projekt entstand",
     "as_github": "Quellcode auf GitHub",
-    "as_support": "Projekt unterstützen",
-    "as_donate": "Spenden",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "Adresse kopiert",
     "as_version": "Version %1$s",
     "as_about": "AEmulator bringt klassische Android-Firmware auf moderne Handys. Kostenlos und quelloffen.",
 }

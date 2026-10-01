@@ -89,11 +89,6 @@ S = {
     "as_orig": "المطوّر الأصلي",
     "as_orig_sub": "صانع محاكيات Desire HD وOne M7 التي نشأ منها المشروع",
     "as_github": "الشفرة المصدرية على GitHub",
-    "as_support": "ادعم المشروع",
-    "as_donate": "تبرّع",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "نُسخ العنوان",
     "as_version": "الإصدار %1$s",
     "as_about": "يشغّل AEmulator برامج أندرويد الكلاسيكية على الهواتف الحديثة. مجاني ومفتوح المصدر.",
 }

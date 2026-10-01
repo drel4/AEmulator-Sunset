@@ -89,11 +89,6 @@ S = {
     "as_orig": "İlk geliştirici",
     "as_orig_sub": "Projenin doğduğu Desire HD ve One M7 emülatörlerinin yaratıcısı",
     "as_github": "GitHub’da kaynak kod",
-    "as_support": "Projeyi destekle",
-    "as_donate": "Bağış yap",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "Adres kopyalandı",
     "as_version": "Sürüm %1$s",
     "as_about": "AEmulator klasik Android yazılımlarını modern telefonlarda çalıştırır. Ücretsiz ve açık kaynak.",
 }

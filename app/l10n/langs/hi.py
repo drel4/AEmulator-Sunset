@@ -89,11 +89,6 @@ S = {
     "as_orig": "मूल लेखक",
     "as_orig_sub": "Desire HD और One M7 एमुलेटर के निर्माता, जिनसे यह प्रोजेक्ट बना",
     "as_github": "GitHub पर सोर्स कोड",
-    "as_support": "प्रोजेक्ट का समर्थन करें",
-    "as_donate": "दान करें",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "पता कॉपी हुआ",
     "as_version": "संस्करण %1$s",
     "as_about": "AEmulator आधुनिक फ़ोनों पर पुराने Android फ़र्मवेयर चलाता है। मुफ़्त और ओपन सोर्स।",
 }

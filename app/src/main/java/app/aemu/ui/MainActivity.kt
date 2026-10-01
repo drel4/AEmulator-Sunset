@@ -187,7 +187,7 @@ fun Library(model: LibraryModel) {
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text("AEmulator") },
+                title = { Text("AEmulator Sunset") },
                 subtitle = { Text(stringResource(R.string.lib_subtitle)) },
                 actions = { IconButton(onClick = { help = true }) { Icon(Icons.Rounded.Info, stringResource(R.string.help)) }
                     IconButton(onClick = { ctx.startActivity(Intent(ctx, AppSettingsActivity::class.java)) }) { Icon(Icons.Rounded.Settings, stringResource(R.string.settings)) } },

@@ -91,11 +91,6 @@
     <string name="as_orig">मूल लेखक</string>
     <string name="as_orig_sub">Desire HD और One M7 एमुलेटर के निर्माता, जिनसे यह प्रोजेक्ट बना</string>
     <string name="as_github">GitHub पर सोर्स कोड</string>
-    <string name="as_support">प्रोजेक्ट का समर्थन करें</string>
-    <string name="as_donate">दान करें</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">पता कॉपी हुआ</string>
     <string name="as_version">संस्करण %1$s</string>
     <string name="as_about">AEmulator आधुनिक फ़ोनों पर पुराने Android फ़र्मवेयर चलाता है। मुफ़्त और ओपन सोर्स।</string>
     <string name="log_copy">Copy</string>

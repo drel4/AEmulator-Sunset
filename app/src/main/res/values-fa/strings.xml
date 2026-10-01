@@ -91,11 +91,6 @@
     <string name="as_orig">سازندهٔ نخست</string>
     <string name="as_orig_sub">سازندهٔ شبیه‌سازهای Desire HD و One M7 که پروژه از آن‌ها رشد کرد</string>
     <string name="as_github">کد منبع در GitHub</string>
-    <string name="as_support">حمایت از پروژه</string>
-    <string name="as_donate">کمک مالی</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">نشانی کپی شد</string>
     <string name="as_version">نسخهٔ %1$s</string>
     <string name="as_about">AEmulator فرم‌ویرهای کلاسیک اندروید را روی گوشی‌های مدرن اجرا می‌کند. رایگان و متن‌باز.</string>
     <string name="log_copy">Copy</string>

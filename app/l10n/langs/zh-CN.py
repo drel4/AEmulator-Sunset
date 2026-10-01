@@ -89,11 +89,6 @@ S = {
     "as_orig": "原作者",
     "as_orig_sub": "Desire HD 与 One M7 模拟器的作者，本项目由此发展而来",
     "as_github": "GitHub 源代码",
-    "as_support": "支持项目",
-    "as_donate": "捐赠",
-    "as_usdt": "USDT（TRC20）",
-    "as_ton": "Toncoin（TON）",
-    "as_copied": "地址已复制",
     "as_version": "版本 %1$s",
     "as_about": "AEmulator 可在现代手机上运行经典 Android 固件。免费且开源。",
 }

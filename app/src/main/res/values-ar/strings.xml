@@ -91,11 +91,6 @@
     <string name="as_orig">المطوّر الأصلي</string>
     <string name="as_orig_sub">صانع محاكيات Desire HD وOne M7 التي نشأ منها المشروع</string>
     <string name="as_github">الشفرة المصدرية على GitHub</string>
-    <string name="as_support">ادعم المشروع</string>
-    <string name="as_donate">تبرّع</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">نُسخ العنوان</string>
     <string name="as_version">الإصدار %1$s</string>
     <string name="as_about">يشغّل AEmulator برامج أندرويد الكلاسيكية على الهواتف الحديثة. مجاني ومفتوح المصدر.</string>
     <string name="log_copy">Copy</string>

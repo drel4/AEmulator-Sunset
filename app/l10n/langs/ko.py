@@ -89,11 +89,6 @@ S = {
     "as_orig": "원작자",
     "as_orig_sub": "이 프로젝트의 출발점인 Desire HD·One M7 에뮬레이터 제작자",
     "as_github": "GitHub 소스 코드",
-    "as_support": "프로젝트 후원",
-    "as_donate": "후원하기",
-    "as_usdt": "USDT(TRC20)",
-    "as_ton": "Toncoin(TON)",
-    "as_copied": "주소가 복사되었습니다",
     "as_version": "버전 %1$s",
     "as_about": "AEmulator는 최신 휴대폰에서 클래식 Android 펌웨어를 실행합니다. 무료 오픈 소스입니다.",
 }

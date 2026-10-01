@@ -91,11 +91,6 @@
     <string name="as_orig">オリジナル作者</string>
     <string name="as_orig_sub">本プロジェクトの原点となった Desire HD・One M7 エミュレーターの作者</string>
     <string name="as_github">GitHub のソースコード</string>
-    <string name="as_support">プロジェクトを支援</string>
-    <string name="as_donate">寄付する</string>
-    <string name="as_usdt">USDT（TRC20）</string>
-    <string name="as_ton">Toncoin（TON）</string>
-    <string name="as_copied">アドレスをコピーしました</string>
     <string name="as_version">バージョン %1$s</string>
     <string name="as_about">AEmulator は最新のスマホで懐かしの Android ファームウェアを動かします。無料でオープンソースです。</string>
     <string name="log_copy">Copy</string>

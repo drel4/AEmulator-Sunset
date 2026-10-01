@@ -1,13 +1,10 @@
 package app.aemu.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,12 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Public
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.AlertDialog
@@ -84,14 +78,12 @@ import app.aemu.AppPrefs
 import app.aemu.BuildConfig
 import app.aemu.R
 
-/** Ссылки проекта — одни и те же в приложении, README и на сайте. */
+/** Modified for AEmulator Sunset on 2026-09-30: fork links and attribution. */
 object Links {
-    const val SITE = "https://aemulator.gt.tc"
-    const val GITHUB = "https://github.com/uxazu/aemulator"
-    const val CHANNEL = "https://t.me/aemulatorofficial"
-    const val AUTHOR = "https://github.com/uxazu"
+    const val GITHUB = "https://github.com/drel4/AEmulator-Sunset"
+    const val AUTHOR = "https://github.com/drel4"
+    const val UPSTREAM = "https://github.com/uxazu/AEmulator"
     const val ORIGINAL = "https://t.me/istratiit_ech"
-    const val DONATE = "https://dalink.to/uxazu"
 }
 
 class AppSettingsActivity : ComponentActivity() {
@@ -167,10 +159,6 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
     }
 
     fun open(url: String) = runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-    fun copy(text: String) {
-        (ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("address", text))
-        Toast.makeText(ctx, ctx.getString(R.string.as_copied), Toast.LENGTH_SHORT).show()
-    }
     val langTag = AppPrefs.language(ctx)
     val langName = AppPrefs.LANGUAGES.firstOrNull { it.first == langTag }?.second?.ifEmpty { null } ?: stringResource(R.string.as_lang_system)
 
@@ -256,17 +244,10 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
 
             item {
                 Section(stringResource(R.string.as_links)) {
-                    Row_(Icons.Rounded.Public, stringResource(R.string.as_site), "aemulator.gt.tc") { open(Links.SITE) }
-                    Row_(Icons.Rounded.Send, stringResource(R.string.as_channel), "@aemulatorofficial") { open(Links.CHANNEL) }
-                    Row_(Icons.Rounded.Person, stringResource(R.string.as_author), "uxazu") { open(Links.AUTHOR) }
+                    Row_(Icons.Rounded.Person, stringResource(R.string.as_author), "drel4") { open(Links.AUTHOR) }
                     Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratiit_ech") { open(Links.ORIGINAL) }
-                    Row_(Icons.Rounded.Code, stringResource(R.string.as_github), "github.com/uxazu/aemulator") { open(Links.GITHUB) }
-                }
-            }
-
-            item {
-                Section(stringResource(R.string.as_support)) {
-                    Row_(Icons.Rounded.Favorite, stringResource(R.string.as_donate), "dalink.to/uxazu") { open(Links.DONATE) }
+                    Row_(Icons.Rounded.Code, stringResource(R.string.as_github), "github.com/drel4/AEmulator-Sunset") { open(Links.GITHUB) }
+                    Row_(Icons.Rounded.History, "Upstream AEmulator", "github.com/uxazu/AEmulator") { open(Links.UPSTREAM) }
                 }
             }
         }
@@ -317,7 +298,7 @@ private fun AboutCard() {
             Image(painterResource(R.drawable.logo), null, Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)))
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("AEmulator", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text("AEmulator Sunset", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(stringResource(R.string.as_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Spacer(Modifier.height(4.dp))

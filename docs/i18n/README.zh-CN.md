@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="../../docs/assets/logo.png" width="128" alt="AEmulator logo"/>
+<img src="../../docs/assets/logo.png" width="128" alt="AEmulator Sunset logo"/>
 
-# AEmulator
+# AEmulator Sunset
 
 **在现代手机上运行经典 Android 固件——HTC Sense、TouchWiz、MIUI、AOSP。无需 root，无需电脑。**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.2-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.1-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · **🇨🇳 简体中文** · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -14,7 +14,7 @@
 
 ---
 
-AEmulator 直接从固件文件启动真实的 Android 2.3–7.x 系统：Recovery 卡刷包、Odin 包或 Google 出厂镜像。旧的 ARM 代码由改进的 QEMU 转译，内核 binder 被模拟，图形使用手机 GPU 绘制，声音经由 Android 音频系统播放——一切都在一个普通应用里完成。
+AEmulator Sunset 直接从固件文件启动真实的 Android 2.3–7.x 系统：Recovery 卡刷包、Odin 包或 Google 出厂镜像。旧的 ARM 代码由改进的 QEMU 转译，内核 binder 被模拟，图形使用手机 GPU 绘制，声音经由 Android 音频系统播放——一切都在一个普通应用里完成。
 
 ## ✨ 功能
 
@@ -37,9 +37,9 @@ AEmulator 直接从固件文件启动真实的 Android 2.3–7.x 系统：Recove
 
 ## 🚀 快速开始
 
-1. 从 [Releases](https://github.com/uxazu/aemulator/releases) 下载并安装 APK。
+1. 从 [Releases](https://github.com/drel4/AEmulator-Sunset/releases) 下载并安装 APK。
 2. 在[论坛](https://aeforum.uxazuu.space/)找到固件并下载到手机。
-3. 打开 AEmulator →**添加固件**并选择文件。导入需要几分钟。
+3. 打开 AEmulator Sunset →**添加固件**并选择文件。导入需要几分钟。
 4. 点击**启动**。首次启动较慢：系统正在优化应用。
 5. ⋮ 菜单可调音量、电源键和日志；⚙️ 打开设置与语言。
 
@@ -58,27 +58,22 @@ AEmulator 直接从固件文件启动真实的 Android 2.3–7.x 系统：Recove
 需要 JDK 17、Android SDK 36 和 NDK r28。客户机库通过 `native/*/build.sh` 构建。
 
 ```bash
-git clone https://github.com/uxazu/aemulator.git
-cd aemulator
-./gradlew assembleRelease
+git clone https://github.com/drel4/AEmulator-Sunset.git
+cd AEmulator-Sunset
+./gradlew copyReleaseApks
 ```
 
 ## 🙏 致谢
 
-AEmulator 源自[原作者](https://t.me/istratiit_ech)的 HTC Desire HD 与 HTC One M7 模拟器——没有他的引擎就没有本项目。
+AEmulator Sunset 源自[原作者](https://t.me/istratiit_ech)的 HTC Desire HD 与 HTC One M7 模拟器——没有他的引擎就没有本项目。
 
-## 💙 支持项目
-
-如果 AEmulator 让你心爱的手机重获新生，欢迎支持开发：
-
-- 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
+This is a modified fork of [uxazu/AEmulator](https://github.com/uxazu/AEmulator). Fork changes are documented in [NOTICE](../../NOTICE.md).
 
 ## 🔗 链接
 
-- 🌐 网站: [aemulator.gt.tc](https://aemulator.gt.tc)
-- 💬 论坛: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
-- 📣 Telegram 频道: [@aemulatorofficial](https://t.me/aemulatorofficial)
-- 👤 作者: [uxazu](https://github.com/uxazu)
+- 🧬 Fork: [drel4/AEmulator-Sunset](https://github.com/drel4/AEmulator-Sunset)
+- ↑ Upstream: [uxazu/AEmulator](https://github.com/uxazu/AEmulator)
+- 👤 作者: [drel4](https://github.com/drel4)
 - 🧬 原作者: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 许可证

@@ -35,9 +35,10 @@ sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
+/** Modified for AEmulator Sunset on 2026-09-30: use the fork's releases. */
 object AppUpdateManager {
-    private const val RELEASES_API = "https://api.github.com/repos/uxazu/AEmulator/releases"
-    private const val GITHUB_REPO_URL = "https://github.com/uxazu/AEmulator"
+    private const val RELEASES_API = "https://api.github.com/repos/drel4/AEmulator-Sunset/releases"
+    private const val GITHUB_REPO_URL = "https://github.com/drel4/AEmulator-Sunset"
 
     /**
      * Запрос к GitHub API для получения информации о последнем релизе с APK-файлом.
@@ -49,7 +50,7 @@ object AppUpdateManager {
             conn.connectTimeout = 15000
             conn.readTimeout = 15000
             conn.setRequestProperty("Accept", "application/vnd.github+json")
-            conn.setRequestProperty("User-Agent", "AEmulator-App")
+            conn.setRequestProperty("User-Agent", "AEmulator-Sunset-App")
 
             if (conn.responseCode != HttpURLConnection.HTTP_OK) {
                 throw Exception("HTTP ${conn.responseCode}: ${conn.responseMessage}")
@@ -133,7 +134,7 @@ object AppUpdateManager {
         // Очищаем старые apk перед новой загрузкой
         updatesDir.listFiles()?.forEach { if (it.extension.equals("apk", ignoreCase = true)) it.delete() }
 
-        val targetFile = File(updatesDir, "aemulator-${release.versionName}.apk")
+        val targetFile = File(updatesDir, "aemulator-sunset-${release.versionName}.apk")
 
         var currentUrl = release.downloadUrl
         var conn: HttpURLConnection
@@ -144,7 +145,7 @@ object AppUpdateManager {
             conn.connectTimeout = 15000
             conn.readTimeout = 30000
             conn.instanceFollowRedirects = true
-            conn.setRequestProperty("User-Agent", "AEmulator-App")
+            conn.setRequestProperty("User-Agent", "AEmulator-Sunset-App")
 
             val code = conn.responseCode
             if (code in listOf(HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP, 307, 308)) {

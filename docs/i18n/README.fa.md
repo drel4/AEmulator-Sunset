@@ -2,13 +2,13 @@
 
 <div align="center">
 
-<img src="../../docs/assets/logo.png" width="128" alt="AEmulator logo"/>
+<img src="../../docs/assets/logo.png" width="128" alt="AEmulator Sunset logo"/>
 
-# AEmulator
+# AEmulator Sunset
 
 **فرم‌ویرهای کلاسیک اندروید — HTC Sense، TouchWiz، MIUI، AOSP — روی گوشی مدرن. بدون روت و بدون رایانه.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.2-3D5AFE?style=for-the-badge)](https://github.com/uxazu/aemulator/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/uxazu/aemulator) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/aemulatorofficial) [![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)](https://aemulator.gt.tc)
+[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.1-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · **🇮🇷 فارسی** · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -16,7 +16,7 @@
 
 ---
 
-AEmulator یک سیستم واقعی اندروید 2.3 تا 7.x را مستقیم از فایل فرم‌ویر بوت می‌کند: ZIP ریکاوری، آرشیو Odin یا ایمیج کارخانهٔ گوگل. کد قدیمی ARM با QEMU اصلاح‌شده ترجمه می‌شود، binder هسته شبیه‌سازی می‌شود، گرافیک با GPU گوشی و صدا با سامانهٔ صوتی اندروید پخش می‌شود — همه درون یک برنامهٔ معمولی.
+AEmulator Sunset یک سیستم واقعی اندروید 2.3 تا 7.x را مستقیم از فایل فرم‌ویر بوت می‌کند: ZIP ریکاوری، آرشیو Odin یا ایمیج کارخانهٔ گوگل. کد قدیمی ARM با QEMU اصلاح‌شده ترجمه می‌شود، binder هسته شبیه‌سازی می‌شود، گرافیک با GPU گوشی و صدا با سامانهٔ صوتی اندروید پخش می‌شود — همه درون یک برنامهٔ معمولی.
 
 ## ✨ ویژگی‌ها
 
@@ -39,9 +39,9 @@ AEmulator یک سیستم واقعی اندروید 2.3 تا 7.x را مستقی
 
 ## 🚀 شروع سریع
 
-1. فایل APK را از [Releases](https://github.com/uxazu/aemulator/releases) دانلود و نصب کنید.
+1. فایل APK را از [Releases](https://github.com/drel4/AEmulator-Sunset/releases) دانلود و نصب کنید.
 2. فرم‌ویری را در [انجمن](https://aeforum.uxazuu.space/) پیدا کنید و روی گوشی دانلود کنید.
-3. AEmulator را باز کنید ← **افزودن فرم‌ویر** و فایل را انتخاب کنید. درون‌ریزی چند دقیقه طول می‌کشد.
+3. AEmulator Sunset را باز کنید ← **افزودن فرم‌ویر** و فایل را انتخاب کنید. درون‌ریزی چند دقیقه طول می‌کشد.
 4. **اجرا** را بزنید. بوت اول کندتر است: سیستم برنامه‌ها را بهینه می‌کند.
 5. منوی ⋮ برای صدا، دکمهٔ پاور و گزارش؛ دکمهٔ ⚙️ برای تنظیمات و زبان.
 
@@ -60,27 +60,22 @@ AEmulator یک سیستم واقعی اندروید 2.3 تا 7.x را مستقی
 به JDK 17، Android SDK 36 و NDK r28 نیاز دارید. کتابخانه‌های مهمان با `native/*/build.sh` ساخته می‌شوند.
 
 ```bash
-git clone https://github.com/uxazu/aemulator.git
-cd aemulator
-./gradlew assembleRelease
+git clone https://github.com/drel4/AEmulator-Sunset.git
+cd AEmulator-Sunset
+./gradlew copyReleaseApks
 ```
 
 ## 🙏 سپاس
 
-AEmulator از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازندهٔ نخست](https://t.me/istratiit_ech) رشد کرد — بدون موتور او این پروژه وجود نداشت.
+AEmulator Sunset از شبیه‌سازهای HTC Desire HD و HTC One M7 ‏[سازندهٔ نخست](https://t.me/istratiit_ech) رشد کرد — بدون موتور او این پروژه وجود نداشت.
 
-## 💙 حمایت از پروژه
-
-اگر AEmulator گوشی محبوبتان را برگرداند، می‌توانید از توسعه حمایت کنید:
-
-- 💳 [dalink.to/uxazu](https://dalink.to/uxazu)
+This is a modified fork of [uxazu/AEmulator](https://github.com/uxazu/AEmulator). Fork changes are documented in [NOTICE](../../NOTICE.md).
 
 ## 🔗 پیوندها
 
-- 🌐 وب‌سایت: [aemulator.gt.tc](https://aemulator.gt.tc)
-- 💬 انجمن: [aeforum.uxazuu.space](https://aeforum.uxazuu.space/)
-- 📣 کانال تلگرام: [@aemulatorofficial](https://t.me/aemulatorofficial)
-- 👤 سازنده: [uxazu](https://github.com/uxazu)
+- 🧬 Fork: [drel4/AEmulator-Sunset](https://github.com/drel4/AEmulator-Sunset)
+- ↑ Upstream: [uxazu/AEmulator](https://github.com/uxazu/AEmulator)
+- 👤 سازنده: [drel4](https://github.com/drel4)
 - 🧬 سازندهٔ نخست: [t.me/istratiit_ech](https://t.me/istratiit_ech)
 
 ## 📄 مجوز

@@ -91,11 +91,6 @@
     <string name="as_orig">Autore originale</string>
     <string name="as_orig_sub">Creatore degli emulatori Desire HD e One M7 da cui è nato il progetto</string>
     <string name="as_github">Codice sorgente su GitHub</string>
-    <string name="as_support">Sostieni il progetto</string>
-    <string name="as_donate">Dona</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">Indirizzo copiato</string>
     <string name="as_version">Versione %1$s</string>
     <string name="as_about">AEmulator esegue firmware Android classici sui telefoni moderni. Gratuito e open source.</string>
     <string name="log_copy">Copy</string>

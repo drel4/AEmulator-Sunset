@@ -89,11 +89,6 @@ S = {
     "as_orig": "Перший автор",
     "as_orig_sub": "Творець емуляторів Desire HD та One M7, з яких виріс проєкт",
     "as_github": "Вихідний код на GitHub",
-    "as_support": "Підтримати проєкт",
-    "as_donate": "Донат",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "Адресу скопійовано",
     "as_version": "Версія %1$s",
     "as_about": "AEmulator запускає старі прошивки Android на сучасних телефонах. Безкоштовно й з відкритим кодом.",
 }

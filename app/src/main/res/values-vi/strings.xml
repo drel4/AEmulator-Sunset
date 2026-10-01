@@ -91,11 +91,6 @@
     <string name="as_orig">Tác giả gốc</string>
     <string name="as_orig_sub">Người tạo trình giả lập Desire HD và One M7, nền tảng của dự án</string>
     <string name="as_github">Mã nguồn trên GitHub</string>
-    <string name="as_support">Ủng hộ dự án</string>
-    <string name="as_donate">Quyên góp</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">Đã sao chép địa chỉ</string>
     <string name="as_version">Phiên bản %1$s</string>
     <string name="as_about">AEmulator chạy firmware Android cổ điển trên điện thoại hiện đại. Miễn phí và mã nguồn mở.</string>
     <string name="log_copy">Copy</string>

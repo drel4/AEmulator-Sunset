@@ -9,7 +9,7 @@ _cfg = json.loads(_src[_src.index("window.AEMU_CONFIG =") + len("window.AEMU_CON
 VERSION = _cfg["version"]
 _L = _cfg["links"]
 REPO, SITE, FORUM, CHANNEL, AUTHOR, ORIGINAL = _L["repo"], _L["site"], _L["forum"], _L["channel"], _L["author"], _L["original"]
-DONATE = _L["donate"]
+UPSTREAM = "https://github.com/uxazu/AEmulator"
 
 LANGS = [  # код, самоназвание, флаг
     ("en", "English", "🇬🇧"), ("ru", "Русский", "🇷🇺"), ("uk", "Українська", "🇺🇦"), ("de", "Deutsch", "🇩🇪"),

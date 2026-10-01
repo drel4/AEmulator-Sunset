@@ -22,8 +22,8 @@ android {
         // 28: гостевые бинарники запускаются из каталога данных приложения (W^X для targetSdk>=29)
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
-        versionCode = 2
-        versionName = "0.0.0.2"
+        versionCode = 3
+        versionName = "0.0.0.3-sunset.1"
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
@@ -107,11 +107,11 @@ tasks.register<Copy>("copyReleaseApks") {
     dependsOn("assembleStandardRelease", "assembleCloneRelease")
     from(layout.buildDirectory.dir("outputs/apk/standard/release")) {
         include("*.apk")
-        rename { "AEmulator-app.aemu.apk" }
+        rename { "AEmulator-Sunset-app.aemu.apk" }
     }
     from(layout.buildDirectory.dir("outputs/apk/clone/release")) {
         include("*.apk")
-        rename { "AEmulator-app.aemu.clone.apk" }
+        rename { "AEmulator-Sunset-app.aemu.clone.apk" }
     }
     into(rootProject.layout.projectDirectory.dir("release-apks"))
 }

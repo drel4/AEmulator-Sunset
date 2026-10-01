@@ -2,6 +2,8 @@ package app.aemu.ui
 
 import app.aemu.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -52,6 +54,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,14 +75,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.CropSquare
-import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.VolumeDown
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Button
@@ -88,7 +87,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -106,6 +104,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -178,7 +180,7 @@ class VmActivity : ComponentActivity() {
         setContentView(root)
 
         // экран гостя вписываем с сохранением пропорций над панелью кнопок
-        val navDp = if (s.showNavBar) 64 else 0
+        val navDp = if (s.showNavBar) 52 else 0
         root.addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ ->
             val navPx = (navDp * resources.displayMetrics.density).toInt()
             val aw = r - l
@@ -562,16 +564,76 @@ class VmActivity : ComponentActivity() {
                 Dlg.NONE -> {}
             }
 
-            // панель кнопок Android
+            // Modified for AEmulator Sunset on 2026-09-30: flat Android 4/Holo-style navigation.
             if (vm.settings.showNavBar && !showLog) {
-                HorizontalFloatingToolbar(
-                    expanded = true,
-                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 6.dp),
+                Surface(
+                    color = Color(0xF20B0B0B),
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding(),
                 ) {
-                    IconButton(onClick = { vm.input.press(InputService.KEY_BACK) }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
-                    IconButton(onClick = { vm.input.press(vm.input.homeCode) }) { Icon(Icons.Rounded.Circle, stringResource(R.string.home)) }
-                    if (vm.img.api >= 11) IconButton(onClick = { vm.input.press(InputService.KEY_APPSELECT) }) { Icon(Icons.Rounded.CropSquare, stringResource(R.string.recents)) }
-                    IconButton(onClick = { vm.input.press(InputService.KEY_MENU) }) { Icon(Icons.Rounded.Menu, stringResource(R.string.menu)) }
+                    Row(
+                        Modifier.fillMaxWidth().height(52.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        HoloNavButton(HoloNavIcon.BACK, stringResource(R.string.back)) { vm.input.press(InputService.KEY_BACK) }
+                        HoloNavButton(HoloNavIcon.HOME, stringResource(R.string.home)) { vm.input.press(vm.input.homeCode) }
+                        if (vm.img.api >= 11) {
+                            HoloNavButton(HoloNavIcon.RECENTS, stringResource(R.string.recents)) { vm.input.press(InputService.KEY_APPSELECT) }
+                        }
+                        HoloNavButton(HoloNavIcon.MENU, stringResource(R.string.menu)) { vm.input.press(InputService.KEY_MENU) }
+                    }
+                }
+            }
+        }
+    }
+
+    private enum class HoloNavIcon { BACK, HOME, RECENTS, MENU }
+
+    @Composable
+    private fun HoloNavButton(icon: HoloNavIcon, label: String, onClick: () -> Unit) {
+        IconButton(onClick = onClick, modifier = Modifier.size(width = 72.dp, height = 48.dp)) {
+            Canvas(Modifier.size(30.dp).semantics { contentDescription = label }) {
+                val sx = size.width / 32f
+                val sy = size.height / 32f
+                fun p(x: Float, y: Float) = Offset(x * sx, y * sy)
+                val stroke = Stroke(width = 2.2f * sx, cap = StrokeCap.Square, join = StrokeJoin.Miter)
+                when (icon) {
+                    HoloNavIcon.BACK -> {
+                        val path = Path().apply {
+                            moveTo(7f * sx, 16f * sy)
+                            lineTo(15f * sx, 8f * sy)
+                            lineTo(15f * sx, 12.5f * sy)
+                            cubicTo(23f * sx, 12.5f * sy, 26f * sx, 17f * sy, 26f * sx, 24f * sy)
+                            cubicTo(23f * sx, 20f * sy, 20f * sx, 19f * sy, 15f * sx, 19f * sy)
+                            lineTo(15f * sx, 24f * sy)
+                            close()
+                        }
+                        drawPath(path, Color.White)
+                    }
+                    HoloNavIcon.HOME -> {
+                        val path = Path().apply {
+                            moveTo(7f * sx, 16f * sy)
+                            lineTo(16f * sx, 8f * sy)
+                            lineTo(25f * sx, 16f * sy)
+                            lineTo(25f * sx, 25f * sy)
+                            lineTo(19f * sx, 25f * sy)
+                            lineTo(19f * sx, 19f * sy)
+                            lineTo(13f * sx, 19f * sy)
+                            lineTo(13f * sx, 25f * sy)
+                            lineTo(7f * sx, 25f * sy)
+                            close()
+                        }
+                        drawPath(path, Color.White, style = stroke)
+                    }
+                    HoloNavIcon.RECENTS -> {
+                        drawRect(Color.White, topLeft = p(8f, 11f), size = androidx.compose.ui.geometry.Size(13f * sx, 13f * sy), style = stroke)
+                        drawRect(Color.White, topLeft = p(13f, 7f), size = androidx.compose.ui.geometry.Size(12f * sx, 12f * sy), style = stroke)
+                    }
+                    HoloNavIcon.MENU -> {
+                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 9f))
+                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 16f))
+                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 23f))
+                    }
                 }
             }
         }

@@ -19,30 +19,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// фирменный синий значка (#3D5AFE) и производные тона Material 3
+// Modified for AEmulator Sunset on 2026-09-30: sunset-orange Material 3 palette.
 private val Light = lightColorScheme(
-    primary = Color(0xFF3D5AFE), onPrimary = Color.White,
-    primaryContainer = Color(0xFFDEE0FF), onPrimaryContainer = Color(0xFF00115A),
-    secondary = Color(0xFF5B5D72), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE0E0F9), onSecondaryContainer = Color(0xFF181A2C),
-    tertiary = Color(0xFF77536D), onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFD7F1), onTertiaryContainer = Color(0xFF2D1228),
-    background = Color(0xFFFBF8FF), surface = Color(0xFFFBF8FF),
-    surfaceContainer = Color(0xFFEFEDF7), surfaceContainerHigh = Color(0xFFE9E7F1),
-    surfaceContainerHighest = Color(0xFFE3E1EC), surfaceContainerLow = Color(0xFFF5F2FC),
+    primary = Color(0xFFF4511E), onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFDBCF), onPrimaryContainer = Color(0xFF3B0900),
+    secondary = Color(0xFF77574D), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFDBCF), onSecondaryContainer = Color(0xFF2C150F),
+    tertiary = Color(0xFF6D5D2F), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF7E2A7), onTertiaryContainer = Color(0xFF231B00),
+    background = Color(0xFFFFF8F5), surface = Color(0xFFFFF8F5),
+    surfaceContainer = Color(0xFFF8ECE7), surfaceContainerHigh = Color(0xFFF2E6E1),
+    surfaceContainerHighest = Color(0xFFECE0DB), surfaceContainerLow = Color(0xFFFFF1EC),
     error = Color(0xFFBA1A1A),
 )
 
 private val Dark = darkColorScheme(
-    primary = Color(0xFFBAC3FF), onPrimary = Color(0xFF08218A),
-    primaryContainer = Color(0xFF2E45D6), onPrimaryContainer = Color(0xFFDEE0FF),
-    secondary = Color(0xFFC4C5DD), onSecondary = Color(0xFF2D2F42),
-    secondaryContainer = Color(0xFF434659), onSecondaryContainer = Color(0xFFE0E0F9),
-    tertiary = Color(0xFFE6BAD7), onTertiary = Color(0xFF44263D),
-    tertiaryContainer = Color(0xFF5D3C55), onTertiaryContainer = Color(0xFFFFD7F1),
-    background = Color(0xFF121318), surface = Color(0xFF121318),
-    surfaceContainer = Color(0xFF1F1F25), surfaceContainerHigh = Color(0xFF292A2F),
-    surfaceContainerHighest = Color(0xFF34343A), surfaceContainerLow = Color(0xFF1B1B21),
+    primary = Color(0xFFFFB59F), onPrimary = Color(0xFF5F1600),
+    primaryContainer = Color(0xFF862200), onPrimaryContainer = Color(0xFFFFDBCF),
+    secondary = Color(0xFFE7BDB0), onSecondary = Color(0xFF442A22),
+    secondaryContainer = Color(0xFF5D4037), onSecondaryContainer = Color(0xFFFFDBCF),
+    tertiary = Color(0xFFDAC68D), onTertiary = Color(0xFF3B2F05),
+    tertiaryContainer = Color(0xFF534619), onTertiaryContainer = Color(0xFFF7E2A7),
+    background = Color(0xFF18120F), surface = Color(0xFF18120F),
+    surfaceContainer = Color(0xFF251D1A), surfaceContainerHigh = Color(0xFF302825),
+    surfaceContainerHighest = Color(0xFF3B322F), surfaceContainerLow = Color(0xFF211A17),
 )
 
 private val AppShapes = Shapes(

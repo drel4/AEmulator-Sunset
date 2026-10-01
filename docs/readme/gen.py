@@ -10,6 +10,7 @@ from data import *  # noqa
 from texts import T  # noqa
 
 RTL = {"ar", "fa"}
+BRAND = "AEmulator Sunset"
 
 
 def path_of(code, from_code):
@@ -20,22 +21,22 @@ def path_of(code, from_code):
 
 
 def render(code):
-    t = T[code]
+    # Keep translations useful while consistently identifying this modified fork.
+    t = {k: ([x.replace("AEmulator", BRAND) for x in v] if isinstance(v, list) else v.replace("AEmulator", BRAND) if isinstance(v, str) else v) for k, v in T[code].items()}
     up = "" if code == "en" else "../../"
     L = []
     if code in RTL:
         L.append('<div dir="rtl">\n')
     L.append('<div align="center">\n')
-    L.append(f'<img src="{up}docs/assets/logo.png" width="128" alt="AEmulator logo"/>\n')
-    L.append("# AEmulator\n")
+    L.append(f'<img src="{up}docs/assets/logo.png" width="128" alt="{BRAND} logo"/>\n')
+    L.append(f"# {BRAND}\n")
     L.append(f"**{t['tagline']}**\n")
     L.append(
-        f'[![Version](https://img.shields.io/badge/version-{VERSION}-3D5AFE?style=for-the-badge)]({REPO}/releases) '
-        f'[![License](https://img.shields.io/badge/license-GPL--3.0-3D5AFE?style=for-the-badge)]({up}LICENSE) '
+        f'[![Version](https://img.shields.io/badge/version-{VERSION.replace("-", "--")}-F4511E?style=for-the-badge)]({REPO}/releases) '
+        f'[![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)]({up}LICENSE) '
         f'[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)]({REPO}) '
         f'[![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)]({FORUM}) '
-        f'[![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)]({CHANNEL}) '
-        f'[![Website](https://img.shields.io/badge/site-aemulator.gt.tc-111?style=for-the-badge)]({SITE})\n')
+        f'[![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)]({REPO})\n')
     L.append(" · ".join(
         (f"**{flag} {name}**" if c == code else f"[{flag} {name}]({path_of(c, code)})") for c, name, flag in LANGS) + "\n")
     L.append("</div>\n")
@@ -60,17 +61,14 @@ def render(code):
     L.append(t["how_text"] + "\n")
     L.append(f"## 🛠️ {t['build_title']}\n")
     L.append(t["build_text"] + "\n")
-    L.append("```bash\ngit clone https://github.com/uxazu/aemulator.git\ncd aemulator\n./gradlew assembleRelease\n```\n")
+    L.append("```bash\ngit clone https://github.com/drel4/AEmulator-Sunset.git\ncd AEmulator-Sunset\n./gradlew copyReleaseApks\n```\n")
     L.append(f"## 🙏 {t['credits_title']}\n")
     L.append(t["credits_text"].format(orig=ORIGINAL) + "\n")
-    L.append(f"## 💙 {t['support_title']}\n")
-    L.append(t["support_text"] + "\n")
-    L.append(f"- 💳 [dalink.to/uxazu]({DONATE})\n")
+    L.append(f"This is a modified fork of [uxazu/AEmulator]({UPSTREAM}). Fork changes are documented in [NOTICE]({up}NOTICE.md).\n")
     L.append(f"## 🔗 {t['links_title']}\n")
-    L.append(f"- 🌐 {t['l_site']}: [aemulator.gt.tc]({SITE})")
-    L.append(f"- 💬 {t['forum']}: [aeforum.uxazuu.space]({FORUM})")
-    L.append(f"- 📣 {t['l_channel']}: [@aemulatorofficial]({CHANNEL})")
-    L.append(f"- 👤 {t['l_author']}: [uxazu]({AUTHOR})")
+    L.append(f"- 🧬 Fork: [drel4/AEmulator-Sunset]({REPO})")
+    L.append(f"- ↑ Upstream: [uxazu/AEmulator]({UPSTREAM})")
+    L.append(f"- 👤 {t['l_author']}: [drel4]({AUTHOR})")
     L.append(f"- 🧬 {t['l_orig']}: [t.me/istratiit_ech]({ORIGINAL})\n")
     L.append(f"## 📄 {t['license_title']}\n")
     L.append(t["license_text"] + "\n")

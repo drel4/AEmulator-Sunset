@@ -89,11 +89,6 @@ S = {
     "as_orig": "Pembuat asli",
     "as_orig_sub": "Pencipta emulator Desire HD dan One M7 yang menjadi awal proyek ini",
     "as_github": "Kode sumber di GitHub",
-    "as_support": "Dukung proyek",
-    "as_donate": "Donasi",
-    "as_usdt": "USDT (TRC20)",
-    "as_ton": "Toncoin (TON)",
-    "as_copied": "Alamat disalin",
     "as_version": "Versi %1$s",
     "as_about": "AEmulator menjalankan firmware Android klasik di ponsel modern. Gratis dan sumber terbuka.",
 }

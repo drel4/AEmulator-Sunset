@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- создано app/l10n/gen.py, правьте langs/*.py -->
 <resources>
-    <string name="app_name" translatable="false">AEmulator</string>
+    <string name="app_name" translatable="false">AEmulator Sunset</string>
     <string name="channel_vm">Running system</string>
     <string name="vm_running">%1$s is running</string>
     <string name="vm_running_hint">Tap to return to the system screen</string>
@@ -92,11 +92,6 @@
     <string name="as_orig">Original author</string>
     <string name="as_orig_sub">Creator of the Desire HD and One M7 emulators this project grew from</string>
     <string name="as_github">Source code on GitHub</string>
-    <string name="as_support">Support the project</string>
-    <string name="as_donate">Donate</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">Address copied</string>
     <string name="as_version">Version %1$s</string>
     <string name="as_about">AEmulator runs classic Android firmware on modern phones. Free and open source.</string>
     <string name="log_copy">Copy</string>

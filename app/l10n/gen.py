@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Генерирует res/values*/strings.xml и res/xml/locales_config.xml из langs/*.py.
 Запуск: python app/l10n/gen.py  (английский — язык по умолчанию, values/)."""
-import os, runpy, sys
+import os, re, runpy, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "..", "src", "main", "res")
@@ -41,10 +41,19 @@ def main():
             print(f"{code}: нет {lack} лишние {extra}")
         out = ['<?xml version="1.0" encoding="utf-8"?>', "<!-- создано app/l10n/gen.py, правьте langs/*.py -->", "<resources>"]
         if code == "en":
-            out.append('    <string name="app_name" translatable="false">AEmulator</string>')
+            out.append('    <string name="app_name" translatable="false">AEmulator Sunset</string>')
         for k in KEYS:
             if k in s:
                 out.append(f'    <string name="{k}">{esc(s[k])}</string>')
+        # Some newer VM strings still live only in strings.xml. Preserve them
+        # until they are migrated into the translation dictionaries.
+        existing = os.path.join(RES, d, "strings.xml")
+        if os.path.isfile(existing):
+            known = set(KEYS) | {"app_name"}
+            for line in open(existing, encoding="utf-8"):
+                match = re.search(r'<string name="([^"]+)"', line)
+                if match and match.group(1) not in known:
+                    out.append(line.rstrip("\r\n"))
         out.append("</resources>\n")
         path = os.path.join(RES, d)
         os.makedirs(path, exist_ok=True)

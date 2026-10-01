@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#FFFBF8FF</color>
-    <color name="ic_bg">#FF3C5DFF</color>
+    <!-- Modified for AEmulator Sunset on 2026-09-30. -->
+    <color name="bg">#FFFFF8F5</color>
+    <color name="ic_bg">#FFF4511E</color>
 </resources>

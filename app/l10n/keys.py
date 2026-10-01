@@ -18,5 +18,5 @@ KEYS = [
     "as_appearance", "as_language", "as_lang_system", "as_theme", "as_theme_system", "as_theme_light", "as_theme_dark",
     "as_dynamic", "as_dynamic_sub", "as_defaults", "as_defaults_sub",
     "as_links", "as_site", "as_channel", "as_author", "as_orig", "as_orig_sub", "as_github",
-    "as_support", "as_donate", "as_usdt", "as_ton", "as_copied", "as_version", "as_about",
+    "as_version", "as_about",
 ]

@@ -91,11 +91,6 @@
     <string name="as_orig">İlk geliştirici</string>
     <string name="as_orig_sub">Projenin doğduğu Desire HD ve One M7 emülatörlerinin yaratıcısı</string>
     <string name="as_github">GitHub’da kaynak kod</string>
-    <string name="as_support">Projeyi destekle</string>
-    <string name="as_donate">Bağış yap</string>
-    <string name="as_usdt">USDT (TRC20)</string>
-    <string name="as_ton">Toncoin (TON)</string>
-    <string name="as_copied">Adres kopyalandı</string>
     <string name="as_version">Sürüm %1$s</string>
     <string name="as_about">AEmulator klasik Android yazılımlarını modern telefonlarda çalıştırır. Ücretsiz ve açık kaynak.</string>
     <string name="log_copy">Copy</string>
