@@ -6,7 +6,7 @@
 
 **在现代手机上运行经典 Android 固件——HTC Sense、TouchWiz、MIUI、AOSP。无需 root，无需电脑。**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.1-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
+[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.2-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · **🇨🇳 简体中文** · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,23 +25,12 @@ AEmulator Sunset 直接从固件文件启动真实的 Android 2.3–7.x 系统�
 - Material 3 Expressive 界面，支持 18 种语言
 - 免费开源（GPL-3.0）
 
-## 📱 固件列表
-
-已验证固件的列表（含状态、备注和下载链接）现已移至我们的论坛。你可以在那里分享结果、提问并发现新的镜像。
-
-<div align="center">
-
-<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%E6%89%93%E5%BC%80%E8%AE%BA%E5%9D%9B-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="论坛"/></a>
-
-</div>
-
 ## 🚀 快速开始
 
 1. 从 [Releases](https://github.com/drel4/AEmulator-Sunset/releases) 下载并安装 APK。
-2. 在[论坛](https://aeforum.uxazuu.space/)找到固件并下载到手机。
-3. 打开 AEmulator Sunset →**添加固件**并选择文件。导入需要几分钟。
-4. 点击**启动**。首次启动较慢：系统正在优化应用。
-5. ⋮ 菜单可调音量、电源键和日志；⚙️ 打开设置与语言。
+2. 打开 AEmulator Sunset →**添加固件**并选择文件。导入需要几分钟。
+3. 点击**启动**。首次启动较慢：系统正在优化应用。
+4. ⋮ 菜单可调音量、电源键和日志；⚙️ 打开设置与语言。
 
 ## 📋 要求
 

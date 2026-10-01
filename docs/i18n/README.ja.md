@@ -6,7 +6,7 @@
 
 **懐かしの Android ファームウェア — HTC Sense、TouchWiz、MIUI、AOSP — を最新スマホで。root も PC も不要。**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.1-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
+[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.2-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇧🇷 Português](README.pt-BR.md) · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · **🇯🇵 日本語** · [🇰🇷 한국어](README.ko.md)
 
@@ -25,23 +25,12 @@ AEmulator Sunset はファームウェアファイルから本物の Android 2.3
 - 18 言語対応の Material 3 Expressive UI
 - 無料・オープンソース（GPL-3.0）
 
-## 📱 ファームウェア一覧
-
-動作確認済みファームウェアの一覧（状態・メモ・ダウンロードリンク付き）はフォーラムにあります。結果の共有や質問、新しいイメージ探しもそちらでどうぞ。
-
-<div align="center">
-
-<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A9%E3%83%A0%E3%82%92%E9%96%8B%E3%81%8F-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="フォーラム"/></a>
-
-</div>
-
 ## 🚀 クイックスタート
 
 1. [Releases](https://github.com/drel4/AEmulator-Sunset/releases) から APK をダウンロードしてインストール。
-2. [フォーラム](https://aeforum.uxazuu.space/)でファームウェアを探し、スマホにダウンロードします。
-3. AEmulator Sunset を開き →**ファームウェアを追加**でファイルを選択。インポートには数分かかります。
-4. **起動**をタップ。初回はアプリ最適化のため時間がかかります。
-5. ⋮ メニューで音量・電源ボタン・ログ、⚙️ で設定と言語。
+2. AEmulator Sunset を開き →**ファームウェアを追加**でファイルを選択。インポートには数分かかります。
+3. **起動**をタップ。初回はアプリ最適化のため時間がかかります。
+4. ⋮ メニューで音量・電源ボタン・ログ、⚙️ で設定と言語。
 
 ## 📋 動作要件
 

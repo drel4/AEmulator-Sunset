@@ -6,7 +6,7 @@
 
 **Firmwares clássicos do Android — HTC Sense, TouchWiz, MIUI, AOSP — em um celular moderno. Sem root, sem PC.**
 
-[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.1-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Forum](https://img.shields.io/badge/Forum-aeforum-FF6D00?style=for-the-badge&logo=discourse&logoColor=white)](https://aeforum.uxazuu.space/) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
+[![Version](https://img.shields.io/badge/version-0.0.0.3--sunset.2-F4511E?style=for-the-badge)](https://github.com/drel4/AEmulator-Sunset/releases) [![License](https://img.shields.io/badge/license-GPL--3.0-F4511E?style=for-the-badge)](../../LICENSE) [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/drel4/AEmulator-Sunset) [![Fork](https://img.shields.io/badge/fork-drel4%2FAEmulator--Sunset-F4511E?style=for-the-badge&logo=github)](https://github.com/drel4/AEmulator-Sunset)
 
 [🇬🇧 English](../../README.md) · [🇷🇺 Русский](README.ru.md) · [🇺🇦 Українська](README.uk.md) · [🇩🇪 Deutsch](README.de.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · **🇧🇷 Português** · [🇮🇹 Italiano](README.it.md) · [🇵🇱 Polski](README.pl.md) · [🇹🇷 Türkçe](README.tr.md) · [🇸🇦 العربية](README.ar.md) · [🇮🇷 فارسی](README.fa.md) · [🇮🇳 हिन्दी](README.hi.md) · [🇮🇩 Indonesia](README.id.md) · [🇻🇳 Tiếng Việt](README.vi.md) · [🇨🇳 简体中文](README.zh-CN.md) · [🇯🇵 日本語](README.ja.md) · [🇰🇷 한국어](README.ko.md)
 
@@ -25,23 +25,12 @@ O AEmulator Sunset inicia um sistema Android 2.3–7.x real direto de um arquivo
 - Interface Material 3 Expressive em 18 idiomas
 - Gratuito e de código aberto (GPL-3.0)
 
-## 📱 Lista de firmwares
-
-A lista de firmwares verificados — com status, notas e links de download — fica no nosso fórum. Lá você compartilha resultados, tira dúvidas e encontra novas imagens.
-
-<div align="center">
-
-<a href="https://aeforum.uxazuu.space/"><img src="https://img.shields.io/badge/Abrir%20o%20f%C3%B3rum-aeforum.uxazuu.space-FF6D00?style=for-the-badge&logo=discourse&logoColor=white" height="44" alt="Fórum"/></a>
-
-</div>
-
 ## 🚀 Início rápido
 
 1. Baixe o APK em [Releases](https://github.com/drel4/AEmulator-Sunset/releases) e instale.
-2. Encontre um firmware no [fórum](https://aeforum.uxazuu.space/) e baixe no celular.
-3. Abra o AEmulator Sunset → **Adicionar firmware** e escolha o arquivo. A importação leva alguns minutos.
-4. Toque em **Iniciar**. A primeira inicialização é mais lenta: o sistema otimiza os apps.
-5. Menu ⋮ para volume, botão liga/desliga e registro; ⚙️ abre configurações e idioma.
+2. Abra o AEmulator Sunset → **Adicionar firmware** e escolha o arquivo. A importação leva alguns minutos.
+3. Toque em **Iniciar**. A primeira inicialização é mais lenta: o sistema otimiza os apps.
+4. Menu ⋮ para volume, botão liga/desliga e registro; ⚙️ abre configurações e idioma.
 
 ## 📋 Requisitos
 
