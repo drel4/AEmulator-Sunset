@@ -191,9 +191,13 @@
     <string name="catalog_reset_source">Restore default URL</string>
     <string name="catalog_refresh">Refresh</string>
     <string name="catalog_retry">Retry</string>
-    <string name="catalog_view_source">View rom.list in browser</string>
     <string name="catalog_section_source">Open section source</string>
-    <string name="catalog_download">Open ROM download in browser</string>
+    <string name="catalog_download_rom">Download %1$s</string>
+    <string name="catalog_back_sections">Back to sections</string>
+    <plurals name="catalog_rom_count">
+        <item quantity="one">%1$d ROM</item>
+        <item quantity="other">%1$d ROMs</item>
+    </plurals>
     <string name="catalog_reported">Compatibility statuses are reported by the catalog source, not verified by the app. Downloads open in your default browser.</string>
     <string name="catalog_no_roms">No ROMs at the moment.</string>
     <string name="catalog_no_url">ROM download URL isn\'t available right now.</string>

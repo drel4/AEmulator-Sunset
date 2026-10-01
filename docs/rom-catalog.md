@@ -1,7 +1,10 @@
 # Sunset ROM catalog
 
 Open **ROM catalog** using the list icon on the library screen or its row in app
-settings. The pencil button changes the `rom.list` URL; the default is
+settings. Sections appear as a compact index: tap a section to show only its
+ROMs, and use the toolbar back arrow or system Back to return to the index.
+Each ROM with a URL has a download icon that opens the default browser. There
+is no button to open the raw `rom.list` file. The pencil button changes the `rom.list` URL; the default is
 `https://dumpster.ralsei.tech/drel/AESSRomCatalog/rom.list`. The address is saved
 per app variant. Refresh reloads the catalog. HTTP sources are supported, but
 HTTPS is recommended; HTTPS redirects cannot silently downgrade to HTTP.
@@ -25,7 +28,7 @@ only as separators, except that the final URL can itself contain semicolons.
 Empty sections remain visible with **No ROMs at the moment.** Missing download
 URLs show **ROM download URL isn't available right now.** Invalid non-web URLs
 are not opened. Malformed records are reported by line number without hiding
-valid entries. Downloads and section/source links open in the default browser,
+valid entries. Downloads and section-source links open in the default browser,
 not in an embedded web view or through an automatic importer. If no default
 browser is set, Android offers browser selection.
 

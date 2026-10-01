@@ -190,9 +190,15 @@
     <string name="catalog_reset_source">Восстановить адрес по умолчанию</string>
     <string name="catalog_refresh">Обновить</string>
     <string name="catalog_retry">Повторить</string>
-    <string name="catalog_view_source">Открыть rom.list в браузере</string>
     <string name="catalog_section_source">Открыть источник раздела</string>
-    <string name="catalog_download">Открыть ссылку на прошивку в браузере</string>
+    <string name="catalog_download_rom">Скачать %1$s</string>
+    <string name="catalog_back_sections">К списку разделов</string>
+    <plurals name="catalog_rom_count">
+        <item quantity="one">%1$d прошивка</item>
+        <item quantity="few">%1$d прошивки</item>
+        <item quantity="many">%1$d прошивок</item>
+        <item quantity="other">%1$d прошивки</item>
+    </plurals>
     <string name="catalog_reported">Статусы совместимости указаны источником каталога и не проверяются приложением. Ссылки открываются в браузере по умолчанию.</string>
     <string name="catalog_no_roms">Пока нет прошивок.</string>
     <string name="catalog_no_url">Ссылка для скачивания прошивки пока недоступна.</string>

@@ -3,20 +3,28 @@ package app.aemu.ui
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.aemu.AppPrefs
 import app.aemu.R
@@ -43,23 +51,35 @@ private fun CatalogScreen(onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var edit by rememberSaveable { mutableStateOf(false) }
     var draft by rememberSaveable { mutableStateOf(source) }
+    var selectedSection by rememberSaveable(source) { mutableIntStateOf(-1) }
+    val section = catalog?.sections?.getOrNull(selectedSection)
+    BackHandler(enabled = selectedSection >= 0) { selectedSection = -1 }
     LaunchedEffect(source, revision) {
         loading = true
         error = null
-        try { catalog = CatalogLoader.load(source) }
+        try {
+            val loaded = CatalogLoader.load(source)
+            catalog = loaded
+            if (selectedSection !in loaded.sections.indices) selectedSection = -1
+        }
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { error = e.message ?: e.javaClass.simpleName }
         finally { loading = false }
     }
     Scaffold(topBar = {
-        TopAppBar(title = { Text(stringResource(R.string.catalog_title)) }, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
+        TopAppBar(title = { Text(section?.name?.ifEmpty { stringResource(R.string.catalog_roms) }
+            ?: stringResource(R.string.catalog_title)) }, navigationIcon = {
+            IconButton(onClick = { if (selectedSection >= 0) selectedSection = -1 else onBack() }) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(
+                    if (selectedSection >= 0) R.string.catalog_back_sections else R.string.back))
+            }
         }, actions = {
             IconButton(onClick = { draft = source; edit = true }) { Icon(Icons.Rounded.Edit, stringResource(R.string.catalog_source)) }
-            IconButton(onClick = { revision++ }, enabled = !loading) { Icon(Icons.Rounded.Refresh, stringResource(R.string.catalog_refresh)) }
+            IconButton(onClick = { selectedSection = -1; revision++ }, enabled = !loading) { Icon(Icons.Rounded.Refresh, stringResource(R.string.catalog_refresh)) }
         })
     }) { pad ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(pad),
+        key(source, selectedSection) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(pad), state = rememberLazyListState(),
             contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             error?.let { problem -> item {
@@ -71,15 +91,14 @@ private fun CatalogScreen(onBack: () -> Unit) {
                 }
             } }
             catalog?.let { list ->
-                if (list.motd.isNotEmpty()) item {
+                if (selectedSection < 0 && list.motd.isNotEmpty()) item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                         Text(list.motd, Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                item {
+                if (selectedSection < 0) item {
                     Text(stringResource(R.string.catalog_reported), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick = { openBrowser(ctx, source) }) { Text(stringResource(R.string.catalog_view_source)) }
                 }
                 if (list.warningLines.isNotEmpty()) item {
                     Text(stringResource(R.string.catalog_warnings, list.warningLines.take(10).joinToString(", ") +
@@ -87,10 +106,25 @@ private fun CatalogScreen(onBack: () -> Unit) {
                         color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 if (list.sections.isEmpty()) item { Text(stringResource(R.string.catalog_no_roms)) }
-                list.sections.forEachIndexed { sectionIndex, section ->
+                if (section == null) list.sections.forEachIndexed { sectionIndex, entry ->
                     item(key = "section-$sectionIndex") {
+                        Card(Modifier.fillMaxWidth()) {
+                            ListItem(modifier = Modifier.clickable { selectedSection = sectionIndex },
+                                headlineContent = { Text(entry.name.ifEmpty { stringResource(R.string.catalog_roms) },
+                                    style = MaterialTheme.typography.titleMedium) },
+                                supportingContent = {
+                                    Column {
+                                        Text(if (entry.roms.isEmpty()) stringResource(R.string.catalog_no_roms)
+                                            else pluralStringResource(R.plurals.catalog_rom_count, entry.roms.size, entry.roms.size))
+                                        if (entry.comment.isNotEmpty()) Text(entry.comment, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    }
+                                },
+                                trailingContent = { Icon(Icons.Rounded.ChevronRight, null) })
+                        }
+                    }
+                } else {
+                    item(key = "section-info") {
                         Column {
-                            Text(section.name.ifEmpty { stringResource(R.string.catalog_roms) }, style = MaterialTheme.typography.titleLarge)
                             if (section.comment.isNotEmpty()) Text(section.comment, style = MaterialTheme.typography.bodyMedium)
                             section.source?.let { url -> TextButton(onClick = { openBrowser(ctx, url) }) {
                                 Text(stringResource(R.string.catalog_section_source))
@@ -100,9 +134,10 @@ private fun CatalogScreen(onBack: () -> Unit) {
                         }
                     }
                     section.roms.forEachIndexed { romIndex, rom ->
-                        item(key = "rom-$sectionIndex-$romIndex") { CatalogRomCard(rom) }
+                        item(key = "rom-$romIndex") { CatalogRomCard(rom) }
                     }
                 }
+            }
             }
         }
     }
@@ -117,6 +152,7 @@ private fun CatalogScreen(onBack: () -> Unit) {
                 val next = CatalogUrls.valid(draft) ?: return@TextButton
                 AppPrefs.setCatalogUrl(ctx, next)
                 if (next != source) catalog = null
+                selectedSection = -1
                 source = next
                 revision++
                 edit = false
@@ -140,15 +176,19 @@ private fun CatalogRomCard(rom: CatalogRom) {
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(rom.device, style = MaterialTheme.typography.titleMedium)
-            Text(listOf("Android ${rom.android}", rom.skin).filter { it.isNotBlank() }.joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium)
-            Text(stringResource(status), color = statusColor, style = MaterialTheme.typography.labelLarge)
-            if (rom.comment.isNotEmpty()) Text(rom.comment, style = MaterialTheme.typography.bodyMedium)
-            rom.url?.let { url -> TextButton(onClick = { openBrowser(ctx, url) }) { Text(stringResource(R.string.catalog_download)) } }
-                ?: Text(stringResource(R.string.catalog_no_url), style = MaterialTheme.typography.bodySmall,
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(rom.device, style = MaterialTheme.typography.titleMedium)
+                Text(listOf("Android ${rom.android}", rom.skin).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(status), color = statusColor, style = MaterialTheme.typography.labelLarge)
+                if (rom.comment.isNotEmpty()) Text(rom.comment, style = MaterialTheme.typography.bodyMedium)
+                if (rom.url == null) Text(stringResource(R.string.catalog_no_url), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            rom.url?.let { url -> IconButton(onClick = { openBrowser(ctx, url) }) {
+                Icon(Icons.Rounded.Download, stringResource(R.string.catalog_download_rom, rom.device))
+            } }
         }
     }
 }
