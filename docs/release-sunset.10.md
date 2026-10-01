@@ -1,5 +1,12 @@
 # AEmulator Sunset 0.0.0.3-sunset.10
 
+**REGRESSION: do not use this build for normal use.** The Xperia ROM user
+reports Recents displays, but SystemUI and launcher freeze after some time.
+Logs contain invalid permission-check Parcel replies and SystemUI ANRs.
+The Keyguard callback workaround is rolled back in
+[sunset.11](https://github.com/drel4/AEmulator-Sunset/releases/tag/v0.0.0.3-sunset.11).
+Install the same package variant over .10, then fully restart the VM.
+
 **Xperia Recents / Keyguard compatibility trial.** Extends the emulator's
 Binder callback scheduling workaround to one-way Keyguard calls arriving on
 threads awaiting a synchronous reply. Handles mixed callback/reply batches,

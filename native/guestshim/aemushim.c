@@ -590,8 +590,7 @@ static int wait_slot(int tid, int add) {
     return 0;
 }
 
-/* Async callbacks taken from a thread that waits for a reply; the next idle
- * reader gets them. The transaction buffer stays owned until BC_FREE_BUFFER. */
+/* player notifications taken from a thread that waits for a reply; the next pool thread that reads gets them */
 static unsigned char g_held[1024];
 static volatile int g_held_len, g_held_lock;
 static void held_lock(void) { while (!__sync_bool_compare_and_swap(&g_held_lock, 0, 1)) sys3(158 /* sched_yield */, 0, 0, 0); }
@@ -599,92 +598,19 @@ static void held_unlock(void) { __sync_lock_release(&g_held_lock); }
 
 /* binder_transaction_data (32-bit) of a oneway call to android.media.IMediaPlayerClient: the parcel starts with the
  * strict-mode word, then the interface name as String16 */
-static int parcel_interface(const unsigned char *td, const char *want, unsigned length) {
+static int is_player_notify(const unsigned char *td) {
     const unsigned char *d = (const unsigned char *)(ulong)*(const unsigned *)(td + 32);
     unsigned size = *(const unsigned *)(td + 24);
-    if (!d || length > 128 || size < 8 + 2 * (length + 1)) return 0;
-    if (*(const unsigned *)(d + 4) != length) return 0;
-    for (unsigned i = 0; i < length; i++) if (d[8 + 2 * i] != (unsigned char)want[i] || d[9 + 2 * i]) return 0;
-    return d[8 + 2 * length] == 0 && d[9 + 2 * length] == 0;
-}
-
-static int is_player_notify(const unsigned char *td) {
-    if (!parcel_interface(td, "android.media.IMediaPlayerClient", 32) ||
-        *(const unsigned *)(td + 24) < 80) return 0;
-    const unsigned char *d = (const unsigned char *)(ulong)*(const unsigned *)(td + 32);
+    const char *want = "android.media.IMediaPlayerClient";
+    if (!d || size < 8 + 64) return 0;
+    if (*(const unsigned *)(d + 4) != 32) return 0;
+    for (int i = 0; i < 32; i++) if (d[8 + 2 * i] != (unsigned char)want[i] || d[9 + 2 * i]) return 0;
     /* MEDIA_PREPARED and MEDIA_SEEK_COMPLETE stay: prepare()/seekTo() expect them on the calling thread */
     int msg = *(const int *)(d + 76);
     return msg != 1 && msg != 4;
 }
 
-static int defer_async(const unsigned char *td) {
-    /* KitKat Keyguard does a synchronous permission check in setHidden().
-     * Running it reentrantly on the UI thread waiting in WMS.relayout violates
-     * kernel Binder's async scheduling and creates an extra nested call chain.
-     * Keep the permission check intact; move the one-way callback, not its UID. */
-    return parcel_interface(td, "com.android.internal.policy.IKeyguardService", 44) ||
-        is_player_notify(td);
-}
-
 static int is_waiting(int tid) { for (int k = 0; k < 64; k++) if (waiting_tid[k] == tid) return 1; return 0; }
-
-static unsigned g_keyguard_logs;
-static void keyguard_deferred_log(const unsigned char *td) {
-    if (__sync_fetch_and_add(&g_keyguard_logs, 1) >= 16) return;
-    char text[144]; int n = 0;
-    const char *labels[] = {"aemushim Binder: deferred Keyguard code=", " caller_pid=", " caller_uid="};
-    unsigned values[] = { *(const unsigned *)(td + 8), *(const unsigned *)(td + 16), *(const unsigned *)(td + 20) };
-    for (int k = 0; k < 3; k++) {
-        const char *label = labels[k]; while (*label) text[n++] = *label++;
-        char digits[10]; int count = 0; unsigned v = values[k];
-        do { digits[count++] = '0' + v % 10; v /= 10; } while (v);
-        while (count) text[n++] = digits[--count];
-    }
-    text[n++] = '\n'; sys3(SYS_write, 2, (long)text, n);
-}
-
-static int replay_binder_held(struct bwr *b) {
-    int copied = 0;
-    held_lock();
-    if (g_held_len && b->read_consumed >= 0 && b->read_consumed <= b->read_size &&
-        b->read_size - b->read_consumed >= g_held_len) {
-        unsigned char *rb = (unsigned char *)b->read_buffer;
-        for (int i = 0; i < g_held_len; i++) rb[b->read_consumed + i] = g_held[i];
-        b->read_consumed += g_held_len; g_held_len = 0; copied = 1;
-    }
-    held_unlock();
-    return copied;
-}
-
-static void filter_binder_read(struct bwr *b, long start, int tid) {
-    int replied = 0;
-    int waiting = is_waiting(tid);
-    held_lock();
-    for (long p = start; p + 4 <= b->read_consumed;) {
-        unsigned char *rb = (unsigned char *)b->read_buffer;
-        unsigned cmd = *(unsigned *)(rb + p);
-        long len = 4 + ((cmd >> 16) & 0x3fff);
-        if (len > b->read_consumed - p) break;
-        if (cmd == BR_REPLY_ || cmd == 0x7205 || cmd == 0x7211) replied = 1;
-        if (waiting && cmd == BR_TRANSACTION_ && len == 44 &&
-            (*(unsigned *)(rb + p + 4 + 12) & TF_ONE_WAY_) &&
-            defer_async(rb + p + 4) && g_held_len + len <= (long)sizeof g_held) {
-            if (parcel_interface(rb + p + 4, "com.android.internal.policy.IKeyguardService", 44))
-                keyguard_deferred_log(rb + p + 4);
-            for (long i = 0; i < len; i++) g_held[g_held_len + i] = rb[p + i];
-            g_held_len += (int)len;
-            for (long i = p; i + len < b->read_consumed; i++) rb[i] = rb[i + len];
-            b->read_consumed -= len;
-            continue;
-        }
-        p += len;
-    }
-    /* Never replay callbacks onto the thread whose reply is in this batch:
-     * libbinder has not unwound its synchronous call yet. */
-    held_unlock();
-    if (!waiting) replay_binder_held(b);
-    if (replied) wait_slot(tid, 0);
-}
 
 EXPORT int ioctl(int fd, int req, void *arg) {
     if (((unsigned)req >> 8 & 255) == 'E' && trackball_fd(fd)) return trackball_ioctl((unsigned)req, arg);
@@ -702,11 +628,6 @@ EXPORT int ioctl(int fd, int req, void *arg) {
             wait_slot(tid, 1);
         p += 4 + sz;
     }
-    /* Idle readers must drain already queued callbacks before a blocking read.
-     * Do not skip writes: BC_FREE_BUFFER, replies and looper registration still
-     * have to reach the engine. */
-    if (!is_waiting(tid) && b->write_consumed == b->write_size &&
-        b->read_buffer && b->read_consumed == 0 && replay_binder_held(b)) return 0;
     long start = b->read_consumed;
     long r = sys3(SYS_ioctl, fd, req, (long)arg);
     /* The stand's binder link now and then answers ENOTCONN; libbinder aborts the whole process on that
@@ -727,11 +648,42 @@ EXPORT int ioctl(int fd, int req, void *arg) {
         p += 4 + sz;
     }
     int waiting = is_waiting(tid);
-    filter_binder_read(b, start, tid);
+    if (nested_oneway && !replied && waiting) {
+        /* a media player's notify must not run here: MediaPlayer::reset() and friends hold the player lock across
+         * the call and notify() takes it (MIUI's SystemUI froze playing the charging sound). It goes to the next
+         * pool thread that reads, where the kernel driver would have delivered it. */
+        unsigned char *rb = (unsigned char *)b->read_buffer;
+        held_lock();
+        for (long p = start; p + 4 <= b->read_consumed;) {
+            unsigned cmd = *(unsigned *)(rb + p);
+            long len = 4 + ((cmd >> 16) & 0x3fff);
+            if (cmd == BR_TRANSACTION_ && p + len <= b->read_consumed && (*(unsigned *)(rb + p + 4 + 12) & TF_ONE_WAY_)
+                && is_player_notify(rb + p + 4) && g_held_len + len <= (long)sizeof g_held) {
+                for (long i = 0; i < len; i++) g_held[g_held_len + i] = rb[p + i];
+                g_held_len += (int)len;
+                for (long i = p; i + len < b->read_consumed; i++) rb[i] = rb[i + len];
+                b->read_consumed -= len;
+                continue;
+            }
+            p += len;
+        }
+        held_unlock();
+    }
     if (nested_oneway && !replied && waiting && sys3(199 /* getuid32 */, 0, 0, 0) >= 10000) {
         struct timespec_s ts = { 0, 30 * 1000 * 1000 };
         sys3(162 /* nanosleep */, (long)&ts, 0, 0);
     }
+    if (!waiting && g_held_len) {
+        held_lock();
+        if (g_held_len && b->read_consumed + g_held_len <= b->read_size) {
+            unsigned char *rb = (unsigned char *)b->read_buffer;
+            for (int i = 0; i < g_held_len; i++) rb[b->read_consumed + i] = g_held[i];
+            b->read_consumed += g_held_len;
+            g_held_len = 0;
+        }
+        held_unlock();
+    }
+    if (replied) wait_slot(tid, 0);
     return (int)r;
 }
 
