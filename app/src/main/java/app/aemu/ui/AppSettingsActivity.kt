@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
@@ -179,6 +180,14 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
             item { AboutCard() }
 
             item {
+                Section(stringResource(R.string.catalog_title)) {
+                    Row_(Icons.Rounded.List, stringResource(R.string.catalog_open), AppPrefs.catalogUrl(ctx)) {
+                        ctx.startActivity(Intent(ctx, RomCatalogActivity::class.java))
+                    }
+                }
+            }
+
+            item {
                 Section(stringResource(R.string.as_updates)) {
                     Toggle(
                         stringResource(R.string.as_auto_updates),
@@ -299,7 +308,7 @@ private fun AboutCard() {
             Image(painterResource(R.drawable.logo), null, Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)))
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("AEmulator Sunset", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                SunsetTitle(style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(stringResource(R.string.as_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Spacer(Modifier.height(4.dp))

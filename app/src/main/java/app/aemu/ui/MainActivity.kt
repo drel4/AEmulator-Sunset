@@ -91,6 +91,7 @@ import app.aemu.core.GuestImage
 import app.aemu.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.List
 import android.content.Context
 
 const val ACTION_BOOT = "app.aemu.BOOT"
@@ -187,9 +188,13 @@ fun Library(model: LibraryModel) {
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text("AEmulator Sunset") },
+                title = { SunsetTitle() },
                 subtitle = { Text(stringResource(R.string.lib_subtitle)) },
-                actions = { IconButton(onClick = { help = true }) { Icon(Icons.Rounded.Info, stringResource(R.string.help)) }
+                actions = {
+                    IconButton(onClick = { ctx.startActivity(Intent(ctx, RomCatalogActivity::class.java)) }) {
+                        Icon(Icons.Rounded.List, stringResource(R.string.catalog_title))
+                    }
+                    IconButton(onClick = { help = true }) { Icon(Icons.Rounded.Info, stringResource(R.string.help)) }
                     IconButton(onClick = { ctx.startActivity(Intent(ctx, AppSettingsActivity::class.java)) }) { Icon(Icons.Rounded.Settings, stringResource(R.string.settings)) } },
                 scrollBehavior = scroll,
             )

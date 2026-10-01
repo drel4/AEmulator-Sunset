@@ -55,6 +55,25 @@ object AppPrefs {
     fun lastUpdateCheck(ctx: Context): Long = sp(ctx).getLong("last_update_check", 0L)
     fun setLastUpdateCheck(ctx: Context, v: Long) = sp(ctx).edit().putLong("last_update_check", v).apply()
 
+    fun catalogUrl(ctx: Context): String = sp(ctx).getString("catalog_url", app.aemu.catalog.CatalogUrls.DEFAULT)
+        ?: app.aemu.catalog.CatalogUrls.DEFAULT
+    fun setCatalogUrl(ctx: Context, url: String) = sp(ctx).edit().putString("catalog_url", url).apply()
+    fun experimental(ctx: Context): Boolean = sp(ctx).getBoolean("experimental", false)
+    fun setExperimental(ctx: Context, enabled: Boolean) = sp(ctx).edit().putBoolean("experimental", enabled).apply()
+    /** Shared by expanded/collapsed toolbar titles and the about card. */
+    fun registerExperimentalTap(ctx: Context): Boolean {
+        val p = sp(ctx)
+        val enabled = p.getBoolean("experimental", false)
+        if (enabled) return false
+        val before = p.getInt("experimental_taps", 0)
+        val next = app.aemu.core.ExperimentalUnlock.next(before, false)
+        val activate = app.aemu.core.ExperimentalUnlock.activates(before, next, false)
+        p.edit().putInt("experimental_taps", next).apply {
+            if (activate) putBoolean("experimental", true)
+        }.apply()
+        return activate
+    }
+
     /** Умолчания, которые получает только что импортированная система. */
     fun defaults(ctx: Context): VmSettings {
         val p = sp(ctx)

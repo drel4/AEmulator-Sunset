@@ -27,6 +27,7 @@
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:largeHeap="true"
+        android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.AEmulator"
@@ -60,6 +61,9 @@
         <activity
             android:name=".ui.AppSettingsActivity"
             android:exported="false"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity android:name=".ui.RomCatalogActivity" android:exported="false"
             android:parentActivityName=".ui.MainActivity" />
 
         <activity
