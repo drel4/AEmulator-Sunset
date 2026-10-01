@@ -206,6 +206,29 @@ static const char *qt_redirect(const char *path, char *buf, int n) {
     return buf;
 }
 
+/*
+ * AEmulator Sunset: KitKat's native NetworkStats parser opens the qtaguid
+ * table with fopen(), not open().  Calls made inside bionic do not reliably
+ * return through our preloaded open() symbol, so redirect fopen explicitly.
+ * Resolve the next definition to preserve bionic's FILE implementation and
+ * leave every unrelated stream completely unchanged.
+ */
+typedef void AemuFile;
+extern void *dlsym(void *handle, const char *name);
+#define AEMU_RTLD_NEXT ((void *)-1L)
+static AemuFile *(*g_real_fopen)(const char *, const char *);
+
+EXPORT AemuFile *fopen(const char *path, const char *mode) {
+    AemuFile *(*real_fopen)(const char *, const char *) = g_real_fopen;
+    if (!real_fopen) {
+        real_fopen = (AemuFile *(*)(const char *, const char *))dlsym(AEMU_RTLD_NEXT, "fopen");
+        g_real_fopen = real_fopen;
+    }
+    if (!real_fopen) return 0;
+    char b[128];
+    return real_fopen(qt_redirect(path, b, sizeof(b)), mode);
+}
+
 EXPORT int access(const char *path, int mode) {
     char b[128];
     long r = sys3(SYS_access, (long)qt_redirect(path, b, sizeof(b)), mode, 0);
