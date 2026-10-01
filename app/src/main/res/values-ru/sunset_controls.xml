@@ -1,0 +1,27 @@
+<resources>
+    <string name="vs_hide_menu">Скрыть кнопку меню</string>
+    <string name="vs_hide_menu_sub">Скрыть кнопку … . Кнопка или жест «Назад» на телефоне открывает меню эмулятора вместо отправки «Назад» в Android. Кнопки гостевой панели навигации по-прежнему управляют Android.</string>
+    <string name="vs_vibration">Вибрация гостевой системы</string>
+    <string name="vs_vibration_sub">Передавать вибрацию старых прошивок на телефон. Применяется при следующей загрузке; один импульс ограничен 60 секундами.</string>
+    <string name="nav_buttons">Кнопки навигации</string>
+    <string name="nav_order">Порядок кнопок (слева направо)</string>
+    <string name="nav_earlier">Левее</string>
+    <string name="nav_later">Правее</string>
+    <string name="nav_reset">Сбросить кнопки</string>
+    <string name="nav_search">Поиск</string>
+    <string name="nav_power">Питание</string>
+    <string name="nav_volume_down">Уменьшить громкость</string>
+    <string name="nav_volume_up">Увеличить громкость</string>
+    <string name="nav_up">Вверх</string>
+    <string name="nav_down">Вниз</string>
+    <string name="nav_left">Влево</string>
+    <string name="nav_right">Вправо</string>
+    <string name="nav_center">Центральная кнопка</string>
+    <string name="nav_trackball">Трекбол</string>
+    <string name="nav_trackball_sub">Проводите пальцем по кругу над панелью навигации для прокрутки; коснитесь для выбора.</string>
+    <string name="nav_dpad_mode">Режим кнопок направления</string>
+    <string name="nav_dpad_sub">Выключен: настоящие относительные события трекбола для гостевых приложений. Включён: нажатия кнопок направления вместо них. Два режима одновременно не используются.</string>
+    <string name="nav_sensitivity">Чувствительность: %1$d dp на шаг (меньше — быстрее)</string>
+    <string name="nav_trackball_waiting">Гостевая система пока не подключилась к трекболу</string>
+    <string name="nav_trackball_recovery">Recovery: используйте режим кнопок направления</string>
+</resources>

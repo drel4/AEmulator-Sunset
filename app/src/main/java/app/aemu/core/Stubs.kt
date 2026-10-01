@@ -83,7 +83,7 @@ class RilStub(
             val b = ByteBuffer.wrap(body).order(ByteOrder.LITTLE_ENDIAN)
             val request = b.getInt()
             val serial = b.getInt()
-            val (err, payload) = runCatching { handle(request) }.getOrElse { 0 to ByteArray(0) }
+            val (err, payload) = runCatching { handle(request, b) }.getOrElse { E_GENERIC_FAILURE to ByteArray(0) }
             val resp = ByteArrayOutputStream()
             resp.write(le(0)); resp.write(le(serial)); resp.write(le(err)); resp.write(payload)
             frame(o, resp.toByteArray())
@@ -119,7 +119,7 @@ class RilStub(
         }
     }
 
-    private fun handle(req: Int): Pair<Int, ByteArray> {
+    private fun handle(req: Int, args: ByteBuffer): Pair<Int, ByteArray> {
         val (mcc, mnc) = operator
         return when (req) {
             RIL_REQUEST_GET_SIM_STATUS -> 0 to simStatus()
@@ -134,7 +134,7 @@ class RilStub(
             RIL_REQUEST_OPERATOR -> 0 to strs(OPERATOR_NAME, OPERATOR_NAME, mcc + mnc)
             RIL_REQUEST_SETUP_DATA_CALL -> 0 to dataCall(single = true)
             RIL_REQUEST_DATA_CALL_LIST -> 0 to dataCall(single = false)
-            RIL_REQUEST_SIM_IO -> 0 to (le(0x6A) + le(0x82) + str(null))   // "file not found": no SIM records
+            RIL_REQUEST_SIM_IO -> LegacySimIo.handle(args).let { 0 to (le(it.sw1) + le(it.sw2) + str(it.hex)) }
             RIL_REQUEST_GET_IMEI -> 0 to str(imei)
             RIL_REQUEST_GET_IMEISV -> 0 to str(IMEISV)
             RIL_REQUEST_BASEBAND_VERSION -> 0 to str(BASEBAND)

@@ -267,6 +267,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         overrides["persist.sys.timezone"] = gmtZone()
         if (!props.prepare(overrides)) error("property area not ready")
         fixer.skipPreBoot(props)
+        fixer.restoreSonySetupFlow()
         fixer.noScreenSleep()
         props.onSet = { k, v -> onProp(k, v) }
         props.onCtl = { start, svc -> onCtl(start, svc) }

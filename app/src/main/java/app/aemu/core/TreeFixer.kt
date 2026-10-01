@@ -702,6 +702,51 @@ class TreeFixer(
     }
 
     /** Экран не гаснет, данные «включены»: прямо в базе настроек (есть после первой загрузки). */
+    private fun hasSonySetupFlow(): Boolean =
+        File(root, "system/app/Initial-boot-setup.apk").isFile && File(root, "system/priv-app/SEMCSetupWizard.apk").isFile
+
+    /** Called only before launching guest processes. Keep recovery copies of migrated data. */
+    fun restoreSonySetupFlow() {
+        if (!hasSonySetupFlow()) return
+        val marker = File(paths.bin, "sony-setup-flow-v1")
+        if (marker.isFile) return
+        val db = File(root, "data/data/com.android.providers.settings/databases/settings.db")
+        val restrictions = File(root, "data/system/users/0/package-restrictions.xml")
+        if (!db.isFile || !restrictions.isFile) return // fresh imports already use stock defaults
+        val prefs = File(root, "data/data/${SonySetupPolicy.PACKAGE}/shared_prefs/SetupWizard.xml")
+        runCatching {
+            val completed = prefs.isFile && SonySetupPolicy.completed(prefs.readText())
+            if (!completed) {
+                val xml = restrictions.readText()
+                val restored = SonySetupPolicy.restorePackage(xml)
+                // Only migrate a package disabled by the old compatibility policy.
+                if (xml != restored) {
+                    for (suffix in listOf("", "-wal", "-shm")) {
+                        val source = File(db.path + suffix)
+                        val backup = File(source.path + ".aemu-before-sony-setup-v1")
+                        if (source.isFile && !backup.exists()) source.copyTo(backup)
+                    }
+                    val backup = File(restrictions.path + ".aemu-before-sony-setup-v1")
+                    if (!backup.exists()) restrictions.copyTo(backup)
+                    SQLiteDatabase.openDatabase(db.path, null, SQLiteDatabase.OPEN_READWRITE).use { d ->
+                        d.beginTransaction()
+                        try {
+                            for ((table, name) in listOf("global" to "device_provisioned", "secure" to "user_setup_complete")) {
+                                val cv = android.content.ContentValues().apply { put("value", "0") }
+                                d.update(table, cv, "name=?", arrayOf(name))
+                            }
+                            d.setTransactionSuccessful()
+                        } finally { d.endTransaction() }
+                    }
+                    restrictions.writeText(restored)
+                    log("setup: restored Sony wizard and incomplete-setup flags; backups retained")
+                }
+            }
+            marker.parentFile?.mkdirs()
+            marker.writeText("Sony owns setup completion; migration checked\n")
+        }.onFailure { log("setup: Sony flow migration failed: ${it.message}") }
+    }
+
     fun noScreenSleep() {
         val db = File(root, "data/data/com.android.providers.settings/databases/settings.db")
         if (!db.isFile) return
@@ -725,8 +770,10 @@ class TreeFixer(
                 if (img.api >= 17) put("global", "verifier_verify_adb_installs", "0")
                 // мастер первого запуска считаем пройденным: иначе он остаётся «домашним экраном»,
                 // и кнопка «Домой» открывает его (у Samsung — чёрный экран на минуты)
-                put(if (img.api >= 17) "global" else "secure", "device_provisioned", "1")
-                put("secure", "user_setup_complete", "1")
+                if (!hasSonySetupFlow()) {
+                    put(if (img.api >= 17) "global" else "secure", "device_provisioned", "1")
+                    put("secure", "user_setup_complete", "1")
+                }
             }
         }.onFailure { log("settings: database failed to open: ${it.message}") }
         disableSetupWizards()
@@ -738,7 +785,9 @@ class TreeFixer(
         if (!f.isFile) return
         // packages.xml, а не packages.list: в списке нет пакетов с общим системным uid (мастер Samsung)
         val pkgs = runCatching { File(root, "data/system/packages.xml").readText() }.getOrNull() ?: return
-        val targets = SETUP_WIZARDS.filter { pkgs.contains("<package name=\"$it\"") }
+        val targets = SETUP_WIZARDS.filter {
+            pkgs.contains("<package name=\"$it\"") && !(hasSonySetupFlow() && it == SonySetupPolicy.PACKAGE)
+        }
         if (targets.isEmpty()) return
         var xml = runCatching { f.readText() }.getOrNull() ?: return
         var changed = false

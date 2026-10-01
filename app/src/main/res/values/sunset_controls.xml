@@ -1,4 +1,6 @@
 <resources>
+    <string name="vs_hide_menu">Hide menu button</string>
+    <string name="vs_hide_menu_sub">Hide the … button. The phone’s Back button or back gesture opens the emulator menu instead of sending Back to Android. Guest navigation buttons still control Android.</string>
     <string name="vs_vibration">Guest vibration</string>
     <string name="vs_vibration_sub">Forward legacy guest vibration to the phone. Applies on next boot; each pulse is capped at 60 seconds.</string>
     <string name="nav_buttons">Navigation buttons</string>

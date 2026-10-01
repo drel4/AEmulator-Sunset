@@ -25,6 +25,7 @@ data class VmSettings(
     val lowRam: Boolean = false,
     val showFrame: Boolean = false,
     val showNavBar: Boolean = true,
+    val hideMenuButton: Boolean = false,
     val navButtons: String = NavControls.DEFAULT_BUTTONS,
     val trackball: Boolean = false,
     val trackballDpad: Boolean = false,
@@ -48,6 +49,7 @@ data class VmSettings(
         .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fullDexopt", fullDexopt).put("fbHz", fbHz)
         .put("touchHz", touchHz).put("netProxy", netProxy).put("lowRam", lowRam)
         .put("showFrame", showFrame).put("showNavBar", showNavBar)
+        .put("hideMenuButton", hideMenuButton)
         .put("navButtons", NavControls.encode(NavControls.parse(navButtons)))
         .put("trackball", trackball).put("trackballDpad", trackballDpad)
         .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
@@ -84,6 +86,7 @@ data class VmSettings(
                 lowRam = o.optBoolean("lowRam", d.lowRam),
                 showFrame = o.optBoolean("showFrame", d.showFrame),
                 showNavBar = o.optBoolean("showNavBar", d.showNavBar),
+                hideMenuButton = o.optBoolean("hideMenuButton", d.hideMenuButton),
                 navButtons = NavControls.encode(NavControls.parse(o.optString("navButtons", d.navButtons))),
                 trackball = o.optBoolean("trackball", false),
                 trackballDpad = o.optBoolean("trackballDpad", false),

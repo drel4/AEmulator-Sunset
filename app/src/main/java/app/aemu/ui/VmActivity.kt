@@ -216,7 +216,10 @@ class VmActivity : ComponentActivity() {
         loadMenuOffset()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() { vm.input.press(InputService.KEY_BACK) }
+            override fun handleOnBackPressed() {
+                if (vm.settings.hideMenuButton) menuOpen = true
+                else vm.input.press(InputService.KEY_BACK)
+            }
         })
 
         registerShell()
@@ -301,6 +304,7 @@ class VmActivity : ComponentActivity() {
     // position of the floating menu button, kept across launches
     private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
     private var menuOffset by mutableStateOf(Offset.Zero)
+    private var menuOpen by mutableStateOf(false)
     private fun loadMenuOffset() { menuOffset = Offset(uiPrefs.getFloat("menu_x", 0f), uiPrefs.getFloat("menu_y", 0f)) }
     private fun saveMenuOffset() { uiPrefs.edit().putFloat("menu_x", menuOffset.x).putFloat("menu_y", menuOffset.y).apply() }
 
@@ -477,7 +481,7 @@ class VmActivity : ComponentActivity() {
     @Composable
     private fun Overlay() {
         var showLog by remember { mutableStateOf(false) }
-        var menu by remember { mutableStateOf(false) }
+        var menu by ::menuOpen
         var dialog by remember { mutableStateOf(Dlg.NONE) }
         val running = state == GuestVm.State.RUNNING
         var seconds by remember { mutableStateOf(0L) }
@@ -510,13 +514,18 @@ class VmActivity : ComponentActivity() {
             }
 
             // top menu button (hidden while the log is open so it does not cover the log toolbar); drag to move it
-            if (!showLog) Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
+            if (!showLog || vm.settings.hideMenuButton) Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
                 .offset { IntOffset(menuOffset.x.roundToInt(), menuOffset.y.roundToInt()) }
                 .pointerInput(Unit) {
                     detectDragGestures(onDragEnd = { saveMenuOffset() }) { ch, d -> ch.consume(); menuOffset += d }
                 }) {
-                FilledTonalIconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.menu))
+                if (!vm.settings.hideMenuButton) {
+                    FilledTonalIconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.menu))
+                    }
+                } else {
+                    // Keep a stable, non-interactive dropdown anchor when the button is hidden.
+                    Spacer(Modifier.size(1.dp))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.log)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) },
