@@ -1,5 +1,6 @@
 #!/bin/sh
 # Сборка звукового HAL с раскладкой AOSP 4.2–4.4: ARMv7, только libc, классическая хэш-таблица
+set -eu
 NDK=${NDK:-$ANDROID_NDK_HOME}
 BIN="$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin"
 [ -x "$BIN/clang" ] || BIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -9,7 +10,13 @@ mkdir -p "$(dirname "$OUT")"
   -nostdlib -ffreestanding -fno-builtin -fvisibility=hidden -fno-stack-protector \
   -Wl,--hash-style=sysv -Wl,-z,norelro -Wl,--build-id=none -Wl,-soname,audio.primary.default.so \
   -o "$OUT" audio_hal.c -lc
-"$BIN/llvm-strip" "$OUT" 2>/dev/null || true
+"$BIN/llvm-strip" "$OUT"
+# Sony KitKat/CAF QCOM_DIRECTTRACK: standard device ABI, extended stream tail.
+"$BIN/clang" --target=armv7a-linux-androideabi21 -march=armv7-a -mthumb -mfloat-abi=softfp -Os -fPIC -shared \
+  -nostdlib -ffreestanding -fno-builtin -fvisibility=hidden -fno-stack-protector -DAEMU_DIRECTTRACK \
+  -Wl,--hash-style=sysv -Wl,-z,norelro -Wl,--build-id=none -Wl,--no-undefined -Wl,-soname,audio.primary.default.so \
+  -o "$(dirname "$OUT")/audio.primary.directtrack.so" audio_hal.c -lc
+"$BIN/llvm-strip" "$(dirname "$OUT")/audio.primary.directtrack.so"
 # Android 4.0 (ICS) variant: older audio_hw_device / open_output_stream layout
 "$BIN/clang" --target=armv7a-linux-androideabi21 -march=armv7-a -mthumb -mfloat-abi=softfp -Os -fPIC -shared \
   -nostdlib -ffreestanding -fno-builtin -fvisibility=hidden -fno-stack-protector -DAEMU_ICS \

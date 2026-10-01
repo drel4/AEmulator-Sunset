@@ -86,9 +86,19 @@ struct audio_stream_out {
     long (*write)(struct audio_stream_out *s, const void *buf, size_t bytes);
     int (*get_render_position)(const struct audio_stream_out *s, uint32_t *frames);
 #ifndef AEMU_ICS
+#ifdef AEMU_DIRECTTRACK
+    /* Sony/CAF QCOM_DIRECTTRACK inserts two slots after render position.
+     * Stock ZR libnbaio: write 0x40, next timestamp 0x50, presentation 0x68.
+     * Do not use AEMU_QCOM: its device-level extensions are a separate ABI. */
+    int (*start)(struct audio_stream_out *s);
+    int (*stop)(struct audio_stream_out *s);
+#endif
     int (*get_next_write_timestamp)(const struct audio_stream_out *s, int64_t *ts);
     /* 4.4: офлоад и точное положение — не поддерживаем (NULL, AudioFlinger это проверяет) */
     fnp set_callback, pause, resume, drain, flush, get_presentation_position;
+#ifdef AEMU_DIRECTTRACK
+    fnp get_time_stamp, set_observer, get_buffer_info, is_buffer_available;
+#endif
 #endif
 };
 
@@ -213,6 +223,9 @@ static int o_render_pos(const struct audio_stream_out *st, uint32_t *frames) {
     return 0;
 }
 static int o_next_ts(const struct audio_stream_out *s, int64_t *ts) { (void)s; (void)ts; return -EINVAL; }
+#ifdef AEMU_DIRECTTRACK
+static int o_direct_unsupported(struct audio_stream_out *s) { (void)s; return -ENOSYS; }
+#endif
 
 /* ---------------------------------------------------------------- устройство */
 
@@ -280,6 +293,10 @@ static int d_open_out(struct audio_hw_device *d, int handle, uint32_t devices, i
     o->s.write = o_write;
     o->s.get_render_position = o_render_pos;
 #ifndef AEMU_ICS
+#ifdef AEMU_DIRECTTRACK
+    o->s.start = o_direct_unsupported;
+    o->s.stop = o_direct_unsupported;
+#endif
     o->s.get_next_write_timestamp = o_next_ts;
 #endif
     *out = &o->s;

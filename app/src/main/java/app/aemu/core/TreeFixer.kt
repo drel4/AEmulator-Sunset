@@ -162,6 +162,10 @@ class TreeFixer(
         af.isFile && String(af.readBytes(), Charsets.ISO_8859_1).contains("setFmVolume")
     }.getOrDefault(false)
 
+    private fun directTrackAudio(): Boolean = img.api in 19..20 && runCatching {
+        AudioHalAbi.usesDirectTrackTail(File(root, "system/lib/libnbaio.so").readBytes())
+    }.getOrDefault(false)
+
     /**
      * MediaTek 4.x: libaudioflinger loads the primary HAL from /system/lib/libaudio.primary.default.so
      * (AudioMTKHardware, which needs the MTK sound driver — silent here). Park it as libaudio.mtk.so and put
@@ -296,6 +300,7 @@ class TreeFixer(
                 from != "audio.primary.default.so" || htcLike -> from
                 // 4.0 has its own audio_hw_device layout; Qualcomm CAF builds add set_fm_volume/open_output_session
                 img.api in 14..15 -> if (qcomAudioFlinger()) "audio.primary.ics-qcom.so" else "audio.primary.ics.so"
+                directTrackAudio() -> "audio.primary.directtrack.so"
                 img.api >= 16 -> "audio.primary.aosp.so"
                 else -> from
             }
@@ -310,6 +315,7 @@ class TreeFixer(
                 dst.setReadable(true, false)
                 dst.setExecutable(true, false)
                 copied++
+                if (name == "audio.primary.directtrack.so") log("audio: verified CAF direct-track stream ABI selected")
             }.onFailure { log("${from.removePrefix("@")} missing from engine set: ${it.message}") }
         }
         // вендорские драйверы RenderScript (Adreno, Mali…) лезут в GPU; без них libRS берёт процессорный

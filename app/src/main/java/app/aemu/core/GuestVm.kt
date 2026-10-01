@@ -618,6 +618,19 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         val f = File(paths.root, "system/lib/hw/audio_policy.default.so")
         val aosp = File(paths.root, "system/lib/libaemu_apaosp.so")
         val parked = File(paths.root, "system/.aemu-parked/system#lib#hw#audio_policy.default.so")
+        // The previous stream-tail bug made mediaserver crash and triggered a
+        // policy fallback. ZR's stock policy itself was not the origin of PC=2;
+        // the AOSP fallback has a different service ABI and crashes at 0x98.
+        val directTrack = img.api in 19..20 && runCatching {
+            AudioHalAbi.usesDirectTrackTail(File(paths.root, "system/lib/libnbaio.so").readBytes())
+        }.getOrDefault(false)
+        if (directTrack) {
+            if (parked.isFile) runCatching {
+                parked.copyTo(f, overwrite = true) // retain saved stock binary
+                log("audio: CAF direct-track, restored firmware audio policy")
+            }.onFailure { log("audio: policy restore failed: ${it.message}") }
+            return
+        }
         // MediaTek: AudioPolicyService переделан (другие ops и слоты), политика AOSP в нём падает.
         // Родная политика MTK падала только из-за проверки DRVB, которую теперь снимает TreeFixer
         if (TreeFixer.isMtkAudio(paths.root)) {
