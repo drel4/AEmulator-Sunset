@@ -65,6 +65,9 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     private val vibration = VibrationBridge(ctx, paths, { settings.vibration }, ::log)
+    val cameraSupported get() = engine == Engine.KK && img.api in 14..25 && !recoveryMode
+    private val camera = HostCameraBridge(ctx, paths, { settings.camera && cameraSupported }, ::log)
+    fun cameraVisible(visible: Boolean) { camera.visible(visible) }
     // 2.x пишет в /dev/eac через AudioHardwareGeneric на 44,1 кГц, HAL 4.x движка — на 48 кГц
     val audio = AudioOut(paths, ::log, if (img.api < 14) 44100 else AudioOut.RATE,
         if (TreeFixer.isMtkAudio(paths.root)) "dev/aemu_pcm" else "dev/eac")
@@ -95,6 +98,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
             if (recoveryMode) doRecovery() else doBoot()
         } catch (t: Throwable) {
             vibration.stop()
+            camera.stop()
             failure = t.message ?: t.toString()
             log("✖ boot aborted: $failure")
             setState(State.FAILED)
@@ -218,6 +222,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         overrides["ro.sf.lcd_density"] = s.density.toString()
         overrides["qemu.sf.lcd_density"] = s.density.toString()
         overrides["ro.aemu.host"] = "qemu-user"
+        if (s.camera && cameraSupported) overrides["ro.hardware.camera"] = "aemu_host"
         overrides["dalvik.vm.execution-mode"] = if (s.jit) "int:jit" else "int:fast"
         if (s.lowRam || s.ramMb in 1..768) overrides["ro.config.low_ram"] = "true"
         if (s.ramMb > 0) {
@@ -280,6 +285,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         input.trackballEnabled = settings.trackball
         input.serve()
         vibration.serve()
+        if (s.camera && cameraSupported) camera.serve()
         frames.serve()
         if (s.radio) ril.serve() else log("radio: emulation disabled in settings")
         vold.serve()
@@ -705,6 +711,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         setState(State.STOPPING)
         log("stopping system")
         vibration.stop()
+        camera.stop()
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
         adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); dns.stop(); events.stop(); logd.stop()

@@ -177,4 +177,7 @@
     <string name="update_error">Failed to check for updates: %1$s</string>
     <string name="update_download_error">Download failed: %1$s</string>
     <string name="update_open_github">View on GitHub</string>
+    <string name="vs_camera">Host camera (experimental)</string>
+    <string name="vs_camera_sub">HAL1 ROMs: 640×480 preview and photos, rear/front camera. Requires permission and a full VM restart. Camera closes when AEmulator is backgrounded; reopen the guest camera app. No video recording.</string>
+    <string name="camera_permission_denied">Camera permission denied. The ROM will boot without host-camera access; grant permission in Android app settings and fully restart the VM to retry.</string>
 </resources>

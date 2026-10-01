@@ -176,4 +176,7 @@
     <string name="update_error">Не удалось проверить обновления: %1$s</string>
     <string name="update_download_error">Ошибка загрузки: %1$s</string>
     <string name="update_open_github">Открыть на GitHub</string>
+    <string name="vs_camera">Камера телефона (экспериментально)</string>
+    <string name="vs_camera_sub">Прошивки HAL1: предпросмотр и фото 640×480, задняя и фронтальная камеры. Нужно разрешение и полный перезапуск ВМ. При сворачивании AEmulator камера закрывается; откройте камеру гостя заново. Запись видео пока не поддерживается.</string>
+    <string name="camera_permission_denied">Нет разрешения на камеру. Прошивка запустится без доступа к камере телефона. Выдайте разрешение в настройках приложения Android и полностью перезапустите ВМ.</string>
 </resources>

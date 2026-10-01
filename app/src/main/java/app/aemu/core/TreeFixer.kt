@@ -108,6 +108,7 @@ class TreeFixer(
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        installCameraHal()
         protectOat()
         fixThemeXml()
         parkWhetstone()
@@ -232,6 +233,26 @@ class TreeFixer(
                 log("MIUI: Whetstone package set aside (deadlock with the activity manager)")
             }
         }
+    }
+
+    private fun installCameraHal() {
+        if (!img.settings.camera || engine != Engine.KK || img.api !in 14..25) return
+        // Dedicated loader variant: never overwrite a stock camera.default/vendor HAL.
+        val asset = "engines/common/camera.aemu_host.so"
+        val destination = File(root, "system/lib/hw/camera.aemu_host.so")
+        if (destination.isFile && sameContent(asset, destination)) return
+        val backup = File(root, "system/.aemu-parked/system#lib#hw#camera.aemu_host.so")
+        runCatching {
+            if (destination.exists() || isLink(destination)) {
+                backup.parentFile?.mkdirs()
+                if (!backup.exists() && !destination.renameTo(backup)) error("cannot preserve existing camera HAL")
+                if (isLink(destination)) Os.remove(destination.absolutePath)
+            }
+            destination.parentFile?.mkdirs()
+            ctx.assets.open(asset).use { input -> destination.outputStream().use { input.copyTo(it) } }
+            destination.setReadable(true, false); destination.setExecutable(true, false)
+            log("camera: standard HAL1 host-camera bridge installed")
+        }.onFailure { error("camera HAL installation failed: ${it.message}") }
     }
 
     private fun installEngineFiles() {

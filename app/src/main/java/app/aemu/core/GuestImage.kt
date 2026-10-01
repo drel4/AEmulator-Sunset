@@ -32,6 +32,8 @@ data class VmSettings(
     val trackballStepDp: Int = 18,
     val keepScreenOn: Boolean = true,
     val vibration: Boolean = true,
+    /** Explicit host-camera opt-in; applies at the next full VM boot. */
+    val camera: Boolean = false,
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
@@ -55,6 +57,7 @@ data class VmSettings(
         .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
         .put("vibration", vibration)
+        .put("camera", camera)
         .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
     companion object {
@@ -93,6 +96,7 @@ data class VmSettings(
                 trackballStepDp = o.optInt("trackballStepDp", 18).coerceIn(4, 48),
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 vibration = o.optBoolean("vibration", d.vibration),
+                camera = o.optBoolean("camera", d.camera),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
                 ramMb = o.optInt("ramMb", 0),

@@ -141,6 +141,19 @@ class VmActivity : ComponentActivity() {
     private val logLines = mutableStateListOf<String>()
     private var controlsHeightPx = 0
     private var updateGuestLayout: (() -> Unit)? = null
+    private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (::vm.isInitialized) {
+            vm.log("camera: host permission ${if (granted) "granted" else "denied"}")
+            if (!granted) toast(getString(R.string.camera_permission_denied))
+            bootIfStopped()
+        }
+    }
+
+    private fun bootIfStopped() {
+        if (vm.state == GuestVm.State.STOPPED || vm.state == GuestVm.State.FAILED) {
+            thread(name = "vm-boot") { vm.boot() }
+        }
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun attachBaseContext(base: Context) = super.attachBaseContext(app.aemu.AppPrefs.wrap(base))
@@ -223,9 +236,21 @@ class VmActivity : ComponentActivity() {
         })
 
         registerShell()
-        if (vm.state == GuestVm.State.STOPPED || vm.state == GuestVm.State.FAILED) {
-            thread(name = "vm-boot") { vm.boot() }
-        }
+        if (s.camera && vm.cameraSupported &&
+            checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            (vm.state == GuestVm.State.STOPPED || vm.state == GuestVm.State.FAILED)) {
+            cameraPermission.launch(android.Manifest.permission.CAMERA)
+        } else bootIfStopped()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::vm.isInitialized) vm.cameraVisible(true)
+    }
+
+    override fun onPause() {
+        if (::vm.isInitialized) vm.cameraVisible(false)
+        super.onPause()
     }
 
     /** Отладка: adb shell am broadcast -a app.aemu.SHELL --es cmd "dumpsys power" → run/shell.out */
