@@ -25,6 +25,10 @@ data class VmSettings(
     val lowRam: Boolean = false,
     val showFrame: Boolean = false,
     val showNavBar: Boolean = true,
+    val navButtons: String = NavControls.DEFAULT_BUTTONS,
+    val trackball: Boolean = false,
+    val trackballDpad: Boolean = false,
+    val trackballStepDp: Int = 18,
     val keepScreenOn: Boolean = true,
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
@@ -43,6 +47,9 @@ data class VmSettings(
         .put("gpu", gpu).put("hwui", hwui).put("jit", jit).put("fullDexopt", fullDexopt).put("fbHz", fbHz)
         .put("touchHz", touchHz).put("netProxy", netProxy).put("lowRam", lowRam)
         .put("showFrame", showFrame).put("showNavBar", showNavBar)
+        .put("navButtons", NavControls.encode(NavControls.parse(navButtons)))
+        .put("trackball", trackball).put("trackballDpad", trackballDpad)
+        .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
         .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
@@ -75,6 +82,10 @@ data class VmSettings(
                 lowRam = o.optBoolean("lowRam", d.lowRam),
                 showFrame = o.optBoolean("showFrame", d.showFrame),
                 showNavBar = o.optBoolean("showNavBar", d.showNavBar),
+                navButtons = NavControls.encode(NavControls.parse(o.optString("navButtons", d.navButtons))),
+                trackball = o.optBoolean("trackball", false),
+                trackballDpad = o.optBoolean("trackballDpad", false),
+                trackballStepDp = o.optInt("trackballStepDp", 18).coerceIn(4, 48),
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),

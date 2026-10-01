@@ -92,6 +92,8 @@ extern int *__errno(void);
 
 static int fail(long r) { *__errno() = (int)-r; return -1; }
 
+#include "netmgr.h"
+
 static long raw_execve(const char *path, char *const argv[], char *const envp[]) {
     return sys3(SYS_execve, (long)path, (long)argv, (long)envp);
 }
@@ -210,24 +212,42 @@ static const char *qt_redirect(const char *path, char *buf, int n) {
  * AEmulator Sunset: KitKat's native NetworkStats parser opens the qtaguid
  * table with fopen(), not open().  Calls made inside bionic do not reliably
  * return through our preloaded open() symbol, so redirect fopen explicitly.
- * Resolve the next definition to preserve bionic's FILE implementation and
- * leave every unrelated stream completely unchanged.
+ * Build the stream the same way as bionic fopen(): open the descriptor and
+ * hand it to bionic fdopen().  Do not resolve fopen through libdl here: this
+ * old wrapper used -1 for RTLD_NEXT, which is actually RTLD_DEFAULT in
+ * 32-bit bionic (-2 is RTLD_NEXT).  It found itself and recursed until
+ * processes such as zygote and installd exhausted their stacks.
  */
 typedef void AemuFile;
-extern void *dlsym(void *handle, const char *name);
-#define AEMU_RTLD_NEXT ((void *)-1L)
-static AemuFile *(*g_real_fopen)(const char *, const char *);
+extern AemuFile *fdopen(int fd, const char *mode);
 
 EXPORT AemuFile *fopen(const char *path, const char *mode) {
-    AemuFile *(*real_fopen)(const char *, const char *) = g_real_fopen;
-    if (!real_fopen) {
-        real_fopen = (AemuFile *(*)(const char *, const char *))dlsym(AEMU_RTLD_NEXT, "fopen");
-        g_real_fopen = real_fopen;
+    if (!path || !mode) { fail(-22 /* EINVAL */); return 0; }
+    int flags;
+    if (mode[0] == 'r') flags = 0 /* O_RDONLY */;
+    else if (mode[0] == 'w') flags = 01 /* O_WRONLY */ | 0100 /* O_CREAT */ | 01000 /* O_TRUNC */;
+    else if (mode[0] == 'a') flags = 01 /* O_WRONLY */ | 0100 /* O_CREAT */ | 02000 /* O_APPEND */;
+    else { fail(-22 /* EINVAL */); return 0; }
+    for (const char *p = mode + 1; *p; p++) {
+        if (*p == '+') flags = (flags & ~3) | 02 /* O_RDWR */;
+        else if (*p == 'e') flags |= 02000000 /* O_CLOEXEC */;
+        else if (*p == 'x') flags |= 0200 /* O_EXCL */;
     }
-    if (!real_fopen) return 0;
     char b[128];
-    return real_fopen(qt_redirect(path, b, sizeof(b)), mode);
+    long fd = sys3(SYS_open, (long)qt_redirect(path, b, sizeof(b)), flags | 0400000 /* O_LARGEFILE */, 0666);
+    if (fd < 0) { fail(fd); return 0; }
+    AemuFile *fp = fdopen((int)fd, mode);
+    if (!fp) {
+        int saved = *__errno();
+        sys3(SYS_close, fd, 0, 0);
+        *__errno() = saved;
+        return 0;
+    }
+    if (mode[0] == 'a') sys3(19 /* lseek */, fd, 0, 2 /* SEEK_END */);
+    return fp;
 }
+
+EXPORT AemuFile *fopen64(const char *path, const char *mode) { return fopen(path, mode); }
 
 EXPORT int access(const char *path, int mode) {
     char b[128];
@@ -398,12 +418,16 @@ out:
     return res;
 }
 
+#include "trackball.h"
+
 EXPORT int open(const char *path, int flags, ...) {
     char b[128];
     int mode = 0;
     if (flags & 0100 /* O_CREAT */) {
         __builtin_va_list ap; __builtin_va_start(ap, flags); mode = __builtin_va_arg(ap, int); __builtin_va_end(ap);
     }
+    long tb = trackball_open(path, flags);
+    if (tb != -4096) return tb < 0 ? fail(tb) : (int)tb;
     if (path && (flags & 3) && path[0] == '/' && path[1] == 'p') {
         int fd = oom_open(path);
         if (fd >= 0) return fd;
@@ -419,6 +443,13 @@ EXPORT int open(const char *path, int flags, ...) {
 }
 
 EXPORT int __open_2(const char *path, int flags) { return open(path, flags); }
+EXPORT int open64(const char *path, int flags, ...) {
+    int mode = 0;
+    if (flags & 0100) {
+        __builtin_va_list ap; __builtin_va_start(ap, flags); mode = __builtin_va_arg(ap, int); __builtin_va_end(ap);
+    }
+    return open(path, flags, mode);
+}
 
 /*
  * Пустые «запасные» виртуальные методы VectorImpl/SortedVectorImpl из libutils 4.0–4.3.
@@ -444,6 +475,23 @@ __attribute__((naked, noinline)) static long sys4(long n, long a, long b, long c
         "push {r7}; mov r7, r0; mov r0, r1; mov r1, r2; mov r2, r3; ldr r3, [sp, #4]; svc #0; pop {r7}; bx lr");
 }
 #define SYS_nanosleep 162
+EXPORT int openat(int dirfd, const char *path, int flags, ...) {
+    int mode = 0;
+    if (flags & 0100) {
+        __builtin_va_list ap; __builtin_va_start(ap, flags); mode = __builtin_va_arg(ap, int); __builtin_va_end(ap);
+    }
+    long r = trackball_open(path, flags);
+    if (r == -4096) r = sys4(322 /* openat */, dirfd, (long)path, flags | 0400000, mode);
+    return r < 0 ? fail(r) : (int)r;
+}
+EXPORT int __openat_2(int dirfd, const char *path, int flags) { return openat(dirfd, path, flags); }
+EXPORT int openat64(int dirfd, const char *path, int flags, ...) {
+    int mode = 0;
+    if (flags & 0100) {
+        __builtin_va_list ap; __builtin_va_start(ap, flags); mode = __builtin_va_arg(ap, int); __builtin_va_end(ap);
+    }
+    return openat(dirfd, path, flags, mode);
+}
 #define SYS_rt_sigprocmask 175
 #define SIG_SETMASK 2
 #define EINTR 4
@@ -564,6 +612,7 @@ static int is_player_notify(const unsigned char *td) {
 static int is_waiting(int tid) { for (int k = 0; k < 64; k++) if (waiting_tid[k] == tid) return 1; return 0; }
 
 EXPORT int ioctl(int fd, int req, void *arg) {
+    if (((unsigned)req >> 8 & 255) == 'E' && trackball_fd(fd)) return trackball_ioctl((unsigned)req, arg);
     if ((unsigned)req != BINDER_WRITE_READ_ || !arg) {
         long r = sys3(SYS_ioctl, fd, req, (long)arg);
         return r < 0 ? fail(r) : (int)r;
@@ -713,6 +762,8 @@ EXPORT long readlinkat(int dirfd, const char *path, char *buf, unsigned long siz
 }
 struct sockaddr_un_ { unsigned short family; char path[108]; };
 EXPORT int getsockname(int fd, void *addr, unsigned *len) {
+    int offline = nm_getsockname(fd, addr, len);
+    if (offline != -4096) return offline;
     long r = sys3(SYS_getsockname, fd, (long)addr, (long)len);
     if (r < 0) return fail(r);
     struct sockaddr_un_ *u = (struct sockaddr_un_ *)addr;

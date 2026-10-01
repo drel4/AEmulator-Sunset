@@ -1,0 +1,23 @@
+<resources>
+    <string name="nav_buttons">Navigation buttons</string>
+    <string name="nav_order">Button order (left to right)</string>
+    <string name="nav_earlier">Earlier</string>
+    <string name="nav_later">Later</string>
+    <string name="nav_reset">Reset buttons</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_power">Power</string>
+    <string name="nav_volume_down">Volume down</string>
+    <string name="nav_volume_up">Volume up</string>
+    <string name="nav_up">D-pad up</string>
+    <string name="nav_down">D-pad down</string>
+    <string name="nav_left">D-pad left</string>
+    <string name="nav_right">D-pad right</string>
+    <string name="nav_center">D-pad center</string>
+    <string name="nav_trackball">Trackball</string>
+    <string name="nav_trackball_sub">Swipe the circle above the navigation bar to roll; tap to select.</string>
+    <string name="nav_dpad_mode">Arrow-key mode</string>
+    <string name="nav_dpad_sub">Off: real relative trackball events for guest apps. On: D-pad key presses instead. Does not send both.</string>
+    <string name="nav_sensitivity">Sensitivity: %1$d dp per step (lower is faster)</string>
+    <string name="nav_trackball_waiting">No guest trackball connection yet</string>
+    <string name="nav_trackball_recovery">Recovery: use arrow-key mode</string>
+</resources>

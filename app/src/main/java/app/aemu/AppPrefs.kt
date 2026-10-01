@@ -64,13 +64,19 @@ object AppPrefs {
             jit = p.getBoolean("def_jit", d.jit),
             netProxy = p.getBoolean("def_proxy", d.netProxy),
             showNavBar = p.getBoolean("def_nav", d.showNavBar),
+            navButtons = p.getString("def_nav_buttons", d.navButtons) ?: d.navButtons,
+            trackball = p.getBoolean("def_trackball", false),
+            trackballDpad = p.getBoolean("def_trackball_dpad", false),
+            trackballStepDp = p.getInt("def_trackball_step", 18).coerceIn(4, 48),
             keepScreenOn = p.getBoolean("def_awake", d.keepScreenOn),
         )
     }
 
     fun setDefaults(ctx: Context, s: VmSettings) = sp(ctx).edit()
         .putBoolean("def_gpu", s.gpu).putBoolean("def_jit", s.jit).putBoolean("def_proxy", s.netProxy)
-        .putBoolean("def_nav", s.showNavBar).putBoolean("def_awake", s.keepScreenOn).apply()
+        .putBoolean("def_nav", s.showNavBar).putBoolean("def_awake", s.keepScreenOn)
+        .putString("def_nav_buttons", s.navButtons).putBoolean("def_trackball", s.trackball)
+        .putBoolean("def_trackball_dpad", s.trackballDpad).putInt("def_trackball_step", s.trackballStepDp).apply()
 
     /** Контекст с выбранным языком — для attachBaseContext каждой активности. */
     fun wrap(base: Context): Context {

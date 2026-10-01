@@ -1,12 +1,20 @@
 package app.aemu.ui
 
 import app.aemu.R
+import java.io.File
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.viewinterop.AndroidView
+import app.aemu.core.NavButton
+import app.aemu.core.NavControls
+import app.aemu.core.TrackballMotion
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material.icons.rounded.InstallMobile
@@ -131,6 +139,8 @@ class VmActivity : ComponentActivity() {
     private lateinit var box: FrameLayout
     private var state by mutableStateOf(GuestVm.State.STOPPED)
     private val logLines = mutableStateListOf<String>()
+    private var controlsHeightPx = 0
+    private var updateGuestLayout: (() -> Unit)? = null
 
     @SuppressLint("ClickableViewAccessibility")
     override fun attachBaseContext(base: Context) = super.attachBaseContext(app.aemu.AppPrefs.wrap(base))
@@ -180,23 +190,22 @@ class VmActivity : ComponentActivity() {
         setContentView(root)
 
         // экран гостя вписываем с сохранением пропорций над панелью кнопок
-        val navDp = if (s.showNavBar) 52 else 0
-        root.addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ ->
-            val navPx = (navDp * resources.displayMetrics.density).toInt()
-            val aw = r - l
-            val ah = b - t - navPx
-            if (aw <= 0 || ah <= 0) return@addOnLayoutChangeListener
+        updateGuestLayout = layout@{
+            val aw = root.width
+            val ah = root.height - controlsHeightPx
+            if (aw <= 0 || ah <= 0) return@layout
             val scale = minOf(aw.toFloat() / gw, ah.toFloat() / gh)
             val w = (gw * scale).toInt()
             val h = (gh * scale).toInt()
             val lp = box.layoutParams as FrameLayout.LayoutParams
-            if (lp.width != w || lp.height != h) {
+            if (lp.width != w || lp.height != h || lp.topMargin != (ah - h) / 2) {
                 lp.width = w; lp.height = h
                 lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
                 lp.topMargin = (ah - h) / 2
-                v.post { box.layoutParams = lp }
+                box.layoutParams = lp
             }
         }
+        root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateGuestLayout?.invoke() }
 
         vm.onFrame = { guest.rings++; guest.poke() }
         state = vm.state
@@ -564,75 +573,62 @@ class VmActivity : ComponentActivity() {
                 Dlg.NONE -> {}
             }
 
-            // Modified for AEmulator Sunset on 2026-09-30: flat Android 4/Holo-style navigation.
-            if (vm.settings.showNavBar && !showLog) {
+            val buttons = NavControls.parse(vm.settings.navButtons).filter {
+                it != NavButton.RECENTS || vm.img.api >= 11
+            }
+            val showButtons = vm.settings.showNavBar && buttons.isNotEmpty()
+            if ((showButtons || vm.settings.trackball) && !showLog) {
                 Surface(
                     color = Color(0xF20B0B0B),
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding(),
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                        .onSizeChanged { size ->
+                            controlsHeightPx = size.height
+                            box.post { updateGuestLayout?.invoke() }
+                        },
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth().height(52.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        HoloNavButton(HoloNavIcon.BACK, stringResource(R.string.back)) { vm.input.press(InputService.KEY_BACK) }
-                        HoloNavButton(HoloNavIcon.HOME, stringResource(R.string.home)) { vm.input.press(vm.input.homeCode) }
-                        if (vm.img.api >= 11) {
-                            HoloNavButton(HoloNavIcon.RECENTS, stringResource(R.string.recents)) { vm.input.press(InputService.KEY_APPSELECT) }
+                    Column(Modifier.navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (vm.settings.trackball) {
+                            val dpad = vm.settings.trackballDpad
+                            val motion = remember(vm.settings.trackballStepDp, dpad) { TrackballMotion(vm.settings.trackballStepDp.toFloat()) }
+                            val description = stringResource(R.string.nav_trackball)
+                            AndroidView(
+                                factory = { ctx -> TrackballView(ctx) },
+                                modifier = Modifier.padding(vertical = 8.dp).size(72.dp),
+                                update = { view ->
+                                    view.contentDescription = description
+                                    view.motion = motion; view.dpad = dpad
+                                    view.onRoll = { dx, dy ->
+                                        if (dpad) vm.input.dpadMotion(dx, dy) else vm.input.trackball(dx, dy)
+                                    }
+                                    view.onSelect = {
+                                        if (dpad) vm.input.press(vm.input.centerCode) else vm.input.trackballClick()
+                                    }
+                                },
+                            )
+                            var connected by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) { while (true) { connected = vm.input.trackballConnected > 0; delay(500) } }
+                            if (!dpad && (!connected || vm.recoveryMode)) {
+                                Text(stringResource(if (vm.recoveryMode) R.string.nav_trackball_recovery else R.string.nav_trackball_waiting),
+                                    style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                            }
                         }
-                        HoloNavButton(HoloNavIcon.MENU, stringResource(R.string.menu)) { vm.input.press(InputService.KEY_MENU) }
-                    }
-                }
-            }
-        }
-    }
-
-    private enum class HoloNavIcon { BACK, HOME, RECENTS, MENU }
-
-    @Composable
-    private fun HoloNavButton(icon: HoloNavIcon, label: String, onClick: () -> Unit) {
-        IconButton(onClick = onClick, modifier = Modifier.size(width = 72.dp, height = 48.dp)) {
-            Canvas(Modifier.size(30.dp).semantics { contentDescription = label }) {
-                val sx = size.width / 32f
-                val sy = size.height / 32f
-                fun p(x: Float, y: Float) = Offset(x * sx, y * sy)
-                val stroke = Stroke(width = 2.2f * sx, cap = StrokeCap.Square, join = StrokeJoin.Miter)
-                when (icon) {
-                    HoloNavIcon.BACK -> {
-                        val path = Path().apply {
-                            moveTo(7f * sx, 16f * sy)
-                            lineTo(15f * sx, 8f * sy)
-                            lineTo(15f * sx, 12.5f * sy)
-                            cubicTo(23f * sx, 12.5f * sy, 26f * sx, 17f * sy, 26f * sx, 24f * sy)
-                            cubicTo(23f * sx, 20f * sy, 20f * sx, 19f * sy, 15f * sx, 19f * sy)
-                            lineTo(15f * sx, 24f * sy)
-                            close()
+                        if (showButtons) Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).height(52.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            buttons.forEach { button ->
+                                HoloNavButton(button, stringResource(button.labelRes())) {
+                                    vm.input.press(when (button) {
+                                        NavButton.HOME -> vm.input.homeCode
+                                        NavButton.CENTER -> vm.input.centerCode
+                                        else -> button.scanCode
+                                    })
+                                }
+                            }
                         }
-                        drawPath(path, Color.White)
-                    }
-                    HoloNavIcon.HOME -> {
-                        val path = Path().apply {
-                            moveTo(7f * sx, 16f * sy)
-                            lineTo(16f * sx, 8f * sy)
-                            lineTo(25f * sx, 16f * sy)
-                            lineTo(25f * sx, 25f * sy)
-                            lineTo(19f * sx, 25f * sy)
-                            lineTo(19f * sx, 19f * sy)
-                            lineTo(13f * sx, 19f * sy)
-                            lineTo(13f * sx, 25f * sy)
-                            lineTo(7f * sx, 25f * sy)
-                            close()
-                        }
-                        drawPath(path, Color.White, style = stroke)
-                    }
-                    HoloNavIcon.RECENTS -> {
-                        drawRect(Color.White, topLeft = p(8f, 11f), size = androidx.compose.ui.geometry.Size(13f * sx, 13f * sy), style = stroke)
-                        drawRect(Color.White, topLeft = p(13f, 7f), size = androidx.compose.ui.geometry.Size(12f * sx, 12f * sy), style = stroke)
-                    }
-                    HoloNavIcon.MENU -> {
-                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 9f))
-                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 16f))
-                        drawCircle(Color.White, radius = 1.7f * sx, center = p(16f, 23f))
+                        // Trackball-only layouts still keep it above a navbar-sized safety zone.
+                        if (!showButtons && vm.settings.trackball) Spacer(Modifier.height(52.dp))
                     }
                 }
             }
@@ -701,7 +697,7 @@ class VmActivity : ComponentActivity() {
                     Text(stringResource(R.string.log), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f),
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = { copyLog(list.toList()) }) { Icon(Icons.Rounded.ContentCopy, stringResource(R.string.log_copy)) }
-                    IconButton(onClick = { pendingExport = list.toList(); exportLog.launch("aemu-${vm.img.id}-${if (guestTab) "logcat" else "host"}.log") }) {
+                    IconButton(onClick = { pendingGuestExport = guestTab; exportLog.launch("aemu-${vm.img.id}-${if (guestTab) "logcat" else "host"}.log") }) {
                         Icon(Icons.Rounded.Download, stringResource(R.string.log_export))
                     }
                     FilledTonalIconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.close)) }
@@ -727,12 +723,21 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private var pendingExport: List<String> = emptyList()
+    private var pendingGuestExport = false
     private val exportLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri == null) return@registerForActivityResult
-        val lines = pendingExport
+        val guest = pendingGuestExport
         thread {
-            val ok = runCatching { contentResolver.openOutputStream(uri)!!.bufferedWriter().use { w -> lines.forEach { w.write(it); w.write("\n") } } }.isSuccess
+            val ok = runCatching {
+                contentResolver.openOutputStream(uri)!!.bufferedWriter().use { w ->
+                    if (guest) GuestLog.writeExport(vm.paths.root, vm.paths.bin, w)
+                    else {
+                        val hostLog = File(vm.paths.bin, "aemu.log")
+                        if (hostLog.isFile) hostLog.bufferedReader().use { it.copyTo(w) }
+                        else vm.lines().forEach { w.write(it); w.write("\n") }
+                    }
+                }
+            }.isSuccess
             runOnUiThread { Toast.makeText(this, if (ok) R.string.log_exported else R.string.log_export_failed, Toast.LENGTH_SHORT).show() }
         }
     }

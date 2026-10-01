@@ -60,7 +60,9 @@ class LibraryModel(app: Application) : AndroidViewModel(app) {
                 val raw = imp.import(uri, name)
                 val d = app.aemu.AppPrefs.defaults(ctx)
                 val img = raw.copy(settings = raw.settings.copy(gpu = d.gpu, jit = d.jit, netProxy = d.netProxy,
-                    showNavBar = d.showNavBar, keepScreenOn = d.keepScreenOn))
+                    showNavBar = d.showNavBar, navButtons = d.navButtons, trackball = d.trackball,
+                    trackballDpad = d.trackballDpad, trackballStepDp = d.trackballStepDp,
+                    keepScreenOn = d.keepScreenOn))
                 if (img != raw) ImageStore.save(ctx, img)
                 _import.value = _import.value.copy(active = false, done = img, step = "Done", progress = 1f)
             } catch (t: Throwable) {

@@ -136,6 +136,7 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.vs_controls), style = MaterialTheme.typography.titleMedium)
             Toggle(stringResource(R.string.vs_nav), stringResource(R.string.vs_nav_sub), s.showNavBar) { s = s.copy(showNavBar = it) }
+            NavigationSettings(s) { s = it }
             Toggle(stringResource(R.string.vs_awake), stringResource(R.string.vs_awake_sub), s.keepScreenOn) { s = s.copy(keepScreenOn = it) }
             Toggle(stringResource(R.string.vs_single), stringResource(R.string.vs_single_sub), s.mtMode == 4) { s = s.copy(mtMode = if (it) 4 else 0) }
 

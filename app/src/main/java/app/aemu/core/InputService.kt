@@ -19,6 +19,9 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
     private class Client(val out: OutputStream, val pid: Int)
 
     private val clients = CopyOnWriteArrayList<Client>()
+    private val trackballClients = CopyOnWriteArrayList<Client>()
+    @Volatile var trackballEnabled = false
+    val trackballConnected: Int get() = trackballClients.size
     @Volatile var rateHz = 60
     @Volatile var mtMode = 0
     @Volatile var sent = 0L
@@ -51,10 +54,60 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
         clients.remove(me)
     }
 
-    fun serve() = server.start(log)
+    private val trackballServer = UnixServer(java.io.File(paths.root, "dev/aemu_trackball"), "trackball") { c ->
+        val me = Client(c.outputStream, runCatching { c.peerCredentials.pid }.getOrDefault(-1))
+        trackballClients.add(me)
+        log("trackball: guest connected (pid ${me.pid})")
+        try {
+            val buf = ByteArray(32)
+            while (c.inputStream.read(buf) >= 0) { /* keep evdev stream alive */ }
+        } finally { trackballClients.remove(me) }
+    }
+
+    fun serve(): Boolean {
+        val ok = server.start(log)
+        if (trackballEnabled) {
+            // An emulator-owned node: no vendor library or original image is patched.
+            java.io.File(paths.root, "dev/input/aemu-trackball").apply { parentFile?.mkdirs(); if (!exists()) createNewFile() }
+            // Android 3+ otherwise treats REL_X/Y + BTN_MOUSE as a mouse. Device-owned
+            // configuration selects SOURCE_TRACKBALL without patching any stock file.
+            java.io.File(paths.root, "system/usr/idc/AEmulator_Trackball.idc").apply {
+                parentFile?.mkdirs()
+                if (!exists()) writeText("device.internal = 1\ncursor.mode = navigation\ncursor.orientationAware = 1\n")
+            }
+            trackballServer.start(log)
+        }
+        return ok
+    }
+
+    @Synchronized
+    fun trackball(dx: Int = 0, dy: Int = 0, button: Boolean? = null) {
+        val bytes = TrackballEvents.frame(dx, dy, button, System.nanoTime())
+        if (bytes.isEmpty()) return
+        val dead = ArrayList<Client>()
+        for (c in trackballClients) {
+            try { c.out.write(bytes); c.out.flush() } catch (_: Exception) { dead.add(c) }
+        }
+        trackballClients.removeAll(dead.toSet())
+    }
+
+    fun trackballClick() {
+        // A single ordered gesture, never interleaved with another key-press thread.
+        synchronized(this) { trackball(button = true); trackball(button = false) }
+    }
+
+    @Synchronized
+    fun dpadMotion(dx: Int, dy: Int) {
+        fun pulse(code: Int) { key(code, true); key(code, false) }
+        repeat(kotlin.math.abs(dx).coerceAtMost(32)) { pulse(if (dx < 0) 105 else 106) }
+        repeat(kotlin.math.abs(dy).coerceAtMost(32)) { pulse(if (dy < 0) 103 else 108) }
+    }
 
     fun stop() {
         server.stop()
+        trackballServer.stop()
+        trackballClients.forEach { runCatching { it.out.close() } }
+        trackballClients.clear()
         clients.forEach { runCatching { it.out.close() } }
         clients.clear()
     }
@@ -144,16 +197,24 @@ class InputService(private val paths: VmPaths, private val log: (String) -> Unit
      * строки), а HOME — 172; в раскладках 2.x бывает наоборот. Берём из раскладки самой прошивки.
      */
     @Volatile var homeCode = KEY_HOME
+    @Volatile var centerCode = NavButton.CENTER.scanCode
 
     fun detectHome(root: java.io.File) {
         val dir = java.io.File(root, "system/usr/keylayout")
+        var foundHome = false
+        var foundCenter = false
         for (n in listOf("Generic.kl", "qwerty.kl")) {
             val codes = runCatching { java.io.File(dir, n).readLines() }.getOrNull() ?: continue
             val home = codes.firstNotNullOfOrNull { l ->
                 val p = l.trim().split(Regex("\\s+"))
                 if (p.size >= 3 && p[0] == "key" && p[2] == "HOME") p[1].toIntOrNull() else null
             }
-            if (home != null) { homeCode = home; return }
+            if (home != null && !foundHome) { homeCode = home; foundHome = true }
+            val center = codes.firstNotNullOfOrNull { l ->
+                val p = l.trim().split(Regex("\\s+"))
+                if (p.size >= 3 && p[0] == "key" && p[2] == "DPAD_CENTER") p[1].toIntOrNull() else null
+            }
+            if (center != null && !foundCenter) { centerCode = center; foundCenter = true }
         }
     }
 

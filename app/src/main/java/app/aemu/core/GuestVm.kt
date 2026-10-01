@@ -34,7 +34,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     @Volatile var bootAt = 0L
         private set
     @Volatile var bootDoneAt = 0L
-    /** the system reached the home screen at least once in this run: later crashes restart it instead of failing */
+    /** Guest reported boot completion; this does not prove that its launcher rendered. */
     @Volatile private var everBooted = false
     private var zygoteRestarts = 0
         private set
@@ -118,6 +118,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         RecoveryImage.prepare(paths, sd)
         input.rateHz = settings.touchHz
         input.mtMode = settings.mtMode
+        input.trackballEnabled = false // recovery does not load the Android evdev shim
         input.serve()
         // recovery's minui opens /dev/input/event0 through openat(), which qemu does not emulate:
         // a FIFO there gets the raw input_event stream straight from InputService
@@ -273,6 +274,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         input.rateHz = s.touchHz
         input.mtMode = s.mtMode
         input.detectHome(paths.root)
+        input.trackballEnabled = settings.trackball
         input.serve()
         frames.serve()
         if (s.radio) ril.serve() else log("radio: emulation disabled in settings")
@@ -491,7 +493,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
             bootDoneAt = System.currentTimeMillis()
             everBooted = true
-            log("★ system booted in ${(bootDoneAt - bootAt) / 1000} s")
+            log("★ guest reported boot completion in ${(bootDoneAt - bootAt) / 1000} s (UI not verified)")
             setState(State.RUNNING)
             Thread { afterBoot() }.start()
         }
@@ -564,23 +566,24 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                 Thread.sleep(3000)
                 if (power.length() > 0) { val v = runCatching { power.readText().trim() }.getOrDefault("reboot"); power.writeText(""); powerRequest(v) }
                 if (img.api >= 21) runCatching { dns.ensure() }
-                val dead = synchronized(procs) { procs.filter { !it.value.isAlive }.keys.toList() }
-                for (name in dead) {
+                val dead = synchronized(procs) { procs.filter { !it.value.isAlive }.toList() }
+                for ((name, p) in dead) {
                     if (stopping) break
-                    val p = synchronized(procs) { procs[name] } ?: continue
+                    // Consume this exact dead instance before spawning a replacement. Removing
+                    // by name after restartZygote() erased the newly started zygote from supervision.
+                    if (!synchronized(procs) { procs.remove(name, p) }) continue
                     val code = runCatching { p.exitValue() }.getOrDefault(-1)
                     if (name == "zygote") {
-                        if (state != State.FAILED && bootDoneAt == 0L && !(everBooted && zygoteRestarts < 6)) {
-                            failure = "zygote exited (code $code)" + if (code == 137) " — system killed by low memory" else ""
+                        if (state != State.FAILED && (!everBooted || zygoteRestarts >= 6)) {
+                            failure = "zygote exited (code $code)" + if (code == 137) " — SIGKILL (cause not established)" else ""
                             if (code == 137 && guestLogHas("No original dex files found"))
                                 failure = "system_server cannot start: the precompiled code of the framework (system/framework/oat) is missing from this container — import the firmware again"
                             log("✖ $failure"); setState(State.FAILED)
-                        } else if (bootDoneAt > 0 || everBooted) {
+                        } else if (state != State.FAILED && everBooted) {
                             zygoteRestarts++
                             log("✖ zygote crashed (code $code), restarting system ($zygoteRestarts)")
                             restartZygote()
                         }
-                        synchronized(procs) { procs.remove(name) }
                         continue
                     }
                     val svc = img.services.firstOrNull { it.name == name }
@@ -590,7 +593,6 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (name == "surfaceflinger" && svc != null && bootDoneAt > 0 && n < 12) {
                         restarts[name] = n + 1
                         log("✖ surfaceflinger crashed (code $code), restarting it and the system (${n + 1}/12)")
-                        synchronized(procs) { procs.remove(name) }
                         runCatching { startService(svc) }
                         synchronized(procs) { procs["zygote"] }?.let { z -> pidOf(z)?.let { runCatching { AProcess.sendSignal(it, 9) } } }
                         continue
@@ -600,9 +602,8 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
                     if (svc != null && (svc.restart || name in ALWAYS_RESTART) && code != 137 && code != 143 && n < 12) {
                         restarts[name] = n + 1
                         log("service $name crashed (code $code), restarting (${n + 1}/12)")
-                        synchronized(procs) { procs.remove(name) }
                         runCatching { startService(svc) }
-                    } else synchronized(procs) { procs.remove(name) }
+                    }
                 }
             }
         }, "vm-watchdog").apply { isDaemon = true; start() }
