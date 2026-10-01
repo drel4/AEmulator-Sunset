@@ -1,4 +1,6 @@
 <resources>
+    <string name="vs_vibration">Guest vibration</string>
+    <string name="vs_vibration_sub">Forward legacy guest vibration to the phone. Applies on next boot; each pulse is capped at 60 seconds.</string>
     <string name="nav_buttons">Navigation buttons</string>
     <string name="nav_order">Button order (left to right)</string>
     <string name="nav_earlier">Earlier</string>

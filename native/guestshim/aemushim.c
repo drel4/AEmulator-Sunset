@@ -475,6 +475,7 @@ __attribute__((naked, noinline)) static long sys4(long n, long a, long b, long c
         "push {r7}; mov r7, r0; mov r0, r1; mov r1, r2; mov r2, r3; ldr r3, [sp, #4]; svc #0; pop {r7}; bx lr");
 }
 #define SYS_nanosleep 162
+#include "vibration.h"
 EXPORT int openat(int dirfd, const char *path, int flags, ...) {
     int mode = 0;
     if (flags & 0100) {

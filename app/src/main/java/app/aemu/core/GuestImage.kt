@@ -30,6 +30,7 @@ data class VmSettings(
     val trackballDpad: Boolean = false,
     val trackballStepDp: Int = 18,
     val keepScreenOn: Boolean = true,
+    val vibration: Boolean = true,
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
@@ -51,6 +52,7 @@ data class VmSettings(
         .put("trackball", trackball).put("trackballDpad", trackballDpad)
         .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
+        .put("vibration", vibration)
         .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
     companion object {
@@ -87,6 +89,7 @@ data class VmSettings(
                 trackballDpad = o.optBoolean("trackballDpad", false),
                 trackballStepDp = o.optInt("trackballStepDp", 18).coerceIn(4, 48),
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
+                vibration = o.optBoolean("vibration", d.vibration),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
                 ramMb = o.optInt("ramMb", 0),
