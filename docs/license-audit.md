@@ -1,13 +1,13 @@
 # Source and licensing audit — 2026-10-02
 
-Scope: the Sunset checkout through sunset.17, its build scripts and release
+Scope: the Sunset checkout through sunset.18, its build scripts and release
 packaging. This is a technical inventory, not a legal compliance certification.
 
 ## Checked and improved
 
 - Root `LICENSE` contains GNU GPL version 3. Upstream credits/history remain.
 - `NOTICE.md` now prominently identifies the modified work, dates and features.
-- New held-key sources and modified navbar/activity files carry dated notices.
+- New held-key/live-status sources and modified navbar/activity files carry dated notices.
 - APK builds package `LICENSE`, `NOTICE.md`, this audit and build instructions
   under `assets/legal/`; Settings exposes the license and modification notices.
 - Exact application revisions are identified by release tags. Release notes

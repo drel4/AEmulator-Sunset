@@ -17,6 +17,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import app.aemu.core.NavButton
 import app.aemu.core.NavControls
 import app.aemu.core.HeldNavKeys
+import app.aemu.core.VmUiPolicy
 import app.aemu.core.TrackballMotion
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.rounded.BatteryStd
@@ -236,8 +237,11 @@ class VmActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (vm.settings.hideMenuButton) menuOpen = true
-                else vm.input.press(InputService.KEY_BACK)
+                when (VmUiPolicy.back(showLog, vm.settings.hideMenuButton)) {
+                    VmUiPolicy.BackAction.CLOSE_LOG -> { showLog = false; menuOpen = false }
+                    VmUiPolicy.BackAction.OPEN_MENU -> menuOpen = true
+                    VmUiPolicy.BackAction.GUEST_BACK -> vm.input.press(InputService.KEY_BACK)
+                }
             }
         })
 
@@ -338,6 +342,7 @@ class VmActivity : ComponentActivity() {
     private val uiPrefs by lazy { getSharedPreferences("vm_ui", MODE_PRIVATE) }
     private var menuOffset by mutableStateOf(Offset.Zero)
     private var menuOpen by mutableStateOf(false)
+    private var showLog by mutableStateOf(false)
     private fun loadMenuOffset() { menuOffset = Offset(uiPrefs.getFloat("menu_x", 0f), uiPrefs.getFloat("menu_y", 0f)) }
     private fun saveMenuOffset() { uiPrefs.edit().putFloat("menu_x", menuOffset.x).putFloat("menu_y", menuOffset.y).apply() }
 
@@ -513,7 +518,6 @@ class VmActivity : ComponentActivity() {
 
     @Composable
     private fun Overlay() {
-        var showLog by remember { mutableStateOf(false) }
         var menu by ::menuOpen
         var dialog by remember { mutableStateOf(Dlg.NONE) }
         val running = state == GuestVm.State.RUNNING
@@ -561,13 +565,6 @@ class VmActivity : ComponentActivity() {
                     Spacer(Modifier.size(1.dp))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.m_minimize)) }, leadingIcon = { Icon(Icons.Rounded.Minimize, null) },
-                        onClick = {
-                            menu = false
-                            heldNavKeys.releaseAll()
-                            startActivity(Intent(this@VmActivity, MainActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                        })
                     DropdownMenuItem(text = { Text(stringResource(R.string.log)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) },
                         onClick = { menu = false; showLog = true })
                     HorizontalDivider()
@@ -602,6 +599,13 @@ class VmActivity : ComponentActivity() {
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_settings)) }, leadingIcon = { Icon(Icons.Rounded.Settings, null) },
                         enabled = running, onClick = { menu = false; guestAsync("am start -a android.settings.SETTINGS") })
                     HorizontalDivider()
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_minimize)) }, leadingIcon = { Icon(Icons.Rounded.Minimize, null) },
+                        onClick = {
+                            menu = false
+                            heldNavKeys.releaseAll()
+                            startActivity(Intent(this@VmActivity, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                        })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_reboot)) }, leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
                         onClick = { menu = false; rebootVm() })
                     DropdownMenuItem(text = { Text(stringResource(if (vm.recoveryMode) R.string.m_reboot_system else R.string.m_reboot_recovery)) },

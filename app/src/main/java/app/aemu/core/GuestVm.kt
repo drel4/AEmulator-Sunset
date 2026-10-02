@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset through 2026-10-02: compatibility bridges and
+ * live library status. GPL-3.0; upstream attribution retained in NOTICE.md. */
 package app.aemu.core
 
 import android.content.Context
@@ -58,7 +60,13 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     fun lines(): List<String> = lines.toList()
     fun onLog(l: (String) -> Unit) { listeners.add(l) }
     fun onState(l: (State) -> Unit) { stateListeners.add(l) }
-    private fun setState(s: State) { state = s; stateListeners.forEach { runCatching { it(s) } } }
+    private val liveStatus = LiveVmStatus(ctx.filesDir)
+    private fun setState(s: State) {
+        state = s
+        runCatching { liveStatus.publish(img.id, VmUiPolicy.active(s.name)) }
+            .onFailure { log("library status: ${it.message}") }
+        stateListeners.forEach { runCatching { it(s) } }
+    }
 
     val props = PropService(paths, ::log)
     /** ADB over the LAN, switched on from the VM menu */

@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset through 2026-10-02: catalog, experimental
+ * unlock and Open action for active guests. GPL-3.0; see NOTICE.md. */
 package app.aemu.ui
 
 import android.Manifest
@@ -69,6 +71,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import app.aemu.core.LiveVmStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -139,6 +148,17 @@ fun Library(model: LibraryModel) {
     val images by model.images.collectAsState()
     val imp by model.import.collectAsState()
     val ctx = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var activeVmId by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(lifecycleOwner) {
+        val status = LiveVmStatus(ctx.filesDir)
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                activeVmId = withContext(Dispatchers.IO) { status.activeId() }
+                delay(1000)
+            }
+        }
+    }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { model.import(it) } }
     var settingsFor by remember { mutableStateOf<GuestImage?>(null) }
     var deleteFor by remember { mutableStateOf<GuestImage?>(null) }
@@ -238,6 +258,7 @@ fun Library(model: LibraryModel) {
                             onRename = { renameFor = img },
                             onDelete = { deleteFor = img },
                             baseName = images.firstOrNull { it.id == img.baseId }?.name,
+                            active = activeVmId == img.id,
                         )
                     }
                 }
@@ -456,7 +477,7 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
 }
 
 @Composable
-private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit, baseName: String? = null) {
+private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit, baseName: String? = null, active: Boolean = false) {
     val ctx = LocalContext.current
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(20.dp)) {
@@ -489,7 +510,7 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
                 Button(onClick = onStart, contentPadding = ButtonDefaults.ButtonWithIconContentPadding, modifier = Modifier.height(48.dp)) {
                     Icon(Icons.Rounded.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.start))
+                    Text(stringResource(if (active) R.string.open_vm else R.string.start))
                 }
                 Spacer(Modifier.weight(1f))
                 FilledTonalIconButton(onClick = onSettings) { Icon(Icons.Rounded.Tune, stringResource(R.string.settings)) }
