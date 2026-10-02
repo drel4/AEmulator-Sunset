@@ -217,9 +217,6 @@
     <string name="as_license_notices">License and modification notices</string>
     <string name="vm_storage_busy">VM storage is busy. Wait for data reset to finish, then try again.</string>
     <string name="lpm_start">Start in charging-only mode</string>
-    <string name="charging_files_install">Repair charging files from this ROM’s boot.img</string>
-    <string name="charging_files_done">Charging files checked and missing files installed. Hold Start after shutdown to enter charging-only mode.</string>
-    <string name="charging_files_failed">Could not install charging files. Shut down all VMs and select this ROM’s original boot.img (maximum 64 MB).</string>
     <string name="vm_reset_data">Reset VM data</string>
     <string name="vm_reset_warning">Shut down the VM first. Permanently delete guest apps, accounts, settings and internal data (/data and /cache)? No backup is created. Firmware, VM settings, recovery and the shared SD-card folder are kept.</string>
     <string name="vm_reset_done">VM data permanently reset. No backup was created.</string>

@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.23.** This work has been
+**Modification notice updated 2026-10-02 for sunset.24.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -87,6 +87,12 @@ Further modifications dated 2026-10-02 (sunset.23):
 - removed the library LPM hint/toast and handled fresh intents to existing VMs;
 - changed confirmed data reset to permanent no-backup deletion with link-safe
   traversal and stale inode ownership pruning; updated English/Russian messages.
+
+Further modifications dated 2026-10-02 (sunset.24):
+
+- removed the LPM-only charging boot-image repair button, picker, and its
+  English/Russian UI messages; charging-only boot and normal recovery controls
+  remain unchanged.
 
 Implementation details and release-specific testing limits are recorded in
 `docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.
