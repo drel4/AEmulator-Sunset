@@ -210,4 +210,6 @@
     <string name="browser_unavailable">No browser is available to open this link.</string>
     <string name="experimental_activated">Experimental features activated!</string>
     <string name="experimental_locked">Experimental camera settings are locked. Tap the AEmulator Sunset title 42 times to unlock them.</string>
+    <string name="m_minimize">Minimize</string>
+    <string name="as_license_notices">License and modification notices</string>
 </resources>

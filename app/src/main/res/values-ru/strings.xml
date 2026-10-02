@@ -211,4 +211,6 @@
     <string name="browser_unavailable">Нет браузера для открытия этой ссылки.</string>
     <string name="experimental_activated">Экспериментальные функции активированы!</string>
     <string name="experimental_locked">Экспериментальные настройки камеры скрыты. Нажмите на заголовок AEmulator Sunset 42 раза, чтобы открыть их.</string>
+    <string name="m_minimize">Свернуть</string>
+    <string name="as_license_notices">Лицензия и сведения об изменениях</string>
 </resources>

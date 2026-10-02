@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset through 2026-10-02: fork links, catalog,
+ * experimental unlock and local license/notices. GPL-3.0; see NOTICE.md. */
 package app.aemu.ui
 
 import android.content.Context
@@ -10,6 +12,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -111,6 +117,7 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
     val ctx = LocalContext.current
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var langDialog by remember { mutableStateOf(false) }
+    var legalDialog by remember { mutableStateOf(false) }
     var defaults by remember { mutableStateOf(AppPrefs.defaults(ctx)) }
     var theme by remember { mutableStateOf(AppPrefs.theme(ctx)) }
     var dynamic by remember { mutableStateOf(AppPrefs.dynamicColor(ctx)) }
@@ -258,9 +265,27 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
                     Row_(Icons.Rounded.History, stringResource(R.string.as_orig), "t.me/istratiit_ech") { open(Links.ORIGINAL) }
                     Row_(Icons.Rounded.Code, stringResource(R.string.as_github), "github.com/drel4/AEmulator-Sunset") { open(Links.GITHUB) }
                     Row_(Icons.Rounded.History, "Upstream AEmulator", "github.com/uxazu/AEmulator") { open(Links.UPSTREAM) }
+                    Row_(Icons.Rounded.Code, stringResource(R.string.as_license_notices), "GPL-3.0") { legalDialog = true }
                 }
             }
         }
+    }
+
+    if (legalDialog) {
+        val notices = remember {
+            listOf("NOTICE.md", "license-audit.md", "LICENSE").joinToString("\n\n") { file ->
+                ctx.assets.open("legal/$file").bufferedReader().use { it.readText() }
+            }
+        }
+        AlertDialog(onDismissRequest = { legalDialog = false },
+            title = { Text(stringResource(R.string.as_license_notices)) },
+            text = {
+                SelectionContainer {
+                    Text(notices, style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()))
+                }
+            },
+            confirmButton = { TextButton(onClick = { legalDialog = false }) { Text(stringResource(R.string.cancel)) } })
     }
 
     if (langDialog) {

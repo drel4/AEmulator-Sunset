@@ -10,6 +10,11 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
+**Modification notice updated 2026-10-02 for sunset.17.** This work has been
+modified by drel4 and contributors to AEmulator Sunset. Original copyright,
+license notices, credits and Git history are retained; no upstream authorship
+is claimed for Sunset's additions.
+
 Changes made by drel4 and contributors to this fork are recorded in Git. The
 initial AEmulator Sunset release was prepared on 2026-09-30 and includes:
 
@@ -21,6 +26,27 @@ initial AEmulator Sunset release was prepared on 2026-09-30 and includes:
 - an explicit focus on Sony Xperia ZR and international Samsung Galaxy S5 ROM
   compatibility.
 
+Further modifications dated 2026-10-01 (sunset.6 through sunset.16):
+
+- Sony/legacy Android service, network and setup-flow compatibility changes;
+- configurable Holo navigation and native relative-motion trackball input;
+- Sony KitKat audio ABI support and a guest-to-host vibration bridge;
+- hidden-menu/back-gesture option and Russian translations;
+- a Keyguard scheduling trial in sunset.10, rolled back in sunset.11;
+- an experimental host camera HAL1 bridge and reversible legacy HAL discovery;
+- opt-in, per-ROM setup skipping with reversible package enabled-state records;
+- a configurable ROM catalog, compact section index and browser download links;
+- persistent 42-tap experimental-feature unlocking.
+
+Modifications dated 2026-10-02 (sunset.17):
+
+- navbar key-down/key-up holding, including guest Home long-press actions;
+- a Minimize menu action returning to the library without stopping the guest;
+- updated modification notices, packaged license/notices and build/source audit.
+
+Implementation details and release-specific testing limits are recorded in
+`docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.
+
 This notice identifies a modified version. It does not imply endorsement by
 the upstream maintainers, Sony, Samsung, Google, or any firmware vendor.
 
@@ -31,4 +57,14 @@ used to build each APK, is published at:
 
 <https://github.com/drel4/AEmulator-Sunset>
 
-Release APKs are distributed under GPL-3.0 with that corresponding source.
+The Sunset application and fork-owned modifications are released under GPL-3.0.
+This does not relicense independently licensed dependencies or user firmware.
+See [build/source instructions](docs/build-source.md) and the
+[source/licensing audit](docs/license-audit.md).
+
+**Unresolved source-provenance gap:** this checkout contains inherited prebuilt
+engine binaries for which matching source, patches and build instructions have
+not been located or verified. The tagged checkout can rebuild the APK using
+those prebuilts, but is not established as complete Corresponding Source for
+every bundled component. This notice is not a claim of full GPL compliance;
+publishing notices or hashes does not remedy missing required source.

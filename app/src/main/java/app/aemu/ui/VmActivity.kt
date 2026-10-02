@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset through 2026-10-02: guest controls and menu,
+ * compatibility and camera integration. GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.ui
 
 import app.aemu.R
@@ -14,6 +16,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.viewinterop.AndroidView
 import app.aemu.core.NavButton
 import app.aemu.core.NavControls
+import app.aemu.core.HeldNavKeys
 import app.aemu.core.TrackballMotion
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.rounded.BatteryStd
@@ -85,6 +88,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Minimize
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.VolumeDown
@@ -104,6 +108,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -134,6 +139,7 @@ object VmHost {
 
 class VmActivity : ComponentActivity() {
     private lateinit var vm: GuestVm
+    private val heldNavKeys = HeldNavKeys { code, down -> if (::vm.isInitialized) vm.input.key(code, down) }
     private lateinit var surfaceView: SurfaceView
     private lateinit var guest: GuestScreen
     private lateinit var box: FrameLayout
@@ -249,6 +255,7 @@ class VmActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        heldNavKeys.releaseAll()
         if (::vm.isInitialized) vm.cameraVisible(false)
         super.onPause()
     }
@@ -308,6 +315,7 @@ class VmActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        heldNavKeys.releaseAll()
         if (::guest.isInitialized) guest.stop()
         shellRx?.let { runCatching { unregisterReceiver(it) } }
         super.onDestroy()
@@ -553,6 +561,13 @@ class VmActivity : ComponentActivity() {
                     Spacer(Modifier.size(1.dp))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_minimize)) }, leadingIcon = { Icon(Icons.Rounded.Minimize, null) },
+                        onClick = {
+                            menu = false
+                            heldNavKeys.releaseAll()
+                            startActivity(Intent(this@VmActivity, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                        })
                     DropdownMenuItem(text = { Text(stringResource(R.string.log)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) },
                         onClick = { menu = false; showLog = true })
                     HorizontalDivider()
@@ -652,12 +667,15 @@ class VmActivity : ComponentActivity() {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             buttons.forEach { button ->
-                                HoloNavButton(button, stringResource(button.labelRes())) {
-                                    vm.input.press(when (button) {
-                                        NavButton.HOME -> vm.input.homeCode
-                                        NavButton.CENTER -> vm.input.centerCode
-                                        else -> button.scanCode
-                                    })
+                                val code = when (button) {
+                                    NavButton.HOME -> vm.input.homeCode
+                                    NavButton.CENTER -> vm.input.centerCode
+                                    else -> button.scanCode
+                                }
+                                key(button, code) {
+                                    HoloNavButton(button, stringResource(button.labelRes()),
+                                        onClick = { vm.input.press(code) },
+                                        onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) })
                                 }
                             }
                         }

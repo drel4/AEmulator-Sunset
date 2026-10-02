@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset through 2026-10-02: Holo controls, trackball and
+ * held guest keys. GPL-3.0; original attribution is preserved in NOTICE.md. */
 package app.aemu.ui
 
 import android.content.Context
@@ -8,7 +10,22 @@ import android.view.View
 import android.view.ViewConfiguration
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,12 +41,43 @@ import app.aemu.core.NavButton
 import app.aemu.core.TrackballMotion
 
 @Composable
-internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit) {
-    IconButton(onClick, Modifier.size(48.dp).semantics { contentDescription = label }) {
+internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit, onDown: () -> Unit, onUp: () -> Unit) {
+    val down by rememberUpdatedState(onDown)
+    val up by rememberUpdatedState(onUp)
+    var pressed by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) { onDispose { up() } }
+    Box(Modifier.size(48.dp).semantics {
+        contentDescription = label
+        role = Role.Button
+        // Accessibility activation remains one tap, without duplicating physical touches.
+        onClick { onClick(); true }
+    }.onKeyEvent { event ->
+        val native = event.nativeKeyEvent
+        if (native.keyCode !in listOf(android.view.KeyEvent.KEYCODE_ENTER,
+                android.view.KeyEvent.KEYCODE_NUMPAD_ENTER, android.view.KeyEvent.KEYCODE_SPACE,
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER)) false
+        else when (native.action) {
+            android.view.KeyEvent.ACTION_DOWN -> {
+                if (native.repeatCount == 0) { pressed = true; down() }
+                true
+            }
+            android.view.KeyEvent.ACTION_UP -> { pressed = false; up(); true }
+            else -> false
+        }
+    }.onFocusChanged { if (!it.hasFocus && pressed) { pressed = false; up() } }
+        .focusable().pointerInput(button) {
+        detectTapGestures(onPress = {
+            val release = up
+            pressed = true
+            down()
+            try { tryAwaitRelease() } finally { pressed = false; release() }
+        })
+    }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(30.dp)) {
             val s = size.width / 32f
             fun p(x: Float, y: Float) = Offset(x * s, y * s)
             val stroke = Stroke(2f * s, cap = StrokeCap.Square, join = StrokeJoin.Miter)
+            if (pressed) drawCircle(Color.White.copy(alpha = 0.15f), size.width / 2f)
             fun line(x: Float, y: Float, x1: Float, y1: Float) = drawLine(Color.White, p(x, y), p(x1, y1), 2f * s)
             fun outline(vararg points: Pair<Float, Float>, close: Boolean = false) {
                 val path = Path().apply {

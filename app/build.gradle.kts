@@ -6,6 +6,14 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Sunset modification, 2026-10-02: ship the actual license and dated notices.
+val legalAssetsDir = layout.buildDirectory.dir("generated/legalAssets")
+val copyLegalNotices = tasks.register<Copy>("copyLegalNotices") {
+    from(rootProject.file("LICENSE"), rootProject.file("NOTICE.md"),
+        rootProject.file("docs/build-source.md"), rootProject.file("docs/license-audit.md"))
+    into(legalAssetsDir.map { it.dir("legal") })
+}
+
 // подпись релиза: keystore.properties в корне (в git не попадает, см. .gitignore);
 // без него релиз собирается неподписанным
 val signProps = Properties().apply {
@@ -15,6 +23,7 @@ val canSign = signProps.getProperty("storeFile")?.let { rootProject.file(it).isF
 
 android {
     namespace = "app.aemu"
+    sourceSets.getByName("main").assets.srcDir(legalAssetsDir)
     compileSdk = 36
 
     defaultConfig {
@@ -22,8 +31,8 @@ android {
         // 28: гостевые бинарники запускаются из каталога данных приложения (W^X для targetSdk>=29)
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
-        versionCode = 18
-        versionName = "0.0.0.3-sunset.16"
+        versionCode = 19
+        versionName = "0.0.0.3-sunset.17"
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
@@ -102,6 +111,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
 }
+
+tasks.named("preBuild") { dependsOn(copyLegalNotices) }
 
 tasks.register<Copy>("copyReleaseApks") {
     dependsOn("assembleStandardRelease", "assembleCloneRelease")
