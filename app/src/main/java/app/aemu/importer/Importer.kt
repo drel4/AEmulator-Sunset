@@ -98,6 +98,7 @@ class Importer(
         val head = ByteBuffer.allocate(1100)
         src.read(0, head); head.flip()
         val h = ByteArray(head.remaining()).also { head.get(it) }
+        if (h.size < 2) throw IOException("empty or truncated firmware file")
         when {
             h.size > 4 && h[0] == 'P'.code.toByte() && h[1] == 'K'.code.toByte() && h[2].toInt() == 3 && h[3].toInt() == 4 -> {
                 if (ch != null) importZip(ch, name, depth) else throw IOException("zip without random access")
@@ -107,12 +108,13 @@ class Importer(
             }
             SparseSource.probe(src) -> importImage(SparseSource(listOf(src)), "system")
             Ext4Reader.probe(src) -> importImage(src, "system")
+            Yaffs2Reader.probe(src) -> importImage(src, "system")
             isTar(h) || name.endsWith(".tar", true) || name.endsWith(".md5", true) || name.endsWith(".win", true) ->
                 importTarStream(streamOf(src), name, depth)
             h[0] == 0x1f.toByte() && h[1] == 0x8b.toByte() -> importTarStream(GZIPInputStream(streamOf(src), 1 shl 16), name, depth)
             h[0] == 0xfd.toByte() && h[1] == '7'.code.toByte() -> importTarStream(XZInputStream(streamOf(src)), name, depth)
             h[0] == 'B'.code.toByte() && h[1] == 'Z'.code.toByte() && h[2] == 'h'.code.toByte() -> importTarStream(BZip2CompressorInputStream(streamOf(src)), name, depth)
-            String(h, 0, 8, Charsets.ISO_8859_1) == "ANDROID!" -> takeBoot(readAllFrom(src))
+            h.size >= 8 && String(h, 0, 8, Charsets.ISO_8859_1) == "ANDROID!" -> takeBoot(readAllFrom(src))
             else -> throw IOException("unknown file format \"$name\"")
         }
     }
@@ -167,6 +169,8 @@ class Importer(
             val base = n.substringAfterLast('/')
             when {
                 e.isDirectory -> {}
+                base.equals("system.yaffs2.img", true) -> withEntrySource(zip, e) { importImage(it, "system") }
+                base.endsWith(".yaffs2.img", true) -> {} // CWM user-data/cache backups are not firmware.
                 n.contains("__MACOSX/") || base.startsWith("._") -> {}
                 n.startsWith("system/") -> {
                     zip.getInputStream(e).use { writeFile(n, it, e.unixMode.takeIf { m -> m != 0 }) }
@@ -226,6 +230,8 @@ class Importer(
                 val base = n.substringAfterLast('/')
                 val stream = z.getInputStream(e)
                 when {
+                    base.equals("system.yaffs2.img", true) -> nested.add(spill(stream, base) to "system")
+                    base.endsWith(".yaffs2.img", true) -> {}
                     n.contains("__MACOSX/") || base.startsWith("._") -> {}
                     n.startsWith("system/") -> { writeFile(n, stream, null); gotSystem = true }
                     base.equals("boot.img", true) -> takeBoot(stream.readBytes())
@@ -305,6 +311,12 @@ class Importer(
             // дерево rootfs целиком (system/, data/, dev/, …)
             if (fullRoot == null && (n == "system" || n.startsWith("system/") || n.startsWith("init.rc") || n.startsWith("default.prop"))) fullRoot = true
             when {
+                base.equals("system.yaffs2.img", true) && e.isFile -> {
+                    val t = spill(tar.nonClosing(), base)
+                    try { FileChannel.open(t.toPath(), StandardOpenOption.READ).use { importImage(ChannelSource(it), "system") } }
+                    finally { t.delete() }
+                }
+                base.endsWith(".yaffs2.img", true) -> {}
                 base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?(\\.lz4)?|factoryfs\\.img|system\\.img\\.ext4")) && e.isFile -> {
                     val t = spill(maybeLz4(tar, base), base)
                     FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c ->
@@ -361,6 +373,7 @@ class Importer(
     // ------------------------------------------------------------------ образы ФС
 
     private fun importImage(src: RandomSource, mount: String) {
+        if (Yaffs2Reader.probe(src)) { importYaffs2(src, mount); return }
         val fs = Ext4Reader(src)
         onProgress("Reading image $mount (ext4, block ${fs.blockSize})", -1f)
         var n = 0
@@ -382,6 +395,40 @@ class Importer(
         }
         if (mount == "system") gotSystem = true
         log("image $mount: $n objects")
+    }
+
+    private fun importYaffs2(src: RandomSource, mount: String) {
+        onProgress("Reading image $mount (YAFFS2)", -1f)
+        val fs = Yaffs2Reader(src) { if (cancelled) throw IOException("cancelled") }
+        var n = 0
+        fs.walk { path, node ->
+            val rel = "$mount/$path"
+            val f = File(root, rel)
+            if (!f.canonicalPath.startsWith(root.canonicalPath + File.separator)) throw IOException("unsafe YAFFS2 path")
+            when (node.type) {
+                3 -> { if (!f.isDirectory && !f.mkdirs()) throw IOException("cannot create $rel") }
+                2 -> {
+                    val target = if (node.alias.startsWith("/")) node.alias.trimStart('/')
+                        else rel.substringBeforeLast('/') + "/" + node.alias
+                    val normalized = java.nio.file.Paths.get(target).normalize().toString()
+                    if (node.alias.isEmpty() || normalized == ".." || normalized.startsWith("../"))
+                        throw IOException("YAFFS2 symlink escapes guest root")
+                    symlinks.add(node.alias to "/$rel")
+                }
+                1, 4 -> {
+                    f.parentFile?.mkdirs()
+                    // Links are only created by finishTree, after all file bytes.
+                    if (isLink(f)) throw IOException("YAFFS2 destination is a symlink")
+                    f.outputStream().buffered(1 shl 20).use { fs.copy(node, it) }
+                    applyMode(f, fs.fileMode(node) and 0xfff)
+                    files++; bytes += f.length()
+                }
+                5 -> {} // Guest /dev is created by the VM; never mknod on the host.
+            }
+            if (++n % 150 == 0) onProgress("$mount: ${path.substringAfterLast('/')}", -1f)
+        }
+        if (mount == "system") gotSystem = true
+        log("YAFFS2 $mount: $n objects, page ${fs.geometry.pageSize}+${fs.geometry.spareSize}")
     }
 
     private fun takeBoot(data: ByteArray) {

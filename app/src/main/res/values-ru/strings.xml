@@ -143,7 +143,7 @@
     <string name="m_adb_enable">Включить</string>
     <string name="m_adb_hint">Любой в этой Wi-Fi-сети получит root-доступ к прошивке. Выключайте в общественных сетях.</string>
     <string name="add_import">Импорт файла прошивки</string>
-    <string name="add_import_sub">ZIP, TAR/MD5, IMG — любая стоковая или кастомная</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — включая бэкапы CWM YAFFS2</string>
     <string name="add_container">Новый контейнер</string>
     <string name="add_container_sub">Ещё одна копия имеющейся прошивки: свои приложения, данные, карта и настройки</string>
     <string name="container_chip">Контейнер</string>

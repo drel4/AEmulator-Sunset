@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import app.aemu.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -73,7 +74,7 @@ object AppUpdateManager {
                 for (j in 0 until assets.length()) {
                     val asset = assets.getJSONObject(j)
                     val assetName = asset.optString("name", "")
-                    if (assetName.endsWith(".apk", ignoreCase = true)) {
+                    if (UpdateAssetPolicy.matches(assetName, BuildConfig.APPLICATION_ID)) {
                         val downloadUrl = asset.getString("browser_download_url")
                         val sizeBytes = asset.optLong("size", 0L)
                         return@runCatching ReleaseInfo(
@@ -128,6 +129,9 @@ object AppUpdateManager {
         release: ReleaseInfo,
         onProgress: (Float, Long, Long) -> Unit
     ): File = withContext(Dispatchers.IO) {
+        require(UpdateAssetPolicy.matches(release.fileName, context.packageName)) {
+            "Update APK does not match this application variant"
+        }
         val updatesDir = File(context.getExternalFilesDir(null) ?: context.cacheDir, "updates")
         if (!updatesDir.exists()) updatesDir.mkdirs()
 
@@ -181,6 +185,11 @@ object AppUpdateManager {
             }
         }
 
+        conn.disconnect()
+        if (context.packageManager.getPackageArchiveInfo(targetFile.absolutePath, 0)?.packageName != context.packageName) {
+            targetFile.delete()
+            throw java.io.IOException("Downloaded APK has the wrong application package")
+        }
         targetFile
     }
 
@@ -189,6 +198,7 @@ object AppUpdateManager {
      */
     fun installApk(context: Context, file: File): Boolean {
         if (!file.exists()) return false
+        if (context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)?.packageName != context.packageName) return false
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!context.packageManager.canRequestPackageInstalls()) {

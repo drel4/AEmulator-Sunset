@@ -144,7 +144,7 @@
     <string name="m_adb_enable">Enable</string>
     <string name="m_adb_hint">Anyone on this Wi-Fi network gets a root shell of the firmware. Switch it off on public networks.</string>
     <string name="add_import">Import firmware file</string>
-    <string name="add_import_sub">ZIP, TAR/MD5, IMG — any stock or custom ROM</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG — including CWM YAFFS2 backups</string>
     <string name="add_container">New container</string>
     <string name="add_container_sub">Another copy of a firmware you have: own apps, data, card and settings</string>
     <string name="container_chip">Container</string>
