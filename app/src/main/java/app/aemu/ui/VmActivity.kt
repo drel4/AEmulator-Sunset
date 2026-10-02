@@ -200,10 +200,10 @@ class VmActivity : ComponentActivity() {
         guest = GuestScreen(this, gw, gh).apply {
             input = vm.input
             fb = if (vm.recoveryMode) app.aemu.core.RecoveryImage.fb(vm.paths) else vm.paths.fb
-            if (vm.recoveryMode) pages = 2
+            if (vm.recoveryMode || vm.lowPowerBoot) pages = 2
         }
         // 5.0+ renders through the standalone glserverd into fb0 (see GuestVm.glUp), shown like the software path
-        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode && vm.img.api < 21
+        val useBridge = vm.engine == Engine.KK && s.gpu && !vm.recoveryMode && !vm.lowPowerBoot && vm.img.api < 21
         surfaceView.visibility = if (useBridge) View.VISIBLE else View.GONE
         guest.passthrough = useBridge
         box.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
@@ -255,6 +255,20 @@ class VmActivity : ComponentActivity() {
             (vm.state == GuestVm.State.STOPPED || vm.state == GuestVm.State.FAILED)) {
             cameraPermission.launch(android.Manifest.permission.CAMERA)
         } else bootIfStopped()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (!::vm.isInitialized) return
+        val id = intent.getStringExtra(EXTRA_ID) ?: vm.img.id
+        val charging = intent.getBooleanExtra(EXTRA_LOW_POWER, false)
+        val recovery = intent.getBooleanExtra(EXTRA_RECOVERY, false)
+        if (id != vm.img.id || (charging && !vm.lowPowerBoot) || (recovery && !vm.recoveryMode)) {
+            if (!endingVm.compareAndSet(false, true)) return
+            heldNavKeys.releaseAll()
+            thread { vm.stop(); VmHost.vm = null; runOnUiThread { restartProcess(id, recovery, charging) } }
+        }
     }
 
     override fun onResume() {

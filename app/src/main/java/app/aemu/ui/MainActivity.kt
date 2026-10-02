@@ -518,7 +518,6 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
                     modifier = Modifier.height(48.dp).combinedClickable(role = Role.Button,
                         onClick = onStart, onLongClickLabel = if (experimental && !active) lowPowerLabel else null,
                         onLongClick = if (experimental && !active) ({
-                            android.widget.Toast.makeText(ctx, lowPowerLabel, android.widget.Toast.LENGTH_SHORT).show()
                             VmActivity.start(ctx, img.id, lowPower = true)
                         }) else null)) {
                     Row(Modifier.padding(ButtonDefaults.ButtonWithIconContentPadding), verticalAlignment = Alignment.CenterVertically) {
@@ -532,7 +531,6 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
                 FilledTonalIconButton(onClick = onRename) { Icon(Icons.Rounded.Edit, stringResource(R.string.rename)) }
                 FilledTonalIconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, stringResource(R.string.delete)) }
             }
-            if (experimental && !active) Text(stringResource(R.string.lpm_hint), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

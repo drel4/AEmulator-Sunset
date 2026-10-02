@@ -34,7 +34,7 @@ object InitPlan {
      *   только если условие выполняется, и перекрывает безусловные (так init применяет их позже, чем on init) —
      *   MIUI/MTK так задают BOOTCLASSPATH для user-сборки.
      */
-    fun parse(files: List<File>, props: Map<String, String> = emptyMap()): Rc {
+    fun parse(files: List<File>, props: Map<String, String> = emptyMap(), includeCharging: Boolean = false): Rc {
         val services = LinkedHashMap<String, RcService>()
         val exports = LinkedHashMap<String, String>()
         val condExports = LinkedHashMap<String, String>()
@@ -43,7 +43,8 @@ object InitPlan {
         val dirs = ArrayList<String>()
         val setprops = LinkedHashMap<String, String>()
         for (f in files) {
-            if (!f.isFile || skip.matches(f.name)) continue
+            val chargingRc = f.name.startsWith("init.charging", true) || f.name.startsWith("lpm", true)
+            if (!f.isFile || (skip.matches(f.name) && !(includeCharging && chargingRc))) continue
             var cur: RcService? = null
             var propTrigger = false
             var condOk: Boolean? = null

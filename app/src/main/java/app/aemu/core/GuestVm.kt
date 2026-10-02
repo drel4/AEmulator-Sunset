@@ -28,7 +28,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     enum class State { STOPPED, PREPARING, BOOTING, RUNNING, FAILED, STOPPING }
 
     val paths = VmPaths(ctx, img.id)
-    val settings = if (lowPowerBoot) LowPowerBoot.apply(img.settings) else img.settings
+    val settings = img.settings
     private val storageLease = VmStorageLease.forVm(ctx.filesDir)
     val engine get() = img.engine
 
@@ -74,7 +74,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     private val vibration = VibrationBridge(ctx, paths, { settings.vibration }, ::log)
-    val cameraSupported get() = engine == Engine.KK && img.api in 14..25 && !recoveryMode
+    val cameraSupported get() = engine == Engine.KK && img.api in 14..25 && !recoveryMode && !lowPowerBoot
     private val camera = HostCameraBridge(ctx, paths, { settings.camera && cameraSupported }, ::log)
     fun cameraVisible(visible: Boolean) { camera.visible(visible) }
     // 2.x пишет в /dev/eac через AudioHardwareGeneric на 44,1 кГц, HAL 4.x движка — на 48 кГц
@@ -106,12 +106,11 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
             setState(State.FAILED)
             return
         }
-        if (lowPowerBoot) log("Experimental low-power boot: refresh/input capped at 30 Hz; saved settings unchanged")
         stopping = false
         failure = null
         setState(State.PREPARING)
         try {
-            if (recoveryMode) doRecovery() else doBoot()
+            if (recoveryMode) doRecovery() else if (lowPowerBoot) doCharging() else doBoot()
         } catch (t: Throwable) {
             vibration.stop()
             camera.stop()
@@ -125,6 +124,55 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     @Volatile var recoveryMode = false
     /** recovery framebuffer format for the screen view: 0 RGB565, 1 RGBA/RGBX_8888, 2 BGRA_8888 */
     @Volatile var recoveryFormat = 0
+
+    /** Native firmware charging class only: no Android framework or normal boot plan. */
+    private fun doCharging() {
+        paths.bin.mkdirs()
+        logFile.writeText("")
+        log("Offline charging boot: ${img.name}")
+        val services = ChargingBoot.services(paths.root, img.api)
+        killLeftovers()
+        HostNative.limitStackSafe()
+        TreeFixer(ctx, paths, img, ::log).fixup()
+        File(paths.root, "dev/tty0").delete() // minui cannot use host VT ioctls
+        val sysLink = File(paths.bin, "sys")
+        if (!java.nio.file.Files.exists(sysLink.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS))
+            android.system.Os.symlink(File(paths.root, "sys").path, sysLink.path)
+        if (!props.prepare(ChargingBoot.properties + ("ro.aemu.host" to "qemu-user"))) error("property area not ready")
+        props.onSet = { k, v -> if (k == "sys.powerctl") powerRequest(v) }
+        props.onCtl = { start, name ->
+            services.firstOrNull { it.name == name }?.let { service ->
+                if (start && !stopping) startService(ChargingBoot.runtimeService(paths.root, service))
+                else synchronized(procs) { procs.remove(name) }?.destroyForcibly()
+            }
+        }
+        props.serve()
+        input.rateHz = settings.touchHz
+        input.mtMode = settings.mtMode
+        input.serve()
+        frames.serve()
+        power.writeText("")
+        bootAt = System.currentTimeMillis()
+        setState(State.BOOTING)
+        services.forEach { service ->
+            if (stopping) return
+            startService(ChargingBoot.runtimeService(paths.root, service))
+        }
+        setState(State.RUNNING)
+        log("Charging services started: ${services.joinToString { it.name }}; Android framework not started")
+        Thread({
+            val renderers = services.filter { it.name != "healthd-charger" }.ifEmpty { services }
+            while (!stopping) {
+                Thread.sleep(500)
+                if (power.length() > 0) { val request = power.readText().trim(); power.writeText(""); powerRequest(request) }
+                val exited = renderers.firstOrNull { service -> synchronized(procs) { procs[service.name]?.isAlive != true } }
+                if (exited != null && !stopping) {
+                    failure = "Charging service ${exited.name} exited. Check its host log; vendor hardware support may be missing."
+                    log(failure!!); setState(State.FAILED); break
+                }
+            }
+        }, "charging-watchdog").apply { isDaemon = true; start() }
+    }
 
     private fun doRecovery() {
         paths.bin.mkdirs()

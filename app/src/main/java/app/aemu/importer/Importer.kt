@@ -492,7 +492,7 @@ class Importer(
                 0x4000 -> f.mkdirs()
                 0xA000 -> symlinks.add(String(e.data) to "/$n")
                 0x8000 -> {
-                    if (n == "init" || n.startsWith("sbin/ueventd") || n.startsWith("sbin/adbd") || n == "charger") return@forEach
+                    if (n == "init" || n.startsWith("sbin/ueventd") || n.startsWith("sbin/adbd")) return@forEach
                     f.parentFile?.mkdirs(); f.writeBytes(e.data)
                     applyMode(f, e.mode and 0xfff)
                 }

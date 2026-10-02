@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.22.** This work has been
+**Modification notice updated 2026-10-02 for sunset.23.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -78,6 +78,15 @@ Further modifications dated 2026-10-02 (sunset.22):
   lease preventing concurrent boot/reset, without deleting firmware or shared SD;
 - added experimental long-press Start for a temporary low-power refresh/input
   preset, leaving saved settings unchanged; added English/Russian labels and tests.
+
+Further modifications dated 2026-10-02 (sunset.23):
+
+- replaced the misunderstood refresh-rate LPM preset with a separate native
+  charging-only boot path; retained stock charger imports and added boot.img
+  repair for charging executables discarded by older imports;
+- removed the library LPM hint/toast and handled fresh intents to existing VMs;
+- changed confirmed data reset to permanent no-backup deletion with link-safe
+  traversal and stale inode ownership pruning; updated English/Russian messages.
 
 Implementation details and release-specific testing limits are recorded in
 `docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.

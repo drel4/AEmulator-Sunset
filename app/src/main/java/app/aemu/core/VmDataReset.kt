@@ -1,51 +1,59 @@
-/* AEmulator Sunset addition, 2026-10-02. GPL-3.0; see LICENSE. */
+/* Modified for AEmulator Sunset, 2026-10-02: permanent reset without backups.
+ * GPL-3.0; see LICENSE. */
 package app.aemu.core
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
-import java.util.UUID
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.FileVisitResult.CONTINUE
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
-/** Same-filesystem moves, never a recursive deletion. Old data remains recoverable.
- * Caller must hold VmStorageLease. Imported symlinked roots are rejected. */
+/** Caller holds storage lease and checks for orphan writers. Never follows links.
+ * Failure may leave partially erased data; no backup or rollback is created. */
 internal object VmDataReset {
-    fun reset(images: File, id: String, move: (File, File) -> Unit = { from, to ->
-        Files.move(from.toPath(), to.toPath()); Unit
-    }): File {
+    fun reset(images: File, id: String, inodeKey: (File) -> String) {
         require(id.matches(Regex("[a-z0-9]{6}")))
         val dir = File(images, id)
         val root = File(dir, "root")
-        for (f in listOf(images, dir, root)) {
+        for (f in listOf(images, dir, root))
             require(!Files.isSymbolicLink(f.toPath()) && f.isDirectory) { "Unsafe image path" }
+        val targets = listOf(File(root, "data"), File(root, "cache"),
+            File(root, "dhd.owners.seeded"), File(dir, "run"))
+        val removedKeys = HashSet<String>()
+        for (target in targets) if (Files.exists(target.toPath(), NOFOLLOW_LINKS)) {
+            Files.walkFileTree(target.toPath(), object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(p: Path, a: BasicFileAttributes) = CONTINUE.also { removedKeys += inodeKey(p.toFile()) }
+                override fun visitFile(p: Path, a: BasicFileAttributes) = CONTINUE.also { removedKeys += inodeKey(p.toFile()) }
+            })
         }
-        val backup = File(dir, "data-reset-${UUID.randomUUID()}")
-        check(backup.mkdir()) { "Cannot create reset backup" }
-        val moved = mutableListOf<Pair<File, File>>()
-        try {
-            // Ownership entries are inode-based; preserve system entries but reseed new data.
-            val targets = listOf("data", "cache", "dhd.owners.seeded")
-            for (name in targets) {
-                val source = File(root, name)
-                if (Files.exists(source.toPath(), NOFOLLOW_LINKS)) {
-                    val dest = File(backup, name)
-                    move(source, dest)
-                    moved += source to dest
+        // Prune before unlinking: recycled data inodes must not inherit stale UIDs.
+        val owners = File(root, "dhd.owners")
+        require(!Files.isSymbolicLink(owners.toPath())) { "Unsafe ownership table" }
+        if (owners.isFile) {
+            val temp = Files.createTempFile(root.toPath(), "owners-reset-", ".tmp")
+            try {
+                Files.newBufferedWriter(temp).use { out -> owners.forEachLine { line ->
+                    val key = line.trim().split(Regex("\\s+")).take(2).joinToString(" ")
+                    if (key !in removedKeys) { out.write(line); out.newLine() }
+                } }
+                Files.move(temp, owners.toPath(), REPLACE_EXISTING)
+            } finally { Files.deleteIfExists(temp) }
+        }
+        for (target in targets) if (Files.exists(target.toPath(), NOFOLLOW_LINKS)) {
+            Files.walkFileTree(target.toPath(), object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(p: Path, a: BasicFileAttributes) = CONTINUE.also { p.toFile().setWritable(true, false) }
+                override fun visitFile(p: Path, a: BasicFileAttributes) = CONTINUE.also {
+                    if (!a.isSymbolicLink) p.toFile().setWritable(true, false)
+                    Files.delete(p)
                 }
-            }
-            // Runtime setup markers/sockets must not leak into the fresh data tree.
-            val run = File(dir, "run")
-            if (Files.exists(run.toPath(), NOFOLLOW_LINKS)) {
-                val dest = File(backup, "run")
-                move(run, dest)
-                moved += run to dest
-            }
-            return backup
-        } catch (t: Throwable) {
-            moved.asReversed().forEach { (source, dest) ->
-                try { Files.move(dest.toPath(), source.toPath()) } catch (rollback: Throwable) { t.addSuppressed(rollback) }
-            }
-            backup.delete() // Only succeeds if empty; never deletes retained data.
-            throw t
+                override fun postVisitDirectory(p: Path, failure: java.io.IOException?) = CONTINUE.also {
+                    if (failure != null) throw failure
+                    Files.delete(p)
+                }
+            })
         }
     }
 }

@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset, 2026-10-02: confirmed recoverable VM data reset.
+/* Modified for AEmulator Sunset, 2026-10-02: permanent VM reset and charging-file repair.
  * GPL-3.0; upstream attribution retained in NOTICE.md. */
 package app.aemu.ui
 
@@ -155,6 +155,7 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
 
             Spacer(Modifier.height(8.dp))
             RecoverySection(img)
+            if (experimental) ChargingFilesSection(img)
 
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.vs_controls), style = MaterialTheme.typography.titleMedium)
@@ -187,12 +188,15 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
                         VmStorageLease(ctx.filesDir).use { lease ->
                             lease.acquire()
                             app.aemu.core.GuestStorageWriters.requireIdle(ctx)
-                            VmDataReset.reset(ImageStore.imagesDir(ctx), img.id)
+                            VmDataReset.reset(ImageStore.imagesDir(ctx), img.id) { file ->
+                                val stat = android.system.Os.lstat(file.path)
+                                String.format(java.util.Locale.ROOT, "%016x %016x", stat.st_dev, stat.st_ino)
+                            }
                         }
                     }
                 }
                 resetting = false
-                resetMessage = if (result.isSuccess) ctx.getString(R.string.vm_reset_done, result.getOrThrow().name)
+                resetMessage = if (result.isSuccess) ctx.getString(R.string.vm_reset_done)
                     else ctx.getString(R.string.vm_reset_failed)
             }
         }) { Text(stringResource(R.string.vm_reset_data)) } },
@@ -264,5 +268,43 @@ private fun recoveryStatus(paths: app.aemu.core.VmPaths): String? {
         java.io.File(dir, "sbin/orangefox.sh").exists() || prop.contains("orangefox", true) -> "OrangeFox"
         prop.contains("cwm", true) || java.io.File(dir, "res/images/icon_clockwork.png").exists() -> "ClockworkMod"
         else -> "Stock recovery"
+    }
+}
+
+@Composable
+private fun ChargingFilesSection(img: GuestImage) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching {
+                VmStorageLease(ctx.filesDir).use { lease ->
+                    lease.acquire()
+                    app.aemu.core.GuestStorageWriters.requireIdle(ctx)
+                    val bytes = ctx.contentResolver.openInputStream(uri)!!.use {
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val read = it.read(buffer)
+                            if (read < 0) break
+                            require(out.size().toLong() + read <= 64 * 1024 * 1024) { "Boot image too large" }
+                            out.write(buffer, 0, read)
+                        }
+                        out.toByteArray()
+                    }
+                    app.aemu.core.ChargingBootInstaller.install(app.aemu.core.VmPaths(ctx, img.id).root, bytes)
+                }
+            } }
+            busy = false
+            android.widget.Toast.makeText(ctx, if (result.isSuccess) R.string.charging_files_done else R.string.charging_files_failed,
+                android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+    TextButton(enabled = !busy, onClick = { picker.launch(arrayOf("*/*")) }) {
+        Text(stringResource(R.string.charging_files_install))
     }
 }

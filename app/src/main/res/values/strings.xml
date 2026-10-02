@@ -216,10 +216,12 @@
     <string name="vm_restart_failed">Could not restart the emulator. Close this screen and open the firmware again.</string>
     <string name="as_license_notices">License and modification notices</string>
     <string name="vm_storage_busy">VM storage is busy. Wait for data reset to finish, then try again.</string>
-    <string name="lpm_start">Start in experimental low-power mode</string>
-    <string name="lpm_hint">Hold Start for low-power mode (this boot only).</string>
+    <string name="lpm_start">Start in charging-only mode</string>
+    <string name="charging_files_install">Repair charging files from this ROM’s boot.img</string>
+    <string name="charging_files_done">Charging files checked and missing files installed. Hold Start after shutdown to enter charging-only mode.</string>
+    <string name="charging_files_failed">Could not install charging files. Shut down all VMs and select this ROM’s original boot.img (maximum 64 MB).</string>
     <string name="vm_reset_data">Reset VM data</string>
-    <string name="vm_reset_warning">Shut down the VM first. This resets guest apps, accounts, settings and internal data (/data and /cache). Firmware, VM settings, recovery and the shared SD-card folder are kept. Old data is retained in a backup folder and still uses storage.</string>
-    <string name="vm_reset_done">Data reset. Old data retained in the VM image folder: %1$s</string>
-    <string name="vm_reset_failed">Cannot reset data. Fully shut down any running VM first; otherwise check free space and the image files. Any moved data remains in its backup folder.</string>
+    <string name="vm_reset_warning">Shut down the VM first. Permanently delete guest apps, accounts, settings and internal data (/data and /cache)? No backup is created. Firmware, VM settings, recovery and the shared SD-card folder are kept.</string>
+    <string name="vm_reset_done">VM data permanently reset. No backup was created.</string>
+    <string name="vm_reset_failed">Cannot complete reset. Fully shut down all VMs and check the image files. If deletion started, some data may already be permanently erased.</string>
 </resources>

@@ -1,6 +1,6 @@
 # Building AEmulator Sunset
 
-Updated 2026-10-02 for `v0.0.0.3-sunset.22`.
+Updated 2026-10-02 for `v0.0.0.3-sunset.23`.
 
 ## Application APKs (uses checked-in engine prebuilts)
 
@@ -16,7 +16,7 @@ dependencies pinned in `build.gradle.kts` and `app/build.gradle.kts`.
 ```sh
 git clone https://github.com/drel4/AEmulator-Sunset.git
 cd AEmulator-Sunset
-git checkout v0.0.0.3-sunset.22
+git checkout v0.0.0.3-sunset.23
 export JAVA_HOME=/path/to/jdk-21
 export ANDROID_HOME=/path/to/Android/Sdk
 sh gradlew --no-daemon '-Dorg.gradle.jvmargs=-Xmx1536m -Dfile.encoding=UTF-8' \
