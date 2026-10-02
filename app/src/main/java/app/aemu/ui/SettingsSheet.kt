@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-02: confirmed recoverable VM data reset.
+ * GPL-3.0; upstream attribution retained in NOTICE.md. */
 package app.aemu.ui
 
 import app.aemu.R
@@ -42,6 +44,15 @@ import androidx.compose.ui.unit.dp
 import app.aemu.core.Engine
 import app.aemu.core.GuestImage
 import app.aemu.core.VmSettings
+import app.aemu.core.VmStorageLease
+import app.aemu.core.VmDataReset
+import app.aemu.core.ImageStore
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private data class Res(val label: String, val w: Int, val h: Int, val dpi: Int)
 
@@ -56,9 +67,14 @@ private val RAM_STEPS = listOf(0, 256, 512, 768, 1024, 1536, 2048, 3072, 4096)
 @Composable
 fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -> Unit) {
     var s by remember { mutableStateOf(img.settings) }
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var resetConfirm by remember { mutableStateOf(false) }
+    var resetting by remember { mutableStateOf(false) }
+    var resetMessage by remember { mutableStateOf<String?>(null) }
     val experimental = experimentalFeaturesEnabled()
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
+    ModalBottomSheet(onDismissRequest = { if (!resetting) onDismiss() }, sheetState = state) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).navigationBarsPadding()) {
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineSmall)
             Text(img.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -149,10 +165,38 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             Toggle(stringResource(R.string.vs_single), stringResource(R.string.vs_single_sub), s.mtMode == 4) { s = s.copy(mtMode = if (it) 4 else 0) }
 
             Spacer(Modifier.height(16.dp))
-            Button(onClick = { onSave(s) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(stringResource(R.string.save)) }
+            TextButton(enabled = !resetting, onClick = { resetConfirm = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.vm_reset_data), color = MaterialTheme.colorScheme.error)
+            }
+            resetMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            Button(enabled = !resetting, onClick = { onSave(s) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(stringResource(R.string.save)) }
             Spacer(Modifier.height(16.dp))
         }
     }
+    if (resetConfirm) AlertDialog(
+        onDismissRequest = { resetConfirm = false },
+        title = { Text(stringResource(R.string.vm_reset_data)) },
+        text = { Text(stringResource(R.string.vm_reset_warning)) },
+        dismissButton = { TextButton(onClick = { resetConfirm = false }) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(onClick = {
+            resetConfirm = false
+            resetting = true
+            scope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        VmStorageLease(ctx.filesDir).use { lease ->
+                            lease.acquire()
+                            app.aemu.core.GuestStorageWriters.requireIdle(ctx)
+                            VmDataReset.reset(ImageStore.imagesDir(ctx), img.id)
+                        }
+                    }
+                }
+                resetting = false
+                resetMessage = if (result.isSuccess) ctx.getString(R.string.vm_reset_done, result.getOrThrow().name)
+                    else ctx.getString(R.string.vm_reset_failed)
+            }
+        }) { Text(stringResource(R.string.vm_reset_data)) } },
+    )
 }
 
 @Composable

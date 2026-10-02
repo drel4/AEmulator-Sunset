@@ -24,11 +24,12 @@ private val ALWAYS_RESTART = setOf("mediaserver", "installd", "netd", "keystore"
  * поднять дважды), заменяет собой init: готовит дерево, поднимает службы хоста (свойства, ввод,
  * звук, заглушки радио и накопителя), binderd, GL-мост и службы гостя в порядке загрузки Android.
  */
-class GuestVm(val ctx: Context, val img: GuestImage) {
+class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean = false) {
     enum class State { STOPPED, PREPARING, BOOTING, RUNNING, FAILED, STOPPING }
 
     val paths = VmPaths(ctx, img.id)
-    val settings get() = img.settings
+    val settings = if (lowPowerBoot) LowPowerBoot.apply(img.settings) else img.settings
+    private val storageLease = VmStorageLease.forVm(ctx.filesDir)
     val engine get() = img.engine
 
     @Volatile var state = State.STOPPED
@@ -88,7 +89,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
     @Volatile private var lmk: GuestLmk? = null
     val net = NetProxy(ctx, paths, ::log)
     private val dns = DnsProxy(paths, img.api, ::log)
-    val runner by lazy { GuestRunner(paths, img) }
+    val runner by lazy { GuestRunner(paths, img.copy(settings = settings)) }
 
     private val extraStubs = ArrayList<VoldStub>()
     private val procs = LinkedHashMap<String, Process>()
@@ -97,8 +98,15 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
 
     // ------------------------------------------------------------------ загрузка
 
-    fun boot() {
+    @Synchronized fun boot() {
         if (state == State.BOOTING || state == State.RUNNING || state == State.PREPARING) return
+        try { storageLease.acquire() } catch (t: Throwable) {
+            failure = "VM storage is busy: ${t.message}"
+            log(failure!!)
+            setState(State.FAILED)
+            return
+        }
+        if (lowPowerBoot) log("Experimental low-power boot: refresh/input capped at 30 Hz; saved settings unchanged")
         stopping = false
         failure = null
         setState(State.PREPARING)
@@ -332,7 +340,7 @@ class GuestVm(val ctx: Context, val img: GuestImage) {
         lmk = GuestLmk(paths.root, s.lowRam, ::log, s.ramMb).also { it.start() }
         val netCfg = if (s.netProxy) net.start() else GuestRunner.NetConfig()
         runner.sdcardHost = sd
-        val r = GuestRunner(paths, img, netCfg.copy(glPath = if (s.gpu) "/dev/socket/gl" else null)).also {
+        val r = GuestRunner(paths, img.copy(settings = settings), netCfg.copy(glPath = if (s.gpu) "/dev/socket/gl" else null)).also {
             it.sdcardHost = sd
             // отладка: файл run/binder.verbose включает полную трассировку binder в binder-warn.log
             it.binderVerbose = File(paths.bin, "binder.verbose").exists()

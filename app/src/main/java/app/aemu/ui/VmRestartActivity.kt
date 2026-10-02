@@ -59,7 +59,7 @@ class VmRestartActivity : ComponentActivity() {
                 if (!launched && !failed) {
                     try {
                         withTimeout(10_000) { awaitVmProcessExit(BinderDeathWatch(oldProcess)) }
-                        VmActivity.start(this@VmRestartActivity, id, recovery)
+                        VmActivity.start(this@VmRestartActivity, id, recovery, intent.getBooleanExtra(VmActivity.EXTRA_LOW_POWER, false))
                         launched = true
                         finish()
                     } catch (_: TimeoutCancellationException) { failed = true }
@@ -72,9 +72,10 @@ class VmRestartActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_PROCESS = "old_vm_process"
-        fun handoff(context: Context, id: String, recovery: Boolean, oldProcess: IBinder) {
+        fun handoff(context: Context, id: String, recovery: Boolean, oldProcess: IBinder, lowPower: Boolean = false) {
             context.startActivity(Intent(context, VmRestartActivity::class.java)
                 .putExtra(VmActivity.EXTRA_ID, id).putExtra(VmActivity.EXTRA_RECOVERY, recovery)
+                .putExtra(VmActivity.EXTRA_LOW_POWER, lowPower)
                 .putExtras(Bundle().apply { putBinder(EXTRA_PROCESS, oldProcess) })
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }

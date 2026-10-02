@@ -1,5 +1,5 @@
 /* Modified for AEmulator Sunset through 2026-10-02: catalog, experimental
- * unlock and Open action for active guests. GPL-3.0; see NOTICE.md. */
+ * unlock, active-guest Open and temporary long-press LPM boot. GPL-3.0; see NOTICE.md. */
 package app.aemu.ui
 
 import android.Manifest
@@ -32,6 +32,9 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.foundation.layout.width
@@ -477,8 +480,11 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDelete: () -> Unit, baseName: String? = null, active: Boolean = false) {
     val ctx = LocalContext.current
+    val experimental = experimentalFeaturesEnabled()
+    val lowPowerLabel = stringResource(R.string.lpm_start)
     Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -507,16 +513,26 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
             img.warnings.firstOrNull()?.let { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onStart, contentPadding = ButtonDefaults.ButtonWithIconContentPadding, modifier = Modifier.height(48.dp)) {
+                Surface(shape = ButtonDefaults.shape, color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.height(48.dp).combinedClickable(role = Role.Button,
+                        onClick = onStart, onLongClickLabel = if (experimental && !active) lowPowerLabel else null,
+                        onLongClick = if (experimental && !active) ({
+                            android.widget.Toast.makeText(ctx, lowPowerLabel, android.widget.Toast.LENGTH_SHORT).show()
+                            VmActivity.start(ctx, img.id, lowPower = true)
+                        }) else null)) {
+                    Row(Modifier.padding(ButtonDefaults.ButtonWithIconContentPadding), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(if (active) R.string.open_vm else R.string.start))
+                    }
                 }
                 Spacer(Modifier.weight(1f))
                 FilledTonalIconButton(onClick = onSettings) { Icon(Icons.Rounded.Tune, stringResource(R.string.settings)) }
                 FilledTonalIconButton(onClick = onRename) { Icon(Icons.Rounded.Edit, stringResource(R.string.rename)) }
                 FilledTonalIconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, stringResource(R.string.delete)) }
             }
+            if (experimental && !active) Text(stringResource(R.string.lpm_hint), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

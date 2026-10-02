@@ -171,17 +171,19 @@ class VmActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val id = intent.getStringExtra(EXTRA_ID)
         val cur = VmHost.vm
-        val img = ((if (id != null) ImageStore.get(this, id) else null) ?: cur?.img)
-            ?.let { if (cur?.img?.id == it.id) it else app.aemu.importer.Analyzer.refresh(this, it).effective() }
-        if (img == null) { finish(); return }
-        if (cur != null && cur.img.id != img.id && cur.state != GuestVm.State.STOPPED) {
+        val stored = (if (id != null) ImageStore.get(this, id) else null) ?: cur?.img
+        if (stored == null) { finish(); return }
+        try { app.aemu.core.VmStorageLease.forVm(filesDir).acquire() }
+        catch (_: Exception) { toast(getString(R.string.vm_storage_busy)); finish(); return }
+        val img = if (cur?.img?.id == stored.id) stored else app.aemu.importer.Analyzer.refresh(this, stored).effective()
+        if (cur != null && ((cur.img.id != img.id && cur.state != GuestVm.State.STOPPED) || cur.state == GuestVm.State.FAILED)) {
             // в процессе уже живёт другая машина — её надо сначала остановить
             cur.stop()
-            restartProcess(img.id, intent.getBooleanExtra(EXTRA_RECOVERY, false))
+            restartProcess(img.id, intent.getBooleanExtra(EXTRA_RECOVERY, false), intent.getBooleanExtra(EXTRA_LOW_POWER, false))
             return
         }
         vm = if (cur != null && cur.img.id == img.id) cur
-            else GuestVm(applicationContext, img).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
+            else GuestVm(applicationContext, img, intent.getBooleanExtra(EXTRA_LOW_POWER, false)).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
         vm.onPower = { reboot, reason -> runOnUiThread { if (reboot) rebootVm(reason == "recovery") else stopVm() } }
         val s = vm.settings
         if (s.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -510,10 +512,10 @@ class VmActivity : ComponentActivity() {
         }
     }
 
-    private fun restartProcess(id: String, recovery: Boolean = false) {
+    private fun restartProcess(id: String, recovery: Boolean = false, lowPower: Boolean = false) {
         // Hand off while still foreground, then wait for Binder death in the main process.
         // Removing the whole task here could also remove the new restart activity.
-        try { VmRestartActivity.handoff(this, id, recovery, processLifetime) }
+        try { VmRestartActivity.handoff(this, id, recovery, processLifetime, lowPower) }
         catch (_: Exception) { endingVm.set(false); toast(getString(R.string.vm_restart_failed)); return }
         finish()
         android.os.Process.killProcess(android.os.Process.myPid())
@@ -812,8 +814,9 @@ class VmActivity : ComponentActivity() {
     companion object {
         const val EXTRA_ID = "id"
         const val EXTRA_RECOVERY = "recovery"
-        fun start(ctx: Context, id: String, recovery: Boolean = false) {
-            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
+        const val EXTRA_LOW_POWER = "low_power"
+        fun start(ctx: Context, id: String, recovery: Boolean = false, lowPower: Boolean = false) {
+            ctx.startActivity(Intent(ctx, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery).putExtra(EXTRA_LOW_POWER, lowPower)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }

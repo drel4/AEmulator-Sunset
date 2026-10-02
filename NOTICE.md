@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.21.** This work has been
+**Modification notice updated 2026-10-02 for sunset.22.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -71,6 +71,13 @@ Further modifications dated 2026-10-02 (sunset.21):
 - fixed updater APK selection for standard/clone variants and validated the
   downloaded/installed APK package identity;
 - added YAFFS2 corruption, path, link, cancellation and variant-selection tests.
+
+Further modifications dated 2026-10-02 (sunset.22):
+
+- added confirmed, recoverable guest-data reset with a process-lifetime storage
+  lease preventing concurrent boot/reset, without deleting firmware or shared SD;
+- added experimental long-press Start for a temporary low-power refresh/input
+  preset, leaving saved settings unchanged; added English/Russian labels and tests.
 
 Implementation details and release-specific testing limits are recorded in
 `docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.
