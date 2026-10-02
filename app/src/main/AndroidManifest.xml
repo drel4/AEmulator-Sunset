@@ -76,6 +76,8 @@
             android:screenOrientation="unspecified"
             android:theme="@style/Theme.AEmulator.Vm" />
 
+        <activity android:name=".ui.VmRestartActivity" android:exported="false" />
+
         <service
             android:name=".core.Keeper"
             android:exported="false"

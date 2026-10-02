@@ -212,5 +212,7 @@
     <string name="experimental_locked">Experimental camera settings are locked. Tap the AEmulator Sunset title 42 times to unlock them.</string>
     <string name="m_minimize">Minimize</string>
     <string name="open_vm">Open</string>
+    <string name="vm_restarting">Restarting virtual machine…</string>
+    <string name="vm_restart_failed">Could not restart the emulator. Close this screen and open the firmware again.</string>
     <string name="as_license_notices">License and modification notices</string>
 </resources>

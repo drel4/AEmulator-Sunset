@@ -140,6 +140,8 @@ object VmHost {
 
 class VmActivity : ComponentActivity() {
     private lateinit var vm: GuestVm
+    private val endingVm = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val processLifetime = android.os.Binder()
     private val heldNavKeys = HeldNavKeys { code, down -> if (::vm.isInitialized) vm.input.key(code, down) }
     private lateinit var surfaceView: SurfaceView
     private lateinit var guest: GuestScreen
@@ -175,7 +177,7 @@ class VmActivity : ComponentActivity() {
         if (cur != null && cur.img.id != img.id && cur.state != GuestVm.State.STOPPED) {
             // в процессе уже живёт другая машина — её надо сначала остановить
             cur.stop()
-            restartProcess(img.id)
+            restartProcess(img.id, intent.getBooleanExtra(EXTRA_RECOVERY, false))
             return
         }
         vm = if (cur != null && cur.img.id == img.id) cur
@@ -326,6 +328,7 @@ class VmActivity : ComponentActivity() {
     }
 
     private fun stopVm() {
+        if (!endingVm.compareAndSet(false, true)) return
         thread {
             vm.stop()
             VmHost.vm = null
@@ -496,6 +499,8 @@ class VmActivity : ComponentActivity() {
     }
 
     private fun rebootVm(recovery: Boolean = false) {
+        if (!endingVm.compareAndSet(false, true)) return
+        heldNavKeys.releaseAll()
         val id = vm.img.id
         thread {
             vm.stop()
@@ -506,11 +511,11 @@ class VmActivity : ComponentActivity() {
     }
 
     private fun restartProcess(id: String, recovery: Boolean = false) {
-        val i = Intent(this, VmActivity::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_RECOVERY, recovery)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        val pi = android.app.PendingIntent.getActivity(this, 1, i, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_CANCEL_CURRENT)
-        (getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 400, pi)
-        finishAndRemoveTask()
+        // Hand off while still foreground, then wait for Binder death in the main process.
+        // Removing the whole task here could also remove the new restart activity.
+        try { VmRestartActivity.handoff(this, id, recovery, processLifetime) }
+        catch (_: Exception) { endingVm.set(false); toast(getString(R.string.vm_restart_failed)); return }
+        finish()
         android.os.Process.killProcess(android.os.Process.myPid())
     }
 
@@ -607,7 +612,7 @@ class VmActivity : ComponentActivity() {
                                 .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
                         })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_reboot)) }, leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
-                        onClick = { menu = false; rebootVm() })
+                        onClick = { menu = false; rebootVm(vm.recoveryMode) })
                     DropdownMenuItem(text = { Text(stringResource(if (vm.recoveryMode) R.string.m_reboot_system else R.string.m_reboot_recovery)) },
                         leadingIcon = { Icon(Icons.Rounded.RestartAlt, null) },
                         enabled = vm.recoveryMode || app.aemu.core.RecoveryImage.installed(vm.paths),

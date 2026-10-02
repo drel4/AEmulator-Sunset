@@ -213,5 +213,7 @@
     <string name="experimental_locked">Экспериментальные настройки камеры скрыты. Нажмите на заголовок AEmulator Sunset 42 раза, чтобы открыть их.</string>
     <string name="m_minimize">Свернуть</string>
     <string name="open_vm">Открыть</string>
+    <string name="vm_restarting">Перезапуск виртуальной машины…</string>
+    <string name="vm_restart_failed">Не удалось перезапустить эмулятор. Закройте этот экран и снова откройте прошивку.</string>
     <string name="as_license_notices">Лицензия и сведения об изменениях</string>
 </resources>

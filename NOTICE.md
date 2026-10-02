@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.18.** This work has been
+**Modification notice updated 2026-10-02 for sunset.19.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -50,6 +50,12 @@ Further modifications dated 2026-10-02 (sunset.18):
 - host Back closes logs before any guest Back or hidden-menu action;
 - live cross-process VM status changes active guests' Start button to Open,
   including preparing/booting guests, with stale-status protection on process exit.
+
+Further modifications dated 2026-10-02 (sunset.19):
+
+- replaced alarm-based VM relaunch with a foreground main-process restart
+  activity that waits for the old VM process's Binder death before booting;
+- retained normal/recovery boot targets and guarded duplicate stop/reboot requests.
 
 Implementation details and release-specific testing limits are recorded in
 `docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.
