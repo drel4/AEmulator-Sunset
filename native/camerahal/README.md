@@ -50,6 +50,24 @@ decompiled CameraService uses count/info at 0x80/0x84 and device ops at 0x40.
 Sony's separate extension service and proprietary commands are not implemented;
 passing the core ABI tests does not prove the Sony/Samsung stock apps work.
 
+### Sony default-mode compatibility (sunset.20)
+
+The ZR app selects `SCENE_RECOGNITION` by default but only adds its settings
+object to the mode map when `sony-scene-detect-supported` is true. Previously
+that missing mode caused a null dereference in `ParameterManager.updateVideoOption`
+at line 172, before opening preview. The HAL now exposes that automatic-mode
+shell, backed by the existing host automatic preview/JPEG path. Scene-apply types
+and the extension version remain empty: no proprietary scene classification,
+face detection, enhancement or Sony extension service is provided. The empty
+version can still produce Sony's caught, nonfatal version-parsing warning.
+
+Sony caches capability discovery in its own app preferences. If an existing
+installation still crashes at the same line after updating, clear **only the
+guest Camera app's data** in guest Settings to rediscover capabilities; this
+resets camera preferences, not the whole ROM. Sunset does not erase app data.
+This is a targeted initialization fix; stock-app preview/capture needs device
+testing and may expose further unsupported vendor assumptions.
+
 Loader references: [KitKat hardware.c](https://raw.githubusercontent.com/aosp-mirror/platform_hardware_libhardware/android-4.4.2_r1/hardware.c)
 uses global hardware/board/platform/arch variants followed by `default`;
 [Lollipop hardware.c](https://raw.githubusercontent.com/aosp-mirror/platform_hardware_libhardware/android-5.0.0_r1/hardware.c)

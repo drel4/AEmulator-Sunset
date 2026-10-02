@@ -329,7 +329,15 @@ static char *get_parameters(cam_device *d) {
         "video-frame-format=yuv420sp;video-snapshot-supported=false;recording-hint=false;whitebalance=auto;whitebalance-values=auto;scene-mode=auto;scene-mode-values=auto;"
         "effect=none;effect-values=none;antibanding=auto;antibanding-values=auto;exposure-compensation=0;min-exposure-compensation=0;"
         "max-exposure-compensation=0;exposure-compensation-step=0;auto-exposure-lock-supported=false;auto-whitebalance-lock-supported=false;"
-        "max-num-detected-faces-hw=0;max-num-detected-faces-sw=0", quality, rotation);
+        "max-num-detected-faces-hw=0;max-num-detected-faces-sw=0;"
+        /* Sony's launcher unconditionally selects SCENE_RECOGNITION, but its
+         * ParameterManager only creates that mode when this key is true.
+         * Expose the automatic-mode shell, using our existing host automatic
+         * capture. No detected scenes or proprietary enhancements are claimed.
+         * Leave the extension version empty: a nonempty version makes Sony
+         * instantiate its proprietary CameraExtension service, which this
+         * generic HAL does not implement. No scene-apply types are supported. */
+        "sony-scene-detect-supported=true;sony-scene-detect-apply-types=;sony-extension-version=", quality, rotation);
     return p;
 }
 static void put_parameters(cam_device *d, char *params) { (void)d; free(params); }

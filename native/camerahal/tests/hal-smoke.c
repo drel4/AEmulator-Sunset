@@ -131,6 +131,15 @@ int main(void) {
     CHECK(ops->set_parameters(test.device, "rotation=45") == -EINVAL);
     CHECK(!ops->set_parameters(test.device, "preview-size=640x480;rotation=90;jpeg-quality=90"));
     char *parameters = ops->get_parameters(test.device); CHECK(parameters && strstr(parameters, "jpeg-quality=90") && strstr(parameters, "rotation=90"));
+    char capability[64];
+    // Reproduce Sony's mode-map precondition: its default Superior Auto launch
+    // must not select a mode excluded by sony-scene-detect-supported.
+    CHECK(value(parameters, "sony-scene-detect-supported", capability, sizeof(capability)) == 1 && !strcmp(capability, "true"));
+    CHECK(value(parameters, "sony-extension-version", capability, sizeof(capability)) == 1 && !*capability);
+    CHECK(value(parameters, "sony-scene-detect-apply-types", capability, sizeof(capability)) == 1 && !*capability);
+    // Advertising a mode shell does not enable recording or fake detected faces.
+    CHECK(strstr(parameters, "max-num-detected-faces-hw=0") && ops->record(test.device) == -ENOSYS);
+    CHECK(!ops->set_parameters(test.device, parameters));
     ops->put_parameters(test.device, parameters);
     gralloc = &fake_gralloc; CHECK(!ops->set_window(test.device, &window));
     ops->callbacks(test.device, notify_callback, data_callback, 0, allocate_memory, &test);

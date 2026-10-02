@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.19.** This work has been
+**Modification notice updated 2026-10-02 for sunset.20.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -56,6 +56,13 @@ Further modifications dated 2026-10-02 (sunset.19):
 - replaced alarm-based VM relaunch with a foreground main-process restart
   activity that waits for the old VM process's Binder death before booting;
 - retained normal/recovery boot targets and guarded duplicate stop/reboot requests.
+
+Further modifications dated 2026-10-02 (sunset.20):
+
+- exposed Sony's default automatic camera mode shell in the host HAL to avoid
+  a missing-mode settings crash; proprietary scene detection remains unavailable;
+- added native capability/round-trip regression checks and documented Sony's
+  app-owned capability cache and device-testing limits.
 
 Implementation details and release-specific testing limits are recorded in
 `docs/release-sunset.*.md`, `docs/sunset.*.md` and the tagged Git history.

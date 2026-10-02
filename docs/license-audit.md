@@ -1,6 +1,6 @@
 # Source and licensing audit — 2026-10-02
 
-Scope: the Sunset checkout through sunset.19, its build scripts and release
+Scope: the Sunset checkout through sunset.20, its build scripts and release
 packaging. This is a technical inventory, not a legal compliance certification.
 
 ## Checked and improved
