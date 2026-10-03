@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-04 for sunset.29.** This work has been
+**Modification notice updated 2026-10-04 for sunset.30.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -120,6 +120,10 @@ policy and app setting; removal of the duplicate host-resolution switch;
 selectable firmware/settings/data archives, settings import with ROM identity
 confirmation, safe boot import for boot-less VMs; and a first-launch advisory
 for unrecognized SoC families. New UI strings include Russian translations.
+
+Further modifications dated 2026-10-04 (sunset.30): shorter English/Russian VM
+export description; removal of the library toolbar subtitle; simplified firmware
+import format summary. Export contents, layout and guest behavior are unchanged.
 
 Further modifications dated 2026-10-03 (sunset.28): Host resolution preset,
 mutually exclusive host/fixed preset selection and manual-size mode switching.

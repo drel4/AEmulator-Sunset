@@ -213,7 +213,6 @@ fun Library(model: LibraryModel) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { SunsetTitle() },
-                subtitle = { Text(stringResource(R.string.lib_subtitle)) },
                 actions = {
                     IconButton(onClick = { ctx.startActivity(Intent(ctx, RomCatalogActivity::class.java)) }) {
                         Icon(Icons.Rounded.List, stringResource(R.string.catalog_title))

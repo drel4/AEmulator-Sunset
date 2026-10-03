@@ -143,7 +143,7 @@
     <string name="m_adb_enable">Включить</string>
     <string name="m_adb_hint">Любой в этой Wi-Fi-сети получит root-доступ к прошивке. Выключайте в общественных сетях.</string>
     <string name="add_import">Импорт файла прошивки</string>
-    <string name="add_import_sub">ZIP, TAR/MD5, IMG — включая бэкапы CWM YAFFS2</string>
+    <string name="add_import_sub">ZIP, TAR/MD5, IMG, бэкапы TWRP и CWM</string>
     <string name="add_container">Новый контейнер</string>
     <string name="add_container_sub">Ещё одна копия имеющейся прошивки: свои приложения, данные, карта и настройки</string>
     <string name="container_chip">Контейнер</string>
@@ -223,7 +223,7 @@
     <string name="vm_reset_done">Данные ВМ безвозвратно сброшены. Резервная копия не создана.</string>
     <string name="vm_reset_failed">Не удалось завершить сброс. Полностью выключите все ВМ и проверьте файлы образа. Если удаление началось, часть данных уже могла быть безвозвратно удалена.</string>
     <string name="vm_export">Экспорт ВМ (.aessvm)</string>
-    <string name="vm_export_info">Сначала полностью остановите все ВМ. Выберите прошивку, настройки и/или данные ниже. Система экспортируется вместе с доступными загрузочными файлами. Для старых импортов без исходного boot.img сохраняются извлечённые загрузочные файлы. Временные файлы, recovery и общая SD-карта не включаются.</string>
+    <string name="vm_export_info">Сначала остановите все ВМ. Выберите, что сохранить. Файлы общей SD-карты не включаются.</string>
     <string name="vm_export_data">Включить раздел данных</string>
     <string name="vm_export_data_info">Включает приложения, аккаунты и личные файлы гостевой системы. Передавайте такой архив только тем, кому доверяете.</string>
     <string name="vm_export_working">Экспорт ВМ… Не закрывайте этот экран.</string>
