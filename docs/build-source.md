@@ -1,6 +1,6 @@
 # Building AEmulator Sunset
 
-Updated 2026-10-03 for `v0.0.0.3-sunset.25`.
+Updated 2026-10-03 for `v0.0.0.3-sunset.26`.
 
 ## Application APKs (uses checked-in engine prebuilts)
 
@@ -16,7 +16,7 @@ dependencies pinned in `build.gradle.kts` and `app/build.gradle.kts`.
 ```sh
 git clone https://github.com/drel4/AEmulator-Sunset.git
 cd AEmulator-Sunset
-git checkout v0.0.0.3-sunset.25
+git checkout v0.0.0.3-sunset.26
 export JAVA_HOME=/path/to/jdk-21
 export ANDROID_HOME=/path/to/Android/Sdk
 sh gradlew --no-daemon '-Dorg.gradle.jvmargs=-Xmx1536m -Dfile.encoding=UTF-8' \
@@ -48,12 +48,16 @@ export NDK="$ANDROID_HOME/ndk/22.1.7171670"
 (cd native/guestshim && sh build.sh)
 (cd native/audiohal && sh build.sh)
 (cd native/camerahal && sh build.sh)
+(cd native/sensorhal && sh build.sh)
 sh native/setupctl/build.sh
 ```
 
 - `guestshim`: preload shim, recovery shim and `aemu_true.so`.
 - `audiohal`: AOSP, Sony DIRECTTRACK, ICS/Qualcomm and MTK audio HAL variants.
 - `camerahal`: `camera.aemu_host.so`, the experimental HAL1 bridge.
+- `sensorhal`: `sensors.aemu_host.so`, the experimental legacy motion-sensor
+  bridge. Its host transport/lifecycle smoke test is `sh native/sensorhal/tests/run.sh`
+  and requires a C compiler with ASan/UBSan (no guest firmware needed).
 - `setupctl`: `aemu-setup.jar`; requires SDK 36/d8 and JDK 17+.
 - Additional upstream source-backed scripts: `native/hostjni`, `native/apwrap`,
   `native/glsplit`, `native/gueststubs`. Read their scripts and requirements;

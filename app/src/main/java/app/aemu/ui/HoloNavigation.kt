@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset through 2026-10-02: Holo controls, trackball and
+/* Modified for AEmulator Sunset through 2026-10-03: rounded highlights, icon rotation,
  * held guest keys. GPL-3.0; original attribution is preserved in NOTICE.md. */
 package app.aemu.ui
 
@@ -37,16 +37,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import app.aemu.core.NavButton
 import app.aemu.core.TrackballMotion
 
 @Composable
-internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit, onDown: () -> Unit, onUp: () -> Unit) {
+internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit, onDown: () -> Unit, onUp: () -> Unit, iconRotation: Float = 0f) {
     val down by rememberUpdatedState(onDown)
     val up by rememberUpdatedState(onUp)
     var pressed by remember { mutableStateOf(false) }
     DisposableEffect(Unit) { onDispose { up() } }
-    Box(Modifier.size(48.dp).semantics {
+    Box(Modifier.size(48.dp).background(if (pressed) Color.White.copy(alpha = 0.18f) else Color.Transparent,
+        RoundedCornerShape(8.dp)).semantics {
         contentDescription = label
         role = Role.Button
         // Accessibility activation remains one tap, without duplicating physical touches.
@@ -73,11 +77,10 @@ internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit
             try { tryAwaitRelease() } finally { pressed = false; release() }
         })
     }, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(30.dp)) {
+        Canvas(Modifier.size(30.dp).graphicsLayer { rotationZ = iconRotation }) {
             val s = size.width / 32f
             fun p(x: Float, y: Float) = Offset(x * s, y * s)
             val stroke = Stroke(2f * s, cap = StrokeCap.Square, join = StrokeJoin.Miter)
-            if (pressed) drawCircle(Color.White.copy(alpha = 0.15f), size.width / 2f)
             fun line(x: Float, y: Float, x1: Float, y1: Float) = drawLine(Color.White, p(x, y), p(x1, y1), 2f * s)
             fun outline(vararg points: Pair<Float, Float>, close: Boolean = false) {
                 val path = Path().apply {

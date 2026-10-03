@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset through 2026-10-02: compatibility bridges and
+/* Modified for AEmulator Sunset through 2026-10-03: motion and boot-media bridges,
  * live library status. GPL-3.0; upstream attribution retained in NOTICE.md. */
 package app.aemu.core
 
@@ -74,6 +74,8 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     private val vibration = VibrationBridge(ctx, paths, { settings.vibration }, ::log)
+    private val motion = MotionBridge(ctx, paths, { settings.motionSensors && img.api in 9..25 && !recoveryMode && !lowPowerBoot }, ::log)
+    fun motionVisible(visible: Boolean) { motion.visible(visible) }
     val cameraSupported get() = engine == Engine.KK && img.api in 14..25 && !recoveryMode && !lowPowerBoot
     private val camera = HostCameraBridge(ctx, paths, { settings.camera && cameraSupported }, ::log)
     fun cameraVisible(visible: Boolean) { camera.visible(visible) }
@@ -114,6 +116,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         } catch (t: Throwable) {
             vibration.stop()
             camera.stop()
+            motion.stop()
             failure = t.message ?: t.toString()
             log("✖ boot aborted: $failure")
             setState(State.FAILED)
@@ -287,6 +290,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         overrides["qemu.sf.lcd_density"] = s.density.toString()
         overrides["ro.aemu.host"] = "qemu-user"
         if (s.camera && cameraSupported) overrides["ro.hardware.camera"] = "aemu_host"
+        if (s.motionSensors && img.api in 9..25) overrides["ro.hardware.sensors"] = "aemu_host"
         overrides["dalvik.vm.execution-mode"] = if (s.jit) "int:jit" else "int:fast"
         if (s.lowRam || s.ramMb in 1..768) overrides["ro.config.low_ram"] = "true"
         if (s.ramMb > 0) {
@@ -352,6 +356,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         input.trackballEnabled = settings.trackball
         input.serve()
         vibration.serve()
+        motion.serve()
         if (s.camera && cameraSupported) camera.serve()
         frames.serve()
         if (s.radio) ril.serve() else log("radio: emulation disabled in settings")
@@ -580,6 +585,10 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
 
     private fun onProp(k: String, v: String) {
         if (k == "sys.powerctl") { powerRequest(v); return }
+        if (k == "service.bootanim.exit") {
+            for ((start, name) in BootMediaServices.triggers(paths.root, k, v)) onCtl(start, name)
+            if (v == "1") onCtl(false, "bootanim")
+        }
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
             bootDoneAt = System.currentTimeMillis()
             everBooted = true
@@ -591,7 +600,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
 
     private fun onCtl(start: Boolean, svc: String) {
         val plan = img.services.ifEmpty { InitPlan.fallback(img, paths.root) }
-        if (svc == "bootanim" || svc == "bootanimation") {
+        if (svc == "bootanim" || svc == "bootanimation" || svc == "samsungani") {
             if (!start) {
                 // 4.x sets service.bootanim.exit first and the animation quits on its own, closing its audio.
                 // Killing it outright left Samsung's boot sound track half-open: mediaserver hung and every
@@ -604,13 +613,14 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
             }
             // below 4.1 (2.3, MIUI ICS) the animation does not quit by itself: killed, it leaves the GL bridge on its last frame
             if (img.api < 16 || bootDoneAt != 0L || synchronized(procs) { procs.containsKey("bootanim") }) return
-            InitPlan.optional("bootanim", img, paths.root)?.let { def ->
+            InitPlan.optional(svc, img, paths.root)?.let { def ->
                 Thread { runCatching { startService(def) } }.start()
                 log("boot animation started")
             }
             return
         }
         val def = plan.firstOrNull { it.name == svc } ?: InitPlan.optional(svc, img, paths.root)
+        if (svc == "playsound" && start && bootDoneAt != 0L) return
         if (def == null) { log("ctl.${if (start) "start" else "stop"} $svc: no such service"); return }
         synchronized(procs) { procs.remove(svc) }?.destroyForcibly()
         if (start) Thread { runCatching { startService(def) } }.start()
@@ -792,6 +802,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         log("stopping system")
         vibration.stop()
         camera.stop()
+        motion.stop()
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }
         killAll()
         adb.stop(); props.stop(); input.stop(); frames.stop(); ril.stop(); vold.stop(); audio.stop(); net.stop(); dns.stop(); events.stop(); logd.stop()

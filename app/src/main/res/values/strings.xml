@@ -228,4 +228,9 @@
     <string name="vm_export_working">Exporting VM… Please keep this screen open.</string>
     <string name="vm_export_done">VM exported. Use Import firmware to restore the .aessvm file.</string>
     <string name="vm_export_failed">Export failed. Fully shut down all VMs and check destination space and access. If a partial file remains, delete it before retrying.</string>
+    <string name="vs_motion">Host motion sensors</string>
+    <string name="vs_motion_sub">Forward available accelerometer, gyroscope and magnetic-field sensors (Android 2.3–7.1). Experimental; takes effect after a full VM restart. Paused while the VM screen is hidden.</string>
+    <string name="vs_host_resolution">Use host resolution</string>
+    <string name="vs_host_resolution_sub">Use the physical host display size and density after a full VM restart. The guest extends behind the cutout and emulator controls. High resolutions require more RAM and rendering time. The legacy 2.x engine keeps its fixed resolution.</string>
+    <string name="m_rotate_screen">Rotate screen</string>
 </resources>

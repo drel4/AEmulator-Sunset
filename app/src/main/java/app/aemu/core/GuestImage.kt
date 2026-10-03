@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-03: persisted motion and host-display options.
+ * GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.core
 
 import org.json.JSONArray
@@ -34,6 +36,8 @@ data class VmSettings(
     val vibration: Boolean = true,
     /** Explicit host-camera opt-in; applies at the next full VM boot. */
     val camera: Boolean = false,
+    val motionSensors: Boolean = false,
+    val hostResolution: Boolean = false,
     val skipSetupWizard: Boolean = false,
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
@@ -59,6 +63,7 @@ data class VmSettings(
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
         .put("vibration", vibration)
         .put("camera", camera)
+        .put("motionSensors", motionSensors).put("hostResolution", hostResolution)
         .put("skipSetupWizard", skipSetupWizard)
         .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
@@ -99,6 +104,8 @@ data class VmSettings(
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 vibration = o.optBoolean("vibration", d.vibration),
                 camera = o.optBoolean("camera", d.camera),
+                motionSensors = o.optBoolean("motionSensors", false),
+                hostResolution = o.optBoolean("hostResolution", false),
                 skipSetupWizard = o.optBoolean("skipSetupWizard", d.skipSetupWizard),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),

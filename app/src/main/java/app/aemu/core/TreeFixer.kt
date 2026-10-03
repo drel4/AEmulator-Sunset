@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-03: source-backed host motion HAL.
+ * GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.core
 
 import android.content.Context
@@ -108,6 +110,7 @@ class TreeFixer(
     fun fixup(owners: Boolean = true) {
         if (owners) seedOwners()
         installEngineFiles()
+        installSensorHal()
         File(root, "system/framework/aemu-setup.jar").let { dst ->
             dst.parentFile?.mkdirs()
             ctx.assets.open("engines/common/aemu-setup.jar").use { src -> dst.outputStream().use { src.copyTo(it) } }
@@ -266,6 +269,25 @@ class TreeFixer(
             log("camera: standard HAL1 host-camera bridge installed")
             if (CameraHalFallback.configure(root, destination, img.api <= 20)) log("camera: legacy default HAL fallback installed")
         }.onFailure { error("camera HAL installation failed: ${it.message}") }
+    }
+
+    private fun installSensorHal() {
+        if (!img.settings.motionSensors || img.api !in 9..25) return
+        // Park OEM names too: old libhardware loaders can ignore ro.hardware.sensors.
+        val parked = File(root, "system/.aemu-parked").apply { mkdirs() }
+        for (directory in listOf("system/lib/hw", "vendor/lib/hw", "system/vendor/lib/hw")) {
+            File(root, directory).listFiles()?.filter { it.name.startsWith("sensors.") && it.name.endsWith(".so") }?.forEach { file ->
+                val dest = File(parked, (directory + "/" + file.name).replace('/', '#'))
+                if (!dest.exists()) check(file.renameTo(dest)) { "Cannot park sensor HAL" } else check(file.delete())
+            }
+        }
+        for (name in listOf("sensors.aemu_host.so", "sensors.default.so")) {
+            val file = File(root, "system/lib/hw/$name")
+            file.parentFile?.mkdirs()
+            ctx.assets.open("engines/common/sensors.aemu_host.so").use { input -> file.outputStream().use { input.copyTo(it) } }
+            file.setReadable(true, false)
+        }
+        log("motion: installed legacy host sensor HAL")
     }
 
     private fun installEngineFiles() {

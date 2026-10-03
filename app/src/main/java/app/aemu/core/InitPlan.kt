@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-03: optional firmware boot media services.
+ * GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.core
 
 import java.io.File
@@ -199,8 +201,7 @@ object InitPlan {
 
     /** Служба, которую гость может попросить через ctl.start (например bootanim). */
     fun optional(name: String, img: GuestImage, root: File): GuestService? = when (name) {
-        "bootanim", "bootanimation" -> if (File(root, "system/bin/bootanimation").isFile)
-            GuestService("bootanim", listOf("/system/bin/bootanimation"), uid = 1003, gid = 1003) else null
+        "bootanim", "bootanimation", "samsungani", "playsound" -> BootMediaServices.resolve(root, name)
         else -> null
     }
 

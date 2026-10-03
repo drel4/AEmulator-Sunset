@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset through 2026-10-02: guest controls and menu,
+/* Modified for AEmulator Sunset through 2026-10-03: natural-edge controls, cutout and
  * compatibility and camera integration. GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.ui
 
@@ -132,6 +132,9 @@ import app.aemu.core.ImageStore
 import app.aemu.core.InputService
 import kotlinx.coroutines.delay
 import kotlin.concurrent.thread
+import app.aemu.core.DisplayGeometry
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.material.icons.rounded.ScreenRotation
 
 /** Процесс :vm держит ровно одну машину. */
 object VmHost {
@@ -149,6 +152,7 @@ class VmActivity : ComponentActivity() {
     private var state by mutableStateOf(GuestVm.State.STOPPED)
     private val logLines = mutableStateListOf<String>()
     private var controlsHeightPx = 0
+    private var displayTurns by mutableStateOf(0)
     private var updateGuestLayout: (() -> Unit)? = null
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (::vm.isInitialized) {
@@ -169,6 +173,17 @@ class VmActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        displayTurns = windowManager.defaultDisplay.rotation
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (android.os.Build.VERSION.SDK_INT >= 28) window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = if (android.os.Build.VERSION.SDK_INT >= 30)
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        }
         val id = intent.getStringExtra(EXTRA_ID)
         val cur = VmHost.vm
         val stored = (if (id != null) ImageStore.get(this, id) else null) ?: cur?.img
@@ -182,8 +197,15 @@ class VmActivity : ComponentActivity() {
             restartProcess(img.id, intent.getBooleanExtra(EXTRA_RECOVERY, false), intent.getBooleanExtra(EXTRA_LOW_POWER, false))
             return
         }
+        val resolved = if (img.settings.hostResolution && img.engine != Engine.GB) {
+            val point = android.graphics.Point()
+            windowManager.defaultDisplay.getRealSize(point)
+            val (width, height) = DisplayGeometry.natural(point.x, point.y, displayTurns)
+            img.copy(settings = img.settings.copy(width = width and -2, height = height and -2,
+                density = resources.displayMetrics.densityDpi))
+        } else img
         vm = if (cur != null && cur.img.id == img.id) cur
-            else GuestVm(applicationContext, img, intent.getBooleanExtra(EXTRA_LOW_POWER, false)).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
+            else GuestVm(applicationContext, resolved, intent.getBooleanExtra(EXTRA_LOW_POWER, false)).also { it.recoveryMode = intent.getBooleanExtra(EXTRA_RECOVERY, false); VmHost.vm = it }
         vm.onPower = { reboot, reason -> runOnUiThread { if (reboot) rebootVm(reason == "recovery") else stopVm() } }
         val s = vm.settings
         if (s.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -215,17 +237,20 @@ class VmActivity : ComponentActivity() {
 
         // экран гостя вписываем с сохранением пропорций над панелью кнопок
         updateGuestLayout = layout@{
-            val aw = root.width
-            val ah = root.height - controlsHeightPx
-            if (aw <= 0 || ah <= 0) return@layout
-            val scale = minOf(aw.toFloat() / gw, ah.toFloat() / gh)
-            val w = (gw * scale).toInt()
-            val h = (gh * scale).toInt()
+            if (root.width <= 0 || root.height <= 0) return@layout
+            val sideways = displayTurns % 2 != 0
+            val fit = DisplayGeometry.fit(root.width, root.height, if (sideways) gh else gw,
+                if (sideways) gw else gh, controlsHeightPx, displayTurns, s.hostResolution)
+            val w = if (sideways) fit.height else fit.width
+            val h = if (sideways) fit.width else fit.height
             val lp = box.layoutParams as FrameLayout.LayoutParams
-            if (lp.width != w || lp.height != h || lp.topMargin != (ah - h) / 2) {
+            val left = fit.left + (fit.width - w) / 2
+            val top = fit.top + (fit.height - h) / 2
+            box.rotation = -displayTurns * 90f
+            if (lp.width != w || lp.height != h || lp.topMargin != top || lp.leftMargin != left) {
                 lp.width = w; lp.height = h
-                lp.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-                lp.topMargin = (ah - h) / 2
+                lp.gravity = Gravity.LEFT or Gravity.TOP
+                lp.leftMargin = left; lp.topMargin = top
                 box.layoutParams = lp
             }
         }
@@ -273,13 +298,30 @@ class VmActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::vm.isInitialized) vm.cameraVisible(true)
+        if (::vm.isInitialized) { vm.cameraVisible(true); vm.motionVisible(true) }
     }
 
     override fun onPause() {
         heldNavKeys.releaseAll()
-        if (::vm.isInitialized) vm.cameraVisible(false)
+        if (::vm.isInitialized) { vm.cameraVisible(false); vm.motionVisible(false) }
         super.onPause()
+    }
+
+    override fun onConfigurationChanged(config: android.content.res.Configuration) {
+        super.onConfigurationChanged(config)
+        heldNavKeys.releaseAll()
+        displayTurns = windowManager.defaultDisplay.rotation
+        updateGuestLayout?.invoke()
+    }
+
+    private fun rotateScreen() {
+        val next = (displayTurns + 1) % 4
+        requestedOrientation = intArrayOf(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)[next]
+        if (vm.img.api >= 17 && !vm.recoveryMode && !vm.lowPowerBoot)
+            guestAsync("settings put system accelerometer_rotation 0; settings put system user_rotation $next")
     }
 
     /** Отладка: adb shell am broadcast -a app.aemu.SHELL --es cmd "dumpsys power" → run/shell.out */
@@ -597,6 +639,8 @@ class VmActivity : ComponentActivity() {
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_power_menu)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER, 1500) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.m_rotate_screen)) }, leadingIcon = { Icon(Icons.Rounded.ScreenRotation, null) },
+                        onClick = { menu = false; rotateScreen() })
                     // long-press Menu makes 2.x–4.x call InputMethodManager.toggleSoftInput: the firmware's own keyboard
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_keyboard)) }, leadingIcon = { Icon(Icons.Rounded.Keyboard, null) },
                         enabled = running, onClick = { menu = false; vm.input.press(InputService.KEY_MENU, 1000) })
@@ -651,14 +695,27 @@ class VmActivity : ComponentActivity() {
                 it != NavButton.RECENTS || vm.img.api >= 11
             }
             val showButtons = vm.settings.showNavBar && buttons.isNotEmpty()
+            DisposableEffect(showButtons, vm.settings.trackball, showLog) {
+                if ((!showButtons && !vm.settings.trackball) || showLog) {
+                    controlsHeightPx = 0; box.post { updateGuestLayout?.invoke() }
+                }
+                onDispose { }
+            }
             if ((showButtons || vm.settings.trackball) && !showLog) {
+                val side = displayTurns % 2 != 0
+                val anchor = when (DisplayGeometry.edge(displayTurns)) {
+                    DisplayGeometry.Edge.BOTTOM -> Alignment.BottomCenter
+                    DisplayGeometry.Edge.RIGHT -> Alignment.CenterEnd
+                    DisplayGeometry.Edge.TOP -> Alignment.TopCenter
+                    DisplayGeometry.Edge.LEFT -> Alignment.CenterStart
+                }
+                NaturalControls(displayTurns, Modifier.align(anchor).onSizeChanged { size ->
+                    controlsHeightPx = if (side) size.width else size.height
+                    box.post { updateGuestLayout?.invoke() }
+                }) {
                 Surface(
                     color = Color(0xF20B0B0B),
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                        .onSizeChanged { size ->
-                            controlsHeightPx = size.height
-                            box.post { updateGuestLayout?.invoke() }
-                        },
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(Modifier.navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (vm.settings.trackball) {
@@ -700,13 +757,14 @@ class VmActivity : ComponentActivity() {
                                 key(button, code) {
                                     HoloNavButton(button, stringResource(button.labelRes()),
                                         onClick = { vm.input.press(code) },
-                                        onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) })
+                                        onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) }, iconRotation = displayTurns * 90f)
                                 }
                             }
                         }
                         // Trackball-only layouts still keep it above a navbar-sized safety zone.
                         if (!showButtons && vm.settings.trackball) Spacer(Modifier.height(52.dp))
                     }
+                }
                 }
             }
         }
