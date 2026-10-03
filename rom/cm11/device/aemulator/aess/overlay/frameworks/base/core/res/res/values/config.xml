@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AEmulator Sunset guest defaults, added 2026-10-04. -->
+<resources>
+    <bool name="config_showNavigationBar">true</bool>
+    <bool name="config_supportAutoRotation">true</bool>
+</resources>

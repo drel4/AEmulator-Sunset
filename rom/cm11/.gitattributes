@@ -1,0 +1,2 @@
+# These recipes run on Linux even when maintained from a Windows checkout.
+* text eol=lf
