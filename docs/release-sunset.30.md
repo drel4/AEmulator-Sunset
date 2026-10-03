@@ -16,3 +16,13 @@ included in this app update.
 [source-provenance audit](https://github.com/drel4/AEmulator-Sunset/blob/v0.0.0.3-sunset.30/docs/license-audit.md).
 
 GPL-3.0; inherited engine source gaps remain disclosed.
+
+Verification: 135 JVM tests passed with no failures, errors or skips. Both
+signed APK variants built successfully; versionCode 32, package IDs, signing
+identity and packaged license notices were verified. On-device UI testing
+remains required.
+
+## APK SHA-256
+
+- Standard: `090859a924ad64d409f044bf64d6692dc2edc49ab175331cbeb306c4010564d0`
+- Clone: `f5deb4f2e004e8bfd6c976d18d6fea77bb572cd514f9083dcce95af16eaf86a7`
