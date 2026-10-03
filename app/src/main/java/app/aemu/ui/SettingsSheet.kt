@@ -47,6 +47,7 @@ import app.aemu.core.VmSettings
 import app.aemu.core.VmStorageLease
 import app.aemu.core.VmDataReset
 import app.aemu.core.ImageStore
+import app.aemu.core.ResolutionPreset
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -54,13 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private data class Res(val label: String, val w: Int, val h: Int, val dpi: Int)
-
-private val RESOLUTIONS = listOf(
-    Res("480×800", 480, 800, 240),
-    Res("540×960", 540, 960, 240),
-    Res("720×1280", 720, 1280, 320),
-)
+private val RESOLUTIONS = ResolutionPreset.entries
 
 private val RAM_STEPS = listOf(0, 256, 512, 768, 1024, 1536, 2048, 3072, 4096)
 
@@ -90,22 +85,24 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
                 Row(horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween), modifier = Modifier.fillMaxWidth()) {
                     RESOLUTIONS.forEachIndexed { i, r ->
                         ToggleButton(
-                            checked = s.width == r.w && s.height == r.h,
-                            onCheckedChange = { s = s.copy(width = r.w, height = r.h, density = r.dpi) },
+                            checked = r.selected(s),
+                            onCheckedChange = { s = r.apply(s) },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
                             shapes = when (i) {
                                 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                                 RESOLUTIONS.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                             },
                             modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
-                        ) { Text(r.label) }
+                        ) { Text(if (r == ResolutionPreset.HOST) stringResource(R.string.vs_resolution_host)
+                            else "${r.width}×${r.height}", style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false) }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    NumField(stringResource(R.string.vs_width), s.width, Modifier.weight(1f)) { s = s.copy(width = it.coerceIn(240, 2160) and 0x7ffffffe) }
-                    NumField(stringResource(R.string.vs_height), s.height, Modifier.weight(1f)) { s = s.copy(height = it.coerceIn(320, 3840) and 0x7ffffffe) }
-                    NumField(stringResource(R.string.vs_dpi), s.density, Modifier.weight(1f)) { s = s.copy(density = it.coerceIn(96, 640)) }
+                    NumField(stringResource(R.string.vs_width), s.width, Modifier.weight(1f)) { s = s.copy(width = it.coerceIn(240, 2160) and 0x7ffffffe, hostResolution = false) }
+                    NumField(stringResource(R.string.vs_height), s.height, Modifier.weight(1f)) { s = s.copy(height = it.coerceIn(320, 3840) and 0x7ffffffe, hostResolution = false) }
+                    NumField(stringResource(R.string.vs_dpi), s.density, Modifier.weight(1f)) { s = s.copy(density = it.coerceIn(96, 640), hostResolution = false) }
                 }
                 Text(stringResource(R.string.vs_screen_hint), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))

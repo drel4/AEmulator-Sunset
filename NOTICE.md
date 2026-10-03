@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-03 for sunset.27.** This work has been
+**Modification notice updated 2026-10-03 for sunset.28.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -113,6 +113,9 @@ icon-only physical orientation tracking, untransformed guest display and trackba
 guest WindowManager rotation helper independent of sensor forwarding, app-wide
 cutout-barrier and Original/Sunset navigation styles with cross-process refresh,
 press-down host haptics and reversible opt-in Google-app disabling inside the guest.
+
+Further modifications dated 2026-10-03 (sunset.28): Host resolution preset,
+mutually exclusive host/fixed preset selection and manual-size mode switching.
 
 Further modifications dated 2026-10-03 (sunset.25): portable `.aessvm` export
 from VM settings, optional private data inclusion, archive restore through

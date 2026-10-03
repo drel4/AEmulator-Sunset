@@ -231,6 +231,7 @@
     <string name="vs_motion">Host motion sensors</string>
     <string name="vs_motion_sub">Forward available accelerometer, gyroscope and magnetic-field sensors (Android 2.3–7.1). Experimental; takes effect after a full VM restart. Paused while the VM screen is hidden.</string>
     <string name="vs_host_resolution">Use host resolution</string>
+    <string name="vs_resolution_host">Host</string>
     <string name="vs_host_resolution_sub">Use the physical host display size and density after a full VM restart. Emulator controls overlay the guest. The cutout barrier is in app settings. High resolutions require more RAM and rendering time. The legacy 2.x engine keeps its fixed resolution.</string>
     <string name="as_cutout_barrier">Cutout barrier for VM screen</string>
     <string name="as_cutout_barrier_sub">Keep the VM screen clear of the notch or camera cutout. Off allows fullscreen behind it. Applies when reopening a VM.</string>
