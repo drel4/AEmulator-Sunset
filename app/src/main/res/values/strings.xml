@@ -221,4 +221,11 @@
     <string name="vm_reset_warning">Shut down the VM first. Permanently delete guest apps, accounts, settings and internal data (/data and /cache)? No backup is created. Firmware, VM settings, recovery and the shared SD-card folder are kept.</string>
     <string name="vm_reset_done">VM data permanently reset. No backup was created.</string>
     <string name="vm_reset_failed">Cannot complete reset. Fully shut down all VMs and check the image files. If deletion started, some data may already be permanently erased.</string>
+    <string name="vm_export">Export VM (.aessvm)</string>
+    <string name="vm_export_info">Fully shut down all VMs first. Export current VM settings, system and boot files when available. Existing imports without the original boot image include the extracted boot files instead. Runtime files, recovery and shared SD-card files are not included.</string>
+    <string name="vm_export_data">Include data partition</string>
+    <string name="vm_export_data_info">Includes guest apps, accounts and private files. Only share this archive with people you trust.</string>
+    <string name="vm_export_working">Exporting VM… Please keep this screen open.</string>
+    <string name="vm_export_done">VM exported. Use Import firmware to restore the .aessvm file.</string>
+    <string name="vm_export_failed">Export failed. Fully shut down all VMs and check destination space and access. If a partial file remains, delete it before retrying.</string>
 </resources>

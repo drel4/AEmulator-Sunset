@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset, 2026-10-02: permanent VM reset; LPM repair UI removed.
+/* Modified for AEmulator Sunset, 2026-10-03: VM archive export.
  * GPL-3.0; upstream attribution retained in NOTICE.md. */
 package app.aemu.ui
 
@@ -165,6 +165,7 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             Toggle(stringResource(R.string.vs_single), stringResource(R.string.vs_single_sub), s.mtMode == 4) { s = s.copy(mtMode = if (it) 4 else 0) }
 
             Spacer(Modifier.height(16.dp))
+            VmExportSection(img, s, resetting) { resetting = it }
             TextButton(enabled = !resetting, onClick = { resetConfirm = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.vm_reset_data), color = MaterialTheme.colorScheme.error)
             }

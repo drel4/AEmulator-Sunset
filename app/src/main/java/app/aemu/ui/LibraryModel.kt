@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-03: preserve restored VM settings.
+ * GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.ui
 
 import android.app.Application
@@ -59,7 +61,8 @@ class LibraryModel(app: Application) : AndroidViewModel(app) {
                 // умолчания из настроек приложения поверх того, что подобрал анализатор (экран, частоты)
                 val raw = imp.import(uri, name)
                 val d = app.aemu.AppPrefs.defaults(ctx)
-                val img = raw.copy(settings = raw.settings.copy(gpu = d.gpu, jit = d.jit, netProxy = d.netProxy,
+                // A VM archive already contains the user's complete settings.
+                val img = if (name.endsWith(".aessvm", true)) raw else raw.copy(settings = raw.settings.copy(gpu = d.gpu, jit = d.jit, netProxy = d.netProxy,
                     showNavBar = d.showNavBar, navButtons = d.navButtons, trackball = d.trackball,
                     trackballDpad = d.trackballDpad, trackballStepDp = d.trackballStepDp,
                     keepScreenOn = d.keepScreenOn))

@@ -1,3 +1,5 @@
+/* Modified for AEmulator Sunset, 2026-10-03: VM archive restore and boot retention.
+ * GPL-3.0; see LICENSE and NOTICE.md. */
 package app.aemu.importer
 
 import android.content.Context
@@ -54,6 +56,12 @@ class Importer(
     @Volatile var cancelled = false
 
     fun import(uri: Uri, name: String): GuestImage {
+        if (name.endsWith(".aessvm", true)) {
+            return app.aemu.core.VmArchiveStorage.restore(ctx, uri) { path ->
+                if (cancelled) throw IOException("cancelled")
+                onProgress("Restoring $path", -1f)
+            }.also { onProgress("Done", 1f) }
+        }
         val id = ImageStore.newId(ctx)
         paths = VmPaths(ctx, id)
         root = paths.root
@@ -436,6 +444,7 @@ class Importer(
         val rd = runCatching { BootImage.ramdisk(data) }.getOrNull()
         if (rd.isNullOrEmpty()) { log("boot: ramdisk not recognized"); return }
         ramdisk = rd
+        File(paths.dir, "boot.img").writeBytes(data)
         log("boot: ramdisk, ${rd.size} files")
     }
 

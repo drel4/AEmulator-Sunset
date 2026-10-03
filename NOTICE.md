@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-02 for sunset.24.** This work has been
+**Modification notice updated 2026-10-03 for sunset.25.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -101,6 +101,11 @@ This notice identifies a modified version. It does not imply endorsement by
 the upstream maintainers, Sony, Samsung, Google, or any firmware vendor.
 
 ## Source and corresponding binaries
+
+Further modifications dated 2026-10-03 (sunset.25): portable `.aessvm` export
+from VM settings, optional private data inclusion, archive restore through
+firmware import, portable file metadata, original boot-image retention for
+new imports, and English/Russian export controls. Source is marked in Git.
 
 Source code for AEmulator Sunset releases, including the exact tagged revision
 used to build each APK, is published at:
