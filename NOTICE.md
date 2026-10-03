@@ -123,7 +123,8 @@ for unrecognized SoC families. New UI strings include Russian translations.
 
 Further modifications dated 2026-10-04 (sunset.30): shorter English/Russian VM
 export description; removal of the library toolbar subtitle; simplified firmware
-import format summary. Export contents, layout and guest behavior are unchanged.
+import format summary; simplified ROM catalog compatibility note and removal of
+browser-opening descriptions. Export contents, layout and guest behavior are unchanged.
 
 Further modifications dated 2026-10-03 (sunset.28): Host resolution preset,
 mutually exclusive host/fixed preset selection and manual-size mode switching.

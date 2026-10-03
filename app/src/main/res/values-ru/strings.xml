@@ -186,7 +186,7 @@
     <string name="catalog_roms">Прошивки</string>
     <string name="catalog_source">Источник каталога</string>
     <string name="catalog_url">Адрес rom.list</string>
-    <string name="catalog_url_hint">Адрес HTTP или HTTPS. Рекомендуется HTTPS. Ссылки каталога открываются в браузере.</string>
+    <string name="catalog_url_hint">Адрес HTTP или HTTPS. Рекомендуется HTTPS.</string>
     <string name="catalog_reset_source">Восстановить адрес по умолчанию</string>
     <string name="catalog_refresh">Обновить</string>
     <string name="catalog_retry">Повторить</string>
@@ -199,7 +199,7 @@
         <item quantity="many">%1$d прошивок</item>
         <item quantity="other">%1$d прошивки</item>
     </plurals>
-    <string name="catalog_reported">Статусы совместимости указаны источником каталога и не проверяются приложением. Ссылки открываются в браузере по умолчанию.</string>
+    <string name="catalog_reported">Статусы совместимости прошивок не проверяются приложением.</string>
     <string name="catalog_no_roms">Пока нет прошивок.</string>
     <string name="catalog_no_url">Ссылка для скачивания прошивки пока недоступна.</string>
     <string name="catalog_status_unknown">Неизвестно</string>

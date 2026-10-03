@@ -3,6 +3,8 @@
 - Shorter VM export description in English and Russian, without boot-file details.
 - Removed the subtitle from the main-screen toolbar.
 - Import file summary: ZIP, TAR/MD5, IMG, TWRP & CWM backups.
+- ROM catalog now says only that compatibility statuses are not verified by the app;
+  removed descriptions about links opening in a browser.
 - Other descriptions, export controls, warnings and VM behavior are unchanged.
 
 The separate CM11 Android 4.4.2 ROM is still a work in progress and is not

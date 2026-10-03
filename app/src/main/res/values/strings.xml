@@ -187,7 +187,7 @@
     <string name="catalog_roms">ROMs</string>
     <string name="catalog_source">Catalog source</string>
     <string name="catalog_url">rom.list URL</string>
-    <string name="catalog_url_hint">HTTP or HTTPS URL. HTTPS is recommended. Catalog links open in your browser.</string>
+    <string name="catalog_url_hint">HTTP or HTTPS URL. HTTPS is recommended.</string>
     <string name="catalog_reset_source">Restore default URL</string>
     <string name="catalog_refresh">Refresh</string>
     <string name="catalog_retry">Retry</string>
@@ -198,7 +198,7 @@
         <item quantity="one">%1$d ROM</item>
         <item quantity="other">%1$d ROMs</item>
     </plurals>
-    <string name="catalog_reported">Compatibility statuses are reported by the catalog source, not verified by the app. Downloads open in your default browser.</string>
+    <string name="catalog_reported">ROM compatibility statuses are not verified by the app.</string>
     <string name="catalog_no_roms">No ROMs at the moment.</string>
     <string name="catalog_no_url">ROM download URL isn\'t available right now.</string>
     <string name="catalog_status_unknown">Unknown</string>
