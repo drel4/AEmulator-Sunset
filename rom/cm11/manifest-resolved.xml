@@ -2,9 +2,9 @@
 <manifest>
   <remote name="aosp" fetch="https://android.googlesource.com" review="android-review.googlesource.com"/>
   <remote name="github" fetch="https://github.com" review="review.cyanogenmod.org"/>
-  
+
   <default remote="github" revision="refs/tags/cm-11.0-XNPH25R-bacon-d22b777afa" sync-j="4" sync-c="true"/>
-  
+
   <project name="CyanogenMod/AndroidAsync" path="external/koush/AndroidAsync" revision="d7c7470a2599a6f76b7f92ed8015b0ec1b1e45c2" upstream="refs/tags/cm-11.0-XNPH25R-bacon-d22b777afa"/>
   <project name="CyanogenMod/Superuser" path="external/koush/Superuser" revision="eefebe7cdab14322cd8261e93a282969bac2dd3f" upstream="refs/tags/cm-11.0-XNPH25R-bacon-d22b777afa"/>
   <project name="CyanogenMod/Widgets" path="external/koush/Widgets" revision="6aebba738f778bf265f0badbe649f590e46e27fd" upstream="refs/tags/cm-11.0-XNPH25R-bacon-d22b777afa"/>
