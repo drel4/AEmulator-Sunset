@@ -152,7 +152,11 @@ class VmActivity : ComponentActivity() {
     private var state by mutableStateOf(GuestVm.State.STOPPED)
     private val logLines = mutableStateListOf<String>()
     private var controlsHeightPx = 0
-    private var displayTurns by mutableStateOf(0)
+    private var iconTurns by mutableStateOf(0)
+    private var hostUi by mutableStateOf(app.aemu.AppPrefs.HostUiOptions())
+    private var vmRoot: FrameLayout? = null
+    private var cutoutInsets = androidx.core.graphics.Insets.NONE
+    private var orientationListener: android.view.OrientationEventListener? = null
     private var updateGuestLayout: (() -> Unit)? = null
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (::vm.isInitialized) {
@@ -173,7 +177,18 @@ class VmActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        displayTurns = windowManager.defaultDisplay.rotation
+        val point = android.graphics.Point()
+        windowManager.defaultDisplay.getRealSize(point)
+        val natural = DisplayGeometry.natural(point.x, point.y, windowManager.defaultDisplay.rotation)
+        // The guest framebuffer is a physical display. Android inside the VM rotates its contents.
+        requestedOrientation = if (natural.first > natural.second)
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        hostUi = app.aemu.AppPrefs.hostUiOptions(this)
+        orientationListener = object : android.view.OrientationEventListener(this, android.hardware.SensorManager.SENSOR_DELAY_NORMAL) {
+            override fun onOrientationChanged(angle: Int) {
+                if (angle != ORIENTATION_UNKNOWN) iconTurns = app.aemu.core.HostDisplayPolicy.iconTurns(angle, iconTurns)
+            }
+        }
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
         if (android.os.Build.VERSION.SDK_INT >= 28) window.attributes = window.attributes.apply {
             layoutInDisplayCutoutMode = if (android.os.Build.VERSION.SDK_INT >= 30)
@@ -198,9 +213,7 @@ class VmActivity : ComponentActivity() {
             return
         }
         val resolved = if (img.settings.hostResolution && img.engine != Engine.GB) {
-            val point = android.graphics.Point()
-            windowManager.defaultDisplay.getRealSize(point)
-            val (width, height) = DisplayGeometry.natural(point.x, point.y, displayTurns)
+            val (width, height) = natural
             img.copy(settings = img.settings.copy(width = width and -2, height = height and -2,
                 density = resources.displayMetrics.densityDpi))
         } else img
@@ -212,6 +225,12 @@ class VmActivity : ComponentActivity() {
 
         val (gw, gh) = if (vm.engine == Engine.GB) 480 to 800 else s.width to s.height
         val root = FrameLayout(this).apply { setBackgroundColor(0xff000000.toInt()) }
+        vmRoot = root
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            cutoutInsets = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout())
+            applyCutoutBarrier()
+            insets
+        }
         box = FrameLayout(this)
         surfaceView = SurfaceView(this)
         surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
@@ -238,15 +257,14 @@ class VmActivity : ComponentActivity() {
         // экран гостя вписываем с сохранением пропорций над панелью кнопок
         updateGuestLayout = layout@{
             if (root.width <= 0 || root.height <= 0) return@layout
-            val sideways = displayTurns % 2 != 0
-            val fit = DisplayGeometry.fit(root.width, root.height, if (sideways) gh else gw,
-                if (sideways) gw else gh, controlsHeightPx, displayTurns, s.hostResolution)
-            val w = if (sideways) fit.height else fit.width
-            val h = if (sideways) fit.width else fit.height
+            val fit = DisplayGeometry.fit(root.width - root.paddingLeft - root.paddingRight,
+                root.height - root.paddingTop - root.paddingBottom, gw, gh, controlsHeightPx, 0, s.hostResolution)
+            val w = fit.width
+            val h = fit.height
             val lp = box.layoutParams as FrameLayout.LayoutParams
-            val left = fit.left + (fit.width - w) / 2
-            val top = fit.top + (fit.height - h) / 2
-            box.rotation = -displayTurns * 90f
+            val left = fit.left
+            val top = fit.top
+            box.rotation = 0f
             if (lp.width != w || lp.height != h || lp.topMargin != top || lp.leftMargin != left) {
                 lp.width = w; lp.height = h
                 lp.gravity = Gravity.LEFT or Gravity.TOP
@@ -298,10 +316,14 @@ class VmActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        hostUi = app.aemu.AppPrefs.hostUiOptions(this)
+        applyCutoutBarrier()
+        orientationListener?.enable()
         if (::vm.isInitialized) { vm.cameraVisible(true); vm.motionVisible(true) }
     }
 
     override fun onPause() {
+        orientationListener?.disable()
         heldNavKeys.releaseAll()
         if (::vm.isInitialized) { vm.cameraVisible(false); vm.motionVisible(false) }
         super.onPause()
@@ -310,18 +332,24 @@ class VmActivity : ComponentActivity() {
     override fun onConfigurationChanged(config: android.content.res.Configuration) {
         super.onConfigurationChanged(config)
         heldNavKeys.releaseAll()
-        displayTurns = windowManager.defaultDisplay.rotation
         updateGuestLayout?.invoke()
     }
 
     private fun rotateScreen() {
-        val next = (displayTurns + 1) % 4
-        requestedOrientation = intArrayOf(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)[next]
-        if (vm.img.api >= 17 && !vm.recoveryMode && !vm.lowPowerBoot)
-            guestAsync("settings put system accelerometer_rotation 0; settings put system user_rotation $next")
+        thread(name = "guest-rotation") {
+            val result = runCatching { vm.rotateGuest() }
+            result.onSuccess { (code, output) ->
+                vm.log("rotation: exit=$code ${output.trim()}")
+                if (code != 0) toast(getString(R.string.m_rotate_failed))
+            }.onFailure { vm.log("rotation failed: ${it.message}"); toast(getString(R.string.m_rotate_failed)) }
+        }
+    }
+
+    private fun applyCutoutBarrier() {
+        val root = vmRoot ?: return
+        val inset = if (hostUi.cutoutBarrier) cutoutInsets else androidx.core.graphics.Insets.NONE
+        root.setPadding(inset.left, inset.top, inset.right, inset.bottom)
+        updateGuestLayout?.invoke()
     }
 
     /** Отладка: adb shell am broadcast -a app.aemu.SHELL --es cmd "dumpsys power" → run/shell.out */
@@ -379,6 +407,8 @@ class VmActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        orientationListener?.disable()
+        vmRoot = null
         heldNavKeys.releaseAll()
         if (::guest.isInitialized) guest.stop()
         shellRx?.let { runCatching { unregisterReceiver(it) } }
@@ -640,6 +670,7 @@ class VmActivity : ComponentActivity() {
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_power_menu)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER, 1500) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_rotate_screen)) }, leadingIcon = { Icon(Icons.Rounded.ScreenRotation, null) },
+                        enabled = running && !vm.recoveryMode && !vm.lowPowerBoot,
                         onClick = { menu = false; rotateScreen() })
                     // long-press Menu makes 2.x–4.x call InputMethodManager.toggleSoftInput: the firmware's own keyboard
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_keyboard)) }, leadingIcon = { Icon(Icons.Rounded.Keyboard, null) },
@@ -702,20 +733,14 @@ class VmActivity : ComponentActivity() {
                 onDispose { }
             }
             if ((showButtons || vm.settings.trackball) && !showLog) {
-                val side = displayTurns % 2 != 0
-                val anchor = when (DisplayGeometry.edge(displayTurns)) {
-                    DisplayGeometry.Edge.BOTTOM -> Alignment.BottomCenter
-                    DisplayGeometry.Edge.RIGHT -> Alignment.CenterEnd
-                    DisplayGeometry.Edge.TOP -> Alignment.TopCenter
-                    DisplayGeometry.Edge.LEFT -> Alignment.CenterStart
-                }
-                NaturalControls(displayTurns, Modifier.align(anchor).onSizeChanged { size ->
-                    controlsHeightPx = if (side) size.width else size.height
+                Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { size ->
+                    controlsHeightPx = size.height
                     box.post { updateGuestLayout?.invoke() }
                 }) {
                 Surface(
-                    color = Color(0xF20B0B0B),
-                    modifier = Modifier.fillMaxWidth(),
+                    color = if (hostUi.sunsetNavbar) Color(0xF20B0B0B) else MaterialTheme.colorScheme.secondaryContainer,
+                    shape = if (hostUi.sunsetNavbar) androidx.compose.ui.graphics.RectangleShape else androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    modifier = Modifier.fillMaxWidth().padding(if (hostUi.sunsetNavbar) 0.dp else 6.dp),
                 ) {
                     Column(Modifier.navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (vm.settings.trackball) {
@@ -757,7 +782,8 @@ class VmActivity : ComponentActivity() {
                                 key(button, code) {
                                     HoloNavButton(button, stringResource(button.labelRes()),
                                         onClick = { vm.input.press(code) },
-                                        onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) }, iconRotation = displayTurns * 90f)
+                                        onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) },
+                                        iconRotation = -iconTurns * 90f, original = !hostUi.sunsetNavbar)
                                 }
                             }
                         }

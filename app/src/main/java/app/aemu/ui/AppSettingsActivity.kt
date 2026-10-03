@@ -1,4 +1,4 @@
-/* Modified for AEmulator Sunset through 2026-10-02: fork links, catalog,
+/* Modified for AEmulator Sunset through 2026-10-03: host display options, fork links, catalog,
  * experimental unlock and local license/notices. GPL-3.0; see NOTICE.md. */
 package app.aemu.ui
 
@@ -121,6 +121,7 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
     var defaults by remember { mutableStateOf(AppPrefs.defaults(ctx)) }
     var theme by remember { mutableStateOf(AppPrefs.theme(ctx)) }
     var dynamic by remember { mutableStateOf(AppPrefs.dynamicColor(ctx)) }
+    var hostUi by remember { mutableStateOf(AppPrefs.hostUiOptions(ctx)) }
     val scope = rememberCoroutineScope()
     var autoUpdates by remember { mutableStateOf(AppPrefs.autoCheckUpdates(ctx)) }
     var updateState by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
@@ -216,6 +217,20 @@ private fun AppSettings(onBack: () -> Unit, onRestyle: () -> Unit) {
 
             item {
                 Section(stringResource(R.string.as_appearance)) {
+                    Toggle(stringResource(R.string.as_cutout_barrier), stringResource(R.string.as_cutout_barrier_sub), hostUi.cutoutBarrier) {
+                        hostUi = hostUi.copy(cutoutBarrier = it); AppPrefs.setHostUiOptions(ctx, hostUi)
+                    }
+                    Text(stringResource(R.string.as_navbar_style), modifier = Modifier.padding(start = 16.dp, top = 8.dp))
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(false to R.string.as_navbar_original, true to R.string.as_navbar_sunset).forEach { (sunset, label) ->
+                            Row(Modifier.weight(1f).clickable {
+                                hostUi = hostUi.copy(sunsetNavbar = sunset); AppPrefs.setHostUiOptions(ctx, hostUi)
+                            }, verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = hostUi.sunsetNavbar == sunset, onClick = null)
+                                Text(stringResource(label))
+                            }
+                        }
+                    }
                     Row_(Icons.Rounded.Translate, stringResource(R.string.as_language), langName) { langDialog = true }
                     Text(stringResource(R.string.as_theme), style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp))

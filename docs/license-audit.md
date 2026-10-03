@@ -1,6 +1,6 @@
 # Source and licensing audit — 2026-10-02
 
-Scope: the Sunset checkout through sunset.26, its build scripts and release
+Scope: the Sunset checkout through sunset.27, its build scripts and release
 packaging. This is a technical inventory, not a legal compliance certification.
 
 ## Checked and improved
@@ -13,7 +13,7 @@ packaging. This is a technical inventory, not a legal compliance certification.
 - Exact application revisions are identified by release tags. Release notes
   provide adjacent source links and disclose the limitations below.
 - Sources/build scripts exist for Sunset's preload/trackball/vibration changes,
-  DIRECTTRACK audio, host camera bridge and setup helper. No vendor ROM APKs
+  DIRECTTRACK audio, host camera/sensor bridges and setup/rotation/Google-app helpers. No vendor ROM APKs
   or firmware images are added to the application source distribution.
 
 ## Unresolved: inherited prebuilt engine provenance

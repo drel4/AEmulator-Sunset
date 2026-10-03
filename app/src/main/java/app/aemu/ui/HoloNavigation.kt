@@ -42,9 +42,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import app.aemu.core.NavButton
 import app.aemu.core.TrackballMotion
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.Icon
 
 @Composable
-internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit, onDown: () -> Unit, onUp: () -> Unit, iconRotation: Float = 0f) {
+internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit, onDown: () -> Unit, onUp: () -> Unit, iconRotation: Float = 0f, original: Boolean = false) {
+    val hostView = androidx.compose.ui.platform.LocalView.current
     val down by rememberUpdatedState(onDown)
     val up by rememberUpdatedState(onUp)
     var pressed by remember { mutableStateOf(false) }
@@ -54,7 +59,7 @@ internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit
         contentDescription = label
         role = Role.Button
         // Accessibility activation remains one tap, without duplicating physical touches.
-        onClick { onClick(); true }
+        onClick { hostView.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY); onClick(); true }
     }.onKeyEvent { event ->
         val native = event.nativeKeyEvent
         if (native.keyCode !in listOf(android.view.KeyEvent.KEYCODE_ENTER,
@@ -62,7 +67,7 @@ internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER)) false
         else when (native.action) {
             android.view.KeyEvent.ACTION_DOWN -> {
-                if (native.repeatCount == 0) { pressed = true; down() }
+                if (native.repeatCount == 0) { pressed = true; hostView.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY); down() }
                 true
             }
             android.view.KeyEvent.ACTION_UP -> { pressed = false; up(); true }
@@ -73,11 +78,27 @@ internal fun HoloNavButton(button: NavButton, label: String, onClick: () -> Unit
         detectTapGestures(onPress = {
             val release = up
             pressed = true
+            hostView.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             down()
             try { tryAwaitRelease() } finally { pressed = false; release() }
         })
     }, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(30.dp).graphicsLayer { rotationZ = iconRotation }) {
+        if (original) Icon(when (button) {
+            NavButton.BACK -> Icons.AutoMirrored.Rounded.ArrowBack
+            NavButton.HOME -> Icons.Rounded.Circle
+            NavButton.RECENTS -> Icons.Rounded.CropSquare
+            NavButton.MENU -> Icons.Rounded.Menu
+            NavButton.SEARCH -> Icons.Rounded.Search
+            NavButton.POWER -> Icons.Rounded.PowerSettingsNew
+            NavButton.VOLUME_DOWN -> Icons.Rounded.VolumeDown
+            NavButton.VOLUME_UP -> Icons.Rounded.VolumeUp
+            NavButton.UP -> Icons.Rounded.KeyboardArrowUp
+            NavButton.DOWN -> Icons.Rounded.KeyboardArrowDown
+            NavButton.LEFT -> Icons.Rounded.KeyboardArrowLeft
+            NavButton.RIGHT -> Icons.Rounded.KeyboardArrowRight
+            NavButton.CENTER -> Icons.Rounded.RadioButtonChecked
+        }, null, Modifier.size(24.dp).graphicsLayer { rotationZ = iconRotation })
+        else Canvas(Modifier.size(30.dp).graphicsLayer { rotationZ = iconRotation }) {
             val s = size.width / 32f
             fun p(x: Float, y: Float) = Offset(x * s, y * s)
             val stroke = Stroke(2f * s, cap = StrokeCap.Square, join = StrokeJoin.Miter)
@@ -159,6 +180,7 @@ internal class TrackballView(context: Context) : View(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
                 pointer = event.getPointerId(0)
                 startX = event.x; startY = event.y; lastX = event.x; lastY = event.y
                 rolling = false; isPressed = true

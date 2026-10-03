@@ -454,6 +454,19 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
                 }.onFailure { log("setup option failed: ${it.message}") }
             }, "setup-option").start()
         }
+        if (GoogleAppsOption.runHelper(img.api, settings.disableGoogleApps,
+                File(paths.root, "data/system/aemu-google-disabled.properties").isFile, recoveryMode, lowPowerBoot)) {
+            val googleRunner = guestRunner
+            Thread({
+                if (!stopping) runCatching {
+                    val (code, output) = googleRunner.run(listOf("/system/bin/app_process",
+                        "-Djava.class.path=/system/framework/aemu-setup.jar", "/system/bin", "app.aemu.setup.GoogleCtl",
+                        if (settings.disableGoogleApps) "disable" else "restore"), 180_000,
+                        mapOf("DHD_UID" to "1000", "DHD_GID" to "1000"))
+                    log("Google-app option: exit=$code ${output.trim()}")
+                }.onFailure { log("Google-app option failed: ${it.message}") }
+            }, "google-app-option").start()
+        }
         watchdog()
     }
 
@@ -843,6 +856,10 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
 
     fun guestShell(cmd: String, timeoutMs: Long = 60_000): String =
         guestRunner.run(listOf("/system/bin/sh", "-c", cmd), timeoutMs).second
+
+    fun rotateGuest(): Pair<Int, String> = guestRunner.run(listOf("/system/bin/app_process",
+        "-Djava.class.path=/system/framework/aemu-setup.jar", "/system/bin", "app.aemu.setup.RotationCtl"),
+        15_000, mapOf("DHD_UID" to "1000", "DHD_GID" to "1000"))
 
     fun installApk(apkOnSdcard: String): String =
         guestRunner.run(listOf("/system/bin/pm", "install", "-r", apkOnSdcard), 600_000).second

@@ -39,6 +39,7 @@ data class VmSettings(
     val motionSensors: Boolean = false,
     val hostResolution: Boolean = false,
     val skipSetupWizard: Boolean = false,
+    val disableGoogleApps: Boolean = false,
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
@@ -65,6 +66,7 @@ data class VmSettings(
         .put("camera", camera)
         .put("motionSensors", motionSensors).put("hostResolution", hostResolution)
         .put("skipSetupWizard", skipSetupWizard)
+        .put("disableGoogleApps", disableGoogleApps)
         .put("ramMb", ramMb).put("radio", radio).put("imei", imei).put("qemuArgs", qemuArgs)
 
     companion object {
@@ -107,6 +109,7 @@ data class VmSettings(
                 motionSensors = o.optBoolean("motionSensors", false),
                 hostResolution = o.optBoolean("hostResolution", false),
                 skipSetupWizard = o.optBoolean("skipSetupWizard", d.skipSetupWizard),
+                disableGoogleApps = o.optBoolean("disableGoogleApps", false),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
                 ramMb = o.optInt("ramMb", 0),

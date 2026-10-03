@@ -1,3 +1,4 @@
+/* Modified for AEmulator Sunset, 2026-10-03: cross-process display options. GPL-3.0. */
 package app.aemu
 
 import android.content.Context
@@ -39,6 +40,24 @@ object AppPrefs {
     private fun sp(ctx: Context) = ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     fun prefs(ctx: Context) = sp(ctx)
+
+    data class HostUiOptions(val cutoutBarrier: Boolean = false, val sunsetNavbar: Boolean = true)
+    // The VM runs in another process: read an atomic file on resume, not cached SharedPreferences.
+    fun hostUiOptions(ctx: Context): HostUiOptions = runCatching {
+        val file = android.util.AtomicFile(java.io.File(ctx.filesDir, "host-ui.json"))
+        val json = org.json.JSONObject(file.openRead().bufferedReader().use { it.readText() })
+        HostUiOptions(json.optBoolean("cutoutBarrier", false), json.optBoolean("sunsetNavbar", true))
+    }.getOrDefault(HostUiOptions())
+
+    fun setHostUiOptions(ctx: Context, options: HostUiOptions) {
+        val file = android.util.AtomicFile(java.io.File(ctx.filesDir, "host-ui.json"))
+        val stream = file.startWrite()
+        try {
+            stream.write(org.json.JSONObject().put("cutoutBarrier", options.cutoutBarrier)
+                .put("sunsetNavbar", options.sunsetNavbar).toString().toByteArray(Charsets.UTF_8))
+            file.finishWrite(stream)
+        } catch (error: Throwable) { file.failWrite(stream); throw error }
+    }
 
     fun language(ctx: Context): String = sp(ctx).getString("lang", "") ?: ""
     fun setLanguage(ctx: Context, tag: String) = sp(ctx).edit().putString("lang", tag).apply()
