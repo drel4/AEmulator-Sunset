@@ -11,11 +11,14 @@ import android.os.HandlerThread
 import java.io.DataInputStream
 import java.io.File
 
-/** Natural-device axes and monotonic host timestamps; no invented missing sensors. */
-internal class MotionBridge(ctx: Context, paths: VmPaths, private val enabled: () -> Boolean, private val log: (String) -> Unit) : SensorEventListener {
+/** Real natural-device axes when enabled; explicit synthetic gravity for manual rotation otherwise. */
+internal class MotionBridge(ctx: Context, paths: VmPaths, private val enabled: () -> Boolean,
+    private val hostSensors: () -> Boolean, private val log: (String) -> Unit) : SensorEventListener {
     private val manager = ctx.getSystemService(SensorManager::class.java)
     private val sensors = MotionProtocol.types.map { manager?.getDefaultSensor(it) }
-    private val available = sensors.mapIndexed { i, s -> if (s != null) 1 shl i else 0 }.fold(0, Int::or)
+    private val hostAvailable = sensors.mapIndexed { i, s -> if (s != null) 1 shl i else 0 }.fold(0, Int::or)
+    private val available get() = if (hostSensors()) hostAvailable else 1
+    private var manualTurns = 0
     private val latest = arrayOfNulls<MotionProtocol.Sample>(3)
     private var worker: HandlerThread? = null
     private var handler: Handler? = null
@@ -33,8 +36,9 @@ internal class MotionBridge(ctx: Context, paths: VmPaths, private val enabled: (
             else {
                 desired = request.mask and available
                 handler?.post { updateRegistration() }
-                MotionProtocol.samples(if (!visible || !started || !enabled()) emptyList() else
-                    latest.mapIndexedNotNull { i, sample -> sample?.takeIf { desired and (1 shl i) != 0 } })
+                MotionProtocol.samples(if (!visible || !started || !enabled()) emptyList() else if (!hostSensors())
+                    if (desired and 1 != 0) listOf(MotionProtocol.Sample(1, android.os.SystemClock.elapsedRealtimeNanos(), ManualMotion.gravity(manualTurns), 3)) else emptyList()
+                else latest.mapIndexedNotNull { i, sample -> sample?.takeIf { desired and (1 shl i) != 0 } })
             }
         }
         client.outputStream.write(reply); client.outputStream.flush()
@@ -45,7 +49,13 @@ internal class MotionBridge(ctx: Context, paths: VmPaths, private val enabled: (
         handler = Handler(worker!!.looper)
         started = true
         if (!server.start(log)) { stop(); return }
-        log("motion: bridge ready, host sensor mask=$available, capped at 50 Hz")
+        log("motion: ${if (hostSensors()) "host" else "manual gravity"} bridge ready, sensor mask=$available, capped at 50 Hz")
+    }
+    @Synchronized fun simulateRotation(): Boolean {
+        if (!started || !enabled() || hostSensors()) return false
+        manualTurns = (manualTurns + 1) % 4
+        log("motion: simulated phone rotation=$manualTurns (guest auto-rotate policy applies)")
+        return true
     }
     @Synchronized fun visible(value: Boolean) {
         visible = value
@@ -53,7 +63,7 @@ internal class MotionBridge(ctx: Context, paths: VmPaths, private val enabled: (
         handler?.post { updateRegistration() }
     }
     @Synchronized private fun updateRegistration() {
-        val target = if (started && visible && enabled()) desired else 0
+        val target = if (started && visible && enabled() && hostSensors()) desired else 0
         if (target == registered) return
         manager?.unregisterListener(this)
         latest.fill(null)

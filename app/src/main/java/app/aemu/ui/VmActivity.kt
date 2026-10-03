@@ -73,6 +73,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -153,6 +154,9 @@ class VmActivity : ComponentActivity() {
     private val logLines = mutableStateListOf<String>()
     private var controlsHeightPx = 0
     private var iconTurns by mutableStateOf(0)
+    private var windowTurns by mutableStateOf(0)
+    private var tablet = false
+    private val controlsTurns get() = app.aemu.core.HostDisplayPolicy.controlsTurns(tablet, hostUi.tabletNavbarRotation, windowTurns)
     private var hostUi by mutableStateOf(app.aemu.AppPrefs.HostUiOptions())
     private var vmRoot: FrameLayout? = null
     private var cutoutInsets = androidx.core.graphics.Insets.NONE
@@ -180,13 +184,18 @@ class VmActivity : ComponentActivity() {
         val point = android.graphics.Point()
         windowManager.defaultDisplay.getRealSize(point)
         val natural = DisplayGeometry.natural(point.x, point.y, windowManager.defaultDisplay.rotation)
-        // The guest framebuffer is a physical display. Android inside the VM rotates its contents.
-        requestedOrientation = if (natural.first > natural.second)
+        // Tablets may rotate the host container without rotating/resizing the guest framebuffer.
+        // Phones retain the fixed natural window. Guest Android owns its display orientation.
+        tablet = app.aemu.core.HostDisplayPolicy.rotateWindow(resources.configuration.smallestScreenWidthDp)
+        requestedOrientation = if (tablet) android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            else if (natural.first > natural.second)
             android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        windowTurns = windowManager.defaultDisplay.rotation
         hostUi = app.aemu.AppPrefs.hostUiOptions(this)
         orientationListener = object : android.view.OrientationEventListener(this, android.hardware.SensorManager.SENSOR_DELAY_NORMAL) {
             override fun onOrientationChanged(angle: Int) {
                 if (angle != ORIENTATION_UNKNOWN) iconTurns = app.aemu.core.HostDisplayPolicy.iconTurns(angle, iconTurns)
+                windowTurns = windowManager.defaultDisplay.rotation
             }
         }
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -258,7 +267,7 @@ class VmActivity : ComponentActivity() {
         updateGuestLayout = layout@{
             if (root.width <= 0 || root.height <= 0) return@layout
             val fit = DisplayGeometry.fit(root.width - root.paddingLeft - root.paddingRight,
-                root.height - root.paddingTop - root.paddingBottom, gw, gh, controlsHeightPx, 0, s.hostResolution)
+                root.height - root.paddingTop - root.paddingBottom, gw, gh, controlsHeightPx, controlsTurns, s.hostResolution)
             val w = fit.width
             val h = fit.height
             val lp = box.layoutParams as FrameLayout.LayoutParams
@@ -316,6 +325,7 @@ class VmActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        windowTurns = windowManager.defaultDisplay.rotation
         hostUi = app.aemu.AppPrefs.hostUiOptions(this)
         applyCutoutBarrier()
         orientationListener?.enable()
@@ -331,18 +341,14 @@ class VmActivity : ComponentActivity() {
 
     override fun onConfigurationChanged(config: android.content.res.Configuration) {
         super.onConfigurationChanged(config)
+        windowTurns = windowManager.defaultDisplay.rotation
         heldNavKeys.releaseAll()
         updateGuestLayout?.invoke()
     }
 
     private fun rotateScreen() {
-        thread(name = "guest-rotation") {
-            val result = runCatching { vm.rotateGuest() }
-            result.onSuccess { (code, output) ->
-                vm.log("rotation: exit=$code ${output.trim()}")
-                if (code != 0) toast(getString(R.string.m_rotate_failed))
-            }.onFailure { vm.log("rotation failed: ${it.message}"); toast(getString(R.string.m_rotate_failed)) }
-        }
+        if (!vm.simulateRotation()) toast(getString(R.string.m_rotate_failed))
+        else toast(getString(R.string.m_rotate_simulated))
     }
 
     private fun applyCutoutBarrier() {
@@ -669,8 +675,8 @@ class VmActivity : ComponentActivity() {
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER) })
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_power_menu)) }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
                         onClick = { menu = false; vm.input.press(InputService.KEY_POWER, 1500) })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.m_rotate_screen)) }, leadingIcon = { Icon(Icons.Rounded.ScreenRotation, null) },
-                        enabled = running && !vm.recoveryMode && !vm.lowPowerBoot,
+                    if (!vm.settings.motionSensors) DropdownMenuItem(text = { Text(stringResource(R.string.m_rotate_screen)) }, leadingIcon = { Icon(Icons.Rounded.ScreenRotation, null) },
+                        enabled = running && vm.img.api in 9..25 && !vm.recoveryMode && !vm.lowPowerBoot,
                         onClick = { menu = false; rotateScreen() })
                     // long-press Menu makes 2.x–4.x call InputMethodManager.toggleSoftInput: the firmware's own keyboard
                     DropdownMenuItem(text = { Text(stringResource(R.string.m_keyboard)) }, leadingIcon = { Icon(Icons.Rounded.Keyboard, null) },
@@ -726,24 +732,38 @@ class VmActivity : ComponentActivity() {
                 it != NavButton.RECENTS || vm.img.api >= 11
             }
             val showButtons = vm.settings.showNavBar && buttons.isNotEmpty()
-            DisposableEffect(showButtons, vm.settings.trackball, showLog) {
+            val stripTurns = controlsTurns
+            val sideways = stripTurns % 2 != 0
+            val stripAlignment = when (DisplayGeometry.edge(stripTurns)) {
+                DisplayGeometry.Edge.RIGHT -> Alignment.CenterEnd
+                DisplayGeometry.Edge.LEFT -> Alignment.CenterStart
+                DisplayGeometry.Edge.TOP -> Alignment.TopCenter
+                DisplayGeometry.Edge.BOTTOM -> Alignment.BottomCenter
+            }
+            DisposableEffect(showButtons, vm.settings.trackball, showLog, stripTurns) {
+                heldNavKeys.releaseAll()
+                box.post { updateGuestLayout?.invoke() }
                 if ((!showButtons && !vm.settings.trackball) || showLog) {
                     controlsHeightPx = 0; box.post { updateGuestLayout?.invoke() }
                 }
                 onDispose { }
             }
             if ((showButtons || vm.settings.trackball) && !showLog) {
-                Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { size ->
-                    controlsHeightPx = size.height
+                Box(Modifier.align(stripAlignment).onSizeChanged { size ->
+                    controlsHeightPx = if (sideways) size.width else size.height
                     box.post { updateGuestLayout?.invoke() }
                 }) {
                 Surface(
                     color = if (hostUi.sunsetNavbar) Color(0xF20B0B0B) else MaterialTheme.colorScheme.secondaryContainer,
                     shape = if (hostUi.sunsetNavbar) androidx.compose.ui.graphics.RectangleShape else androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
-                    modifier = Modifier.fillMaxWidth().padding(if (hostUi.sunsetNavbar) 0.dp else 6.dp),
+                    modifier = (if (sideways) Modifier.fillMaxHeight() else Modifier.fillMaxWidth())
+                        .padding(if (hostUi.sunsetNavbar) 0.dp else 6.dp),
                 ) {
-                    Column(Modifier.navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (vm.settings.trackball) {
+                    ControlStrip(stripTurns, Modifier.navigationBarsPadding(), trackball = {
+                        if (vm.settings.trackball) Column(
+                            if (sideways) Modifier.width(112.dp) else Modifier,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                             val dpad = vm.settings.trackballDpad
                             val motion = remember(vm.settings.trackballStepDp, dpad) { TrackballMotion(vm.settings.trackballStepDp.toFloat()) }
                             val description = stringResource(R.string.nav_trackball)
@@ -768,12 +788,9 @@ class VmActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
                             }
                         }
-                        if (showButtons) Row(
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).height(52.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            buttons.forEach { button ->
+                    }, buttons = {
+                        if (showButtons) ControlButtons(sideways) {
+                            (if (stripTurns == 1 || stripTurns == 2) buttons.asReversed() else buttons).forEach { button ->
                                 val code = when (button) {
                                     NavButton.HOME -> vm.input.homeCode
                                     NavButton.CENTER -> vm.input.centerCode
@@ -783,13 +800,14 @@ class VmActivity : ComponentActivity() {
                                     HoloNavButton(button, stringResource(button.labelRes()),
                                         onClick = { vm.input.press(code) },
                                         onDown = { heldNavKeys.down(code) }, onUp = { heldNavKeys.up(code) },
-                                        iconRotation = -iconTurns * 90f, original = !hostUi.sunsetNavbar)
+                                        iconRotation = app.aemu.core.HostDisplayPolicy.controlIconRotation(tablet,
+                                            hostUi.tabletNavbarRotation, iconTurns, windowTurns), original = !hostUi.sunsetNavbar)
                                 }
                             }
                         }
                         // Trackball-only layouts still keep it above a navbar-sized safety zone.
-                        if (!showButtons && vm.settings.trackball) Spacer(Modifier.height(52.dp))
-                    }
+                        if (!showButtons && vm.settings.trackball) Spacer(if (sideways) Modifier.width(52.dp) else Modifier.height(52.dp))
+                    })
                 }
                 }
             }

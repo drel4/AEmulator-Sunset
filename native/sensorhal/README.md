@@ -8,6 +8,14 @@ monotonic nanosecond timestamps and accuracy. No OEM drivers, fake missing
 sensors, high-rate sampling, batching, wake-up sensors or direct channels.
 Host registration is demand-driven, capped at 50 Hz and paused offscreen.
 
+Since sunset.29 this HAL is also installed with the host motion option off:
+the manual Rotate screen control explicitly supplies one synthetic accelerometer
+with stationary gravity in four natural-device orientations. It registers no
+host sensors and advertises no synthetic gyro or magnetic-field sensor. Rotation
+is decided by guest auto-rotate policy, not WindowManager freezeRotation. Charging
+and recovery modes do not expose the bridge. This manual mode is distinct from
+forwarding real host samples described above.
+
 Build: `NDK=/path/to/ndk sh build.sh` from this directory. Run
 `sh tests/run.sh` for a host ASan/UBSan transport/lifecycle smoke test. ARM32
 sizes/offsets are checked at compile time. Device/ROM testing is still required:

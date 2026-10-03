@@ -22,7 +22,7 @@ internal class VmStorageLease(directory: File) : AutoCloseable {
         file.parentFile!!.mkdirs()
         val opened = RandomAccessFile(file, "rw")
         try {
-            lock = opened.channel.tryLock() ?: error("Shut down the VM before resetting data")
+            lock = opened.channel.tryLock() ?: error("Shut down all VMs before modifying or exporting VM files")
             handle = opened
         } catch (t: Throwable) { opened.close(); throw t }
     }

@@ -19,11 +19,12 @@ import java.nio.ByteOrder
 class Analyzer(private val ctx: Context, private val paths: VmPaths, private val ramdisk: List<BootImage.CpioEntry>?) {
     private val root = paths.root
 
-    fun analyze(id: String, sourceName: String): GuestImage {
+    fun analyze(id: String, sourceName: String, persistBuildProp: Boolean = true): GuestImage {
         val buildFile = File(root, "system/build.prop")
         val noBuildProp = !buildFile.isFile
-        if (noBuildProp) buildFile.writeText(synthBuildProp())
-        val build = PropArea.parseProps(buildFile.readText(Charsets.UTF_8))
+        val buildText = if (noBuildProp) synthBuildProp().also { if (persistBuildProp) buildFile.writeText(it) }
+            else buildFile.readText(Charsets.UTF_8)
+        val build = PropArea.parseProps(buildText)
         val deflt = File(root, "default.prop").takeIf { it.isFile }?.let { PropArea.parseProps(it.readText()) } ?: LinkedHashMap()
         val all = LinkedHashMap<String, String>().apply { putAll(deflt); build.forEach { (k, v) -> if (!(k.startsWith("ro.") && containsKey(k))) put(k, v) } }
 

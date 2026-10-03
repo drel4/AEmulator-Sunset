@@ -103,7 +103,13 @@ class LibraryModel(app: Application) : AndroidViewModel(app) {
 
     fun rename(img: GuestImage, name: String) = save(img.copy(name = name))
 
-    fun updateSettings(img: GuestImage, s: VmSettings) = save(img.copy(settings = s))
+    fun updateSettings(img: GuestImage, s: VmSettings) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = ImageStore.get(getApplication(), img.id) ?: return@launch
+            ImageStore.save(getApplication(), current.copy(settings = s))
+            refresh()
+        }
+    }
 
     private fun save(img: GuestImage) {
         viewModelScope.launch(Dispatchers.IO) {

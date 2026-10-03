@@ -10,7 +10,7 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-03 for sunset.28.** This work has been
+**Modification notice updated 2026-10-04 for sunset.29.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
@@ -113,6 +113,13 @@ icon-only physical orientation tracking, untransformed guest display and trackba
 guest WindowManager rotation helper independent of sensor forwarding, app-wide
 cutout-barrier and Original/Sunset navigation styles with cross-process refresh,
 press-down host haptics and reversible opt-in Google-app disabling inside the guest.
+
+Further modifications dated 2026-10-04 (sunset.29): manual sensor-based rotation
+when the host sensor bridge is off; tablet-only host-window/navbar rotation
+policy and app setting; removal of the duplicate host-resolution switch;
+selectable firmware/settings/data archives, settings import with ROM identity
+confirmation, safe boot import for boot-less VMs; and a first-launch advisory
+for unrecognized SoC families. New UI strings include Russian translations.
 
 Further modifications dated 2026-10-03 (sunset.28): Host resolution preset,
 mutually exclusive host/fixed preset selection and manual-size mode switching.

@@ -76,8 +76,6 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             Spacer(Modifier.height(16.dp))
 
             Text(stringResource(R.string.vs_screen), style = MaterialTheme.typography.titleMedium)
-            if (!(s.legacyEngine && img.api < 14)) Toggle(stringResource(R.string.vs_host_resolution),
-                stringResource(R.string.vs_host_resolution_sub), s.hostResolution) { s = s.copy(hostResolution = it) }
             Spacer(Modifier.height(8.dp))
             if (s.legacyEngine && img.api < 14) {
                 Text(stringResource(R.string.vs_fixed_2x), style = MaterialTheme.typography.bodyMedium)
@@ -106,6 +104,9 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
                 }
                 Text(stringResource(R.string.vs_screen_hint), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                if (s.hostResolution) Text(stringResource(R.string.vs_host_resolution_sub),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp))
             }
             Spacer(Modifier.height(16.dp))
 
@@ -167,6 +168,7 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
 
             Spacer(Modifier.height(16.dp))
             VmExportSection(img, s, resetting) { resetting = it }
+            VmImportSection(img, resetting, { resetting = it }) { s = it }
             TextButton(enabled = !resetting, onClick = { resetConfirm = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.vm_reset_data), color = MaterialTheme.colorScheme.error)
             }

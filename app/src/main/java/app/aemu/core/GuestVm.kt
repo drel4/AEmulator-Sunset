@@ -74,8 +74,9 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     private val vibration = VibrationBridge(ctx, paths, { settings.vibration }, ::log)
-    private val motion = MotionBridge(ctx, paths, { settings.motionSensors && img.api in 9..25 && !recoveryMode && !lowPowerBoot }, ::log)
+    private val motion = MotionBridge(ctx, paths, { img.api in 9..25 && !recoveryMode && !lowPowerBoot }, { settings.motionSensors }, ::log)
     fun motionVisible(visible: Boolean) { motion.visible(visible) }
+    fun simulateRotation() = motion.simulateRotation()
     val cameraSupported get() = engine == Engine.KK && img.api in 14..25 && !recoveryMode && !lowPowerBoot
     private val camera = HostCameraBridge(ctx, paths, { settings.camera && cameraSupported }, ::log)
     fun cameraVisible(visible: Boolean) { camera.visible(visible) }
@@ -290,7 +291,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         overrides["qemu.sf.lcd_density"] = s.density.toString()
         overrides["ro.aemu.host"] = "qemu-user"
         if (s.camera && cameraSupported) overrides["ro.hardware.camera"] = "aemu_host"
-        if (s.motionSensors && img.api in 9..25) overrides["ro.hardware.sensors"] = "aemu_host"
+        if (img.api in 9..25) overrides["ro.hardware.sensors"] = "aemu_host"
         overrides["dalvik.vm.execution-mode"] = if (s.jit) "int:jit" else "int:fast"
         if (s.lowRam || s.ramMb in 1..768) overrides["ro.config.low_ram"] = "true"
         if (s.ramMb > 0) {

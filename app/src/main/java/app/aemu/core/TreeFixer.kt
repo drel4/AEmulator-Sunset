@@ -272,7 +272,7 @@ class TreeFixer(
     }
 
     private fun installSensorHal() {
-        if (!img.settings.motionSensors || img.api !in 9..25) return
+        if (img.api !in 9..25) return
         // Park OEM names too: old libhardware loaders can ignore ro.hardware.sensors.
         val parked = File(root, "system/.aemu-parked").apply { mkdirs() }
         for (directory in listOf("system/lib/hw", "vendor/lib/hw", "system/vendor/lib/hw")) {

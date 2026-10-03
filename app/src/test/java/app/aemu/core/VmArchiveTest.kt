@@ -10,6 +10,41 @@ import java.util.zip.GZIPOutputStream
 import org.apache.commons.compress.archivers.tar.*
 
 class VmArchiveTest {
+    @Test fun partialArchivesKeepOnlySelectedComponents() = fixture { src, dest ->
+        val out = ByteArrayOutputStream()
+        VmArchive.export(src, "profile", VmArchive.Selection(false, true, true), out, { VmArchive.Metadata(0x1ed) })
+        val profile = VmArchive.profile(ByteArrayInputStream(out.toByteArray()))
+        assertEquals("profile", profile.json)
+        assertEquals(VmArchive.Selection(false, true, true), profile.selection)
+        VmArchive.restore(ByteArrayInputStream(out.toByteArray()), dest, { _, _ -> }, { _, _, _ -> }, requireSystem = false)
+        assertEquals("secret", File(dest, "root/data/private").readText())
+        assertFalse(File(dest, "root/system").exists())
+        assertFalse(File(dest, "root/init.rc").exists())
+        assertFalse(File(dest, "boot.img").exists())
+        assertFalse(File(dest, "props.base").exists())
+    }
+    @Test fun configOnlyCannotRestoreNewVm() = fixture { src, dest ->
+        val out = ByteArrayOutputStream()
+        VmArchive.export(src, "profile", VmArchive.Selection(false, true, false), out, { VmArchive.Metadata(0x1ed) })
+        assertThrows(IllegalArgumentException::class.java) { restore(out.toByteArray(), dest) }
+    }
+    @Test fun noEmptyExportOrMalformedSelection() = fixture { src, _ ->
+        assertThrows(IllegalArgumentException::class.java) {
+            VmArchive.export(src, "profile", VmArchive.Selection(false, false, false), ByteArrayOutputStream(), { VmArchive.Metadata(0) })
+        }
+        for (text in listOf("000\n", "abc\n", "111", "1111\n"))
+            assertThrows(IllegalArgumentException::class.java) { VmArchive.Selection.decode(text) }
+    }
+    @Test fun readsLegacyLeadingProfile() {
+        val bytes = ByteArrayOutputStream().also { out ->
+            TarArchiveOutputStream(GZIPOutputStream(out)).use { tar ->
+                for ((name, text) in listOf("aessvm.version" to "1\n", "image.json" to "old settings")) {
+                    tar.putArchiveEntry(TarArchiveEntry(name).apply { size = text.length.toLong() }); tar.write(text.toByteArray()); tar.closeArchiveEntry()
+                }
+            }
+        }.toByteArray()
+        assertEquals("old settings", VmArchive.profile(ByteArrayInputStream(bytes)).json)
+    }
     private fun fixture(run: (File, File) -> Unit) {
         val base = Files.createTempDirectory("aessvm-test").toFile()
         try {
@@ -107,7 +142,7 @@ class VmArchiveTest {
     @Test fun rejectsUnsupportedVersion() = fixture { _, dest ->
         val bytes = ByteArrayOutputStream().also { out ->
             TarArchiveOutputStream(GZIPOutputStream(out)).use { tar ->
-                tar.putArchiveEntry(TarArchiveEntry("aessvm.version").apply { size = 2 }); tar.write("2\n".toByteArray()); tar.closeArchiveEntry()
+                tar.putArchiveEntry(TarArchiveEntry("aessvm.version").apply { size = 2 }); tar.write("3\n".toByteArray()); tar.closeArchiveEntry()
             }
         }.toByteArray()
         assertThrows(IllegalArgumentException::class.java) { restore(bytes, dest) }

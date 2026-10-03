@@ -16,6 +16,19 @@ import java.util.zip.Inflater
  *  - Samsung zImage со встроенным initramfs (2.3–4.x: в .tar из Odin лежит zImage/boot.img без "ANDROID!").
  */
 object BootImage {
+    // Sunset: bound untrusted decompression, including embedded Samsung kernels.
+    private const val MAX_DECODED = 128 * 1024 * 1024
+    private fun InputStream.bounded(): ByteArray {
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(65536)
+        while (true) {
+            val n = read(buf)
+            if (n < 0) break
+            require(out.size().toLong() + n <= MAX_DECODED) { "Boot ramdisk is too large" }
+            out.write(buf, 0, n)
+        }
+        return out.toByteArray()
+    }
     data class CpioEntry(val name: String, val mode: Int, val data: ByteArray)
 
     fun ramdisk(img: ByteArray): List<CpioEntry>? {
@@ -27,9 +40,10 @@ object BootImage {
             val kPages = (kernelSize + pageSize - 1) / pageSize
             var off = (1 + kPages) * pageSize
             var len = ramdiskSize
-            if (off + len > img.size) return null
+            if (len < 4 || off + len > img.size) return null
             // MediaTek: перед сжатым рамдиском 512 байт своего заголовка
             if (bb.getInt(off.toInt()) == 0x58881688) { off += 512; len -= 512 }
+            if (len < 6) return null
             val rd = img.copyOfRange(off.toInt(), (off + len).toInt())
             return cpio(decompress(rd) ?: return null)
         }
@@ -51,7 +65,7 @@ object BootImage {
                 when {
                     gz -> gunzipLenient(tail)
                     lz -> lzmaLenient(tail)
-                    else -> XZInputStream(ByteArrayInputStream(tail)).readBytes()
+                    else -> XZInputStream(ByteArrayInputStream(tail), 65536).use { it.bounded() }
                 }
             }.getOrNull() ?: continue
             if (kernel.size < 1_000_000) continue
@@ -64,9 +78,9 @@ object BootImage {
     private fun lzmaLenient(d: ByteArray): ByteArray {
         val out = ByteArrayOutputStream()
         runCatching {
-            LZMAInputStream(ByteArrayInputStream(d)).use { s ->
+            LZMAInputStream(ByteArrayInputStream(d), 65536).use { s ->
                 val buf = ByteArray(1 shl 16)
-                while (true) { val n = s.read(buf); if (n < 0) break; out.write(buf, 0, n) }
+                while (true) { val n = s.read(buf); if (n < 0) break; require(out.size().toLong() + n <= MAX_DECODED); out.write(buf, 0, n) }
             }
         }
         return out.toByteArray()
@@ -117,8 +131,8 @@ object BootImage {
         return runCatching {
             when {
                 d[0] == 0x1f.toByte() && d[1] == 0x8b.toByte() -> gunzipLenient(d)
-                d[0] == 0x5d.toByte() && d[1] == 0x00.toByte() -> LZMAInputStream(ByteArrayInputStream(d)).readBytes()
-                d[0] == 0xfd.toByte() && String(d, 1, 4) == "7zXZ" -> XZInputStream(ByteArrayInputStream(d)).readBytes()
+                d[0] == 0x5d.toByte() && d[1] == 0x00.toByte() -> LZMAInputStream(ByteArrayInputStream(d), 65536).use { it.bounded() }
+                d[0] == 0xfd.toByte() && String(d, 1, 4) == "7zXZ" -> XZInputStream(ByteArrayInputStream(d), 65536).use { it.bounded() }
                 d[0] == 0x02.toByte() && d[1] == 0x21.toByte() && d[2] == 0x4c.toByte() -> Lz4Legacy.decode(d)
                 String(d, 0, 6) == "070701" -> d
                 else -> null
@@ -132,15 +146,18 @@ object BootImage {
         try {
             GZIPInputStream(ByteArrayInputStream(d), 65536).use { g ->
                 val b = ByteArray(65536)
-                while (true) { val n = g.read(b); if (n < 0) break; out.write(b, 0, n) }
+                while (true) { val n = g.read(b); if (n < 0) break; require(out.size().toLong() + n <= MAX_DECODED); out.write(b, 0, n) }
             }
         } catch (e: Exception) {
+            if (e is IllegalArgumentException) throw e
             if (out.size() == 0) {
                 // сырой deflate после 10-байтного заголовка
                 val inf = Inflater(true)
                 inf.setInput(d, 10, d.size - 10)
                 val b = ByteArray(65536)
-                while (!inf.finished()) { val n = inf.inflate(b); if (n == 0 && (inf.needsInput() || inf.needsDictionary())) break; out.write(b, 0, n) }
+                try {
+                    while (!inf.finished()) { val n = inf.inflate(b); if (n == 0) break; require(out.size().toLong() + n <= MAX_DECODED); out.write(b, 0, n) }
+                } finally { inf.end() }
             }
         }
         return out.toByteArray()
@@ -154,14 +171,19 @@ object BootImage {
             if (m != "070701" && m != "070702") break
             fun hex(i: Int) = String(d, off + 6 + i * 8, 8, Charsets.ISO_8859_1).toLong(16)
             val mode = hex(1).toInt()
-            val fileSize = hex(6).toInt()
-            val nameSize = hex(11).toInt()
+            val fileSizeLong = hex(6)
+            val nameSizeLong = hex(11)
+            require(fileSizeLong in 0..MAX_DECODED.toLong() && nameSizeLong in 1..4096)
+            val fileSize = fileSizeLong.toInt()
+            val nameSize = nameSizeLong.toInt()
             val nameStart = off + 110
+            require(nameStart.toLong() + nameSize <= d.size && d[nameStart + nameSize - 1] == 0.toByte())
             val name = String(d, nameStart, maxOf(0, nameSize - 1), Charsets.UTF_8)
             var dataStart = nameStart + nameSize
             dataStart = (dataStart + 3) and 3.inv()
             if (name == "TRAILER!!!") break
-            val data = d.copyOfRange(dataStart, minOf(d.size, dataStart + fileSize))
+            require(dataStart.toLong() + fileSize <= d.size) { "Truncated ramdisk" }
+            val data = d.copyOfRange(dataStart, dataStart + fileSize)
             out.add(CpioEntry(name.removePrefix("./").trimStart('/'), mode, data))
             off = (dataStart + fileSize + 3) and 3.inv()
         }
@@ -180,7 +202,9 @@ object Lz4Legacy {
         while (p + 4 <= d.size) {
             val clen = bb.getInt(p); p += 4
             if (clen == 0x184C2102 || clen <= 0 || p + clen > d.size) break
-            out.write(block(d, p, clen))
+            val decoded = block(d, p, clen)
+            require(out.size().toLong() + decoded.size <= 128 * 1024 * 1024)
+            out.write(decoded)
             p += clen
         }
         return out.toByteArray()
@@ -188,11 +212,11 @@ object Lz4Legacy {
 
     private fun block(src: ByteArray, start: Int, len: Int): ByteArray {
         val out = ByteArrayOutputStream(len * 3)
-        var buf = ByteArray(len * 4)
+        var buf = ByteArray(minOf(len.toLong() * 4, 1024 * 1024L).toInt())
         var o = 0
         var i = start
         val end = start + len
-        fun ensure(n: Int) { if (o + n > buf.size) buf = buf.copyOf(maxOf(buf.size * 2, o + n)) }
+        fun ensure(n: Int) { require(n >= 0 && o.toLong() + n <= 128 * 1024 * 1024); if (o + n > buf.size) buf = buf.copyOf(maxOf(buf.size * 2, o + n).coerceAtMost(128 * 1024 * 1024)) }
         while (i < end) {
             val token = src[i++].toInt() and 0xff
             var lit = token ushr 4

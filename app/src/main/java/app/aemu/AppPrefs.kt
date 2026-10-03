@@ -41,12 +41,14 @@ object AppPrefs {
 
     fun prefs(ctx: Context) = sp(ctx)
 
-    data class HostUiOptions(val cutoutBarrier: Boolean = false, val sunsetNavbar: Boolean = true)
+    data class HostUiOptions(val cutoutBarrier: Boolean = false, val sunsetNavbar: Boolean = true,
+        val tabletNavbarRotation: Boolean = true)
     // The VM runs in another process: read an atomic file on resume, not cached SharedPreferences.
     fun hostUiOptions(ctx: Context): HostUiOptions = runCatching {
         val file = android.util.AtomicFile(java.io.File(ctx.filesDir, "host-ui.json"))
         val json = org.json.JSONObject(file.openRead().bufferedReader().use { it.readText() })
-        HostUiOptions(json.optBoolean("cutoutBarrier", false), json.optBoolean("sunsetNavbar", true))
+        HostUiOptions(json.optBoolean("cutoutBarrier", false), json.optBoolean("sunsetNavbar", true),
+            json.optBoolean("tabletNavbarRotation", true))
     }.getOrDefault(HostUiOptions())
 
     fun setHostUiOptions(ctx: Context, options: HostUiOptions) {
@@ -54,7 +56,8 @@ object AppPrefs {
         val stream = file.startWrite()
         try {
             stream.write(org.json.JSONObject().put("cutoutBarrier", options.cutoutBarrier)
-                .put("sunsetNavbar", options.sunsetNavbar).toString().toByteArray(Charsets.UTF_8))
+                .put("sunsetNavbar", options.sunsetNavbar).put("tabletNavbarRotation", options.tabletNavbarRotation)
+                .toString().toByteArray(Charsets.UTF_8))
             file.finishWrite(stream)
         } catch (error: Throwable) { file.failWrite(stream); throw error }
     }

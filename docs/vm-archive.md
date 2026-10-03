@@ -1,4 +1,32 @@
-# VM archives (.aessvm), version 1
+# VM archives (.aessvm), versions 1 and 2
+
+Sunset.29 exports version 2 and still imports version 1. Choose **System and
+boot** (or **System** if no boot files are present), **Settings**, and/or
+**Data**. System and boot cannot be selected separately. Settings-only and
+data-only archives cannot create a new VM. This release does not add a separate
+data-only restore into an existing VM. Unselected settings restore to defaults.
+
+Version 2 starts with `aessvm.version` (`2\n`), `image.json` and `aessvm.parts`
+(three ASCII bits, system/config/data, followed by a newline). ROM metadata is
+retained even without settings. Firmware payloads require system selection;
+data payloads require data selection. New formats are not readable by old builds.
+
+**Import settings** reads only the bounded leading metadata and changes the
+settings sheet, not partitions. Press Save to apply. Device, Android release,
+skin and ROM build fingerprint are compared with the current VM. Different
+identities, missing fingerprints and old archives require confirmation.
+
+**Import boot partition** is shown only when both the original boot image and
+extracted `init.rc` are absent. Stop all VMs first. Supported inputs include
+Android boot IMG, Samsung zImage, raw TWRP `boot.emmc.win`, ZIP/7z/TAR containers
+and supported gzip/XZ/bzip2/LZ4 compression. Encrypted backups, arbitrary split
+backups, bootloader-only images and modern boot header formats are not promised.
+Only boot/ramdisk files are added; existing files and system/data are preserved.
+The boot plan and property template are regenerated; failures roll back newly
+created files. The guest kernel is retained for export, not booted as a host
+kernel. Files are bounded and ramdisk paths/links are validated.
+
+## Original version 1 behavior
 
 Added in sunset.25. Export from VM settings, then choose a destination through
 Android's document picker. Fully stop all VMs first; storage leases and orphan

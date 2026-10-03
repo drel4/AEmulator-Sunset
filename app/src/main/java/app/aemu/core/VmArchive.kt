@@ -15,14 +15,30 @@ import org.apache.commons.compress.archivers.tar.TarConstants
 
 /** Versioned streaming archive: no staging copy, host paths, sockets or inode ownership keys. */
 internal object VmArchive {
+    data class Selection(val system: Boolean = true, val config: Boolean = true, val data: Boolean = false) {
+        val valid get() = system || config || data
+        fun encode() = "${if (system) 1 else 0}${if (config) 1 else 0}${if (data) 1 else 0}\n"
+        companion object {
+            fun decode(text: String): Selection {
+                require(text.length == 4 && text.last() == '\n' && text.take(3).all { it == '0' || it == '1' })
+                return Selection(text[0] == '1', text[1] == '1', text[2] == '1').also { require(it.valid) }
+            }
+        }
+    }
+    data class Profile(val json: String, val selection: Selection)
     data class Metadata(val mode: Int, val uid: Long = 0, val gid: Long = 0)
     private val runtime = setOf("dev", "proc", "sys", "cache", "dhd.owners", "dhd.owners.seeded")
 
     fun export(dir: File, imageJson: String, includeData: Boolean, output: OutputStream,
+               metadata: (File) -> Metadata, progress: (String) -> Unit = {}) =
+        export(dir, imageJson, Selection(data = includeData), output, metadata, progress)
+
+    fun export(dir: File, imageJson: String, selection: Selection, output: OutputStream,
                metadata: (File) -> Metadata, progress: (String) -> Unit = {}) {
+        require(selection.valid) { "Select at least one export component" }
         val root = File(dir, "root")
         require(root.isDirectory && !Files.isSymbolicLink(root.toPath()))
-        require(File(root, "system").isDirectory) { "System partition missing" }
+        if (selection.system) require(File(root, "system").isDirectory) { "System partition missing" }
         val system = File(root, "system").canonicalFile
         TarArchiveOutputStream(GZIPOutputStream(output.buffered(65536))).use { tar ->
             tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX)
@@ -32,8 +48,9 @@ internal object VmArchive {
                 tar.putArchiveEntry(TarArchiveEntry(name).apply { size = bytes.size.toLong() })
                 tar.write(bytes); tar.closeArchiveEntry()
             }
-            text("aessvm.version", "1\n")
+            text("aessvm.version", "2\n")
             text("image.json", imageJson)
+            text("aessvm.parts", selection.encode())
             fun add(file: File, name: String) {
                 val attrs = Files.readAttributes(file.toPath(), java.nio.file.attribute.BasicFileAttributes::class.java, NOFOLLOW_LINKS)
                 if (!attrs.isRegularFile && !attrs.isDirectory && !attrs.isSymbolicLink) return
@@ -60,39 +77,52 @@ internal object VmArchive {
                     add(child, "$name/${child.name}")
             }
             // Old containers may share /system: materialize it, not the container's host link.
-            add(system, "root/system")
+            if (selection.system) add(system, "root/system")
             for (file in (root.listFiles() ?: error("Cannot read root")).sortedBy { it.name }) {
-                if (file.name == "system" || file.name in runtime || (!includeData && file.name == "data")) continue
+                if (file.name == "system" || file.name in runtime ||
+                    (file.name == "data" && !selection.data) || (file.name != "data" && !selection.system)) continue
                 add(file, "root/${file.name}")
             }
             for (name in listOf("props.base", "boot.img")) {
                 val file = File(dir, name)
-                if (file.isFile && !Files.isSymbolicLink(file.toPath())) add(file, name)
+                if (selection.system && file.isFile && !Files.isSymbolicLink(file.toPath())) add(file, name)
             }
         }
     }
 
     /** Destination must be new. Links are created only after all file bytes are written. */
     fun restore(input: InputStream, dir: File, mode: (File, Int) -> Unit,
-                owner: (File, Long, Long) -> Unit, progress: (String) -> Unit = {}): String {
+                owner: (File, Long, Long) -> Unit, progress: (String) -> Unit = {}, requireSystem: Boolean = true): String {
         require(dir.isDirectory && dir.list()?.isEmpty() == true)
         val seen = HashSet<String>()
         val links = ArrayList<Triple<File, String, Metadata>>()
         var image: String? = null
+        var selection: Selection? = null
         TarArchiveInputStream(GZIPInputStream(input.buffered(65536))).use { tar ->
             val first = tar.nextTarEntry ?: error("Empty VM archive")
-            require(first.name == "aessvm.version" && first.isFile && first.size == 2L && tar.readBytes().contentEquals("1\n".toByteArray())) { "Unsupported VM archive" }
+            val version = readVersion(first, tar)
             while (true) {
                 val entry = tar.nextTarEntry ?: break
                 val name = entry.name.trimEnd('/')
                 require(name.isNotEmpty() && !name.startsWith('/') && !name.contains('\\') &&
                     name.split('/').none { it == "." || it == ".." || it.isEmpty() }) { "Unsafe archive path" }
                 require(seen.add(name) && seen.size <= 1_000_000) { "Duplicate or excessive archive entries" }
-                require(name in setOf("image.json", "props.base", "boot.img", "root") || name.startsWith("root/"))
+                require(name in setOf("image.json", "aessvm.parts", "props.base", "boot.img", "root") || name.startsWith("root/"))
                 if (!name.startsWith("root")) require(entry.isFile) { "Invalid metadata entry" }
                 require(name.split('/').getOrNull(1) !in runtime) { "Runtime files in archive" }
                 val file = File(dir, name)
                 require(entry.isFile || entry.isDirectory || entry.isSymbolicLink) { "Unsupported archive entry" }
+                if (name == "aessvm.parts") {
+                    require(version == 2 && entry.isFile && entry.size == 4L)
+                    selection = Selection.decode(tar.readBytes().toString(Charsets.UTF_8))
+                    if (requireSystem) require(selection!!.system) { "Archive has no system; use Import settings for configuration archives" }
+                    continue
+                }
+                if (version == 2 && name != "image.json") {
+                    val parts = selection ?: error("Missing archive component selection")
+                    if (name == "root/data" || name.startsWith("root/data/")) require(parts.data)
+                    else if (name != "root") require(parts.system)
+                }
                 if (entry.isSymbolicLink) {
                     require(name.startsWith("root/") && entry.linkName.isNotEmpty() && !entry.linkName.contains('\\'))
                     val target = java.nio.file.Paths.get(entry.linkName)
@@ -115,8 +145,9 @@ internal object VmArchive {
                 }
                 progress(name)
             }
+            require(version == 1 || selection != null) { "Missing archive component selection" }
         }
-        require(image != null && File(dir, "root/system").isDirectory) { "Incomplete VM archive" }
+        require(image != null && (!requireSystem || File(dir, "root/system").isDirectory)) { "Incomplete VM archive" }
         for ((file, target, stat) in links) {
             var parent = file.parentFile
             while (parent != dir) {
@@ -130,5 +161,27 @@ internal object VmArchive {
         }
         for ((file) in links) require(file.canonicalFile.toPath().startsWith(File(dir, "root").toPath())) { "Link chain escapes guest" }
         return image!!
+    }
+
+    /** Read bounded leading metadata only; importing settings never extracts partitions. */
+    fun profile(input: InputStream): Profile = TarArchiveInputStream(GZIPInputStream(input.buffered(65536))).use { tar ->
+        val version = readVersion(tar.nextTarEntry ?: error("Empty archive"), tar)
+        val entry = tar.nextTarEntry ?: error("Missing VM profile")
+        require(entry.name == "image.json" && entry.isFile && entry.size in 1..1_048_576)
+        val json = tar.readBytes().toString(Charsets.UTF_8)
+        val parts = if (version == 1) Selection() else {
+            val next = tar.nextTarEntry ?: error("Missing component selection")
+            require(next.name == "aessvm.parts" && next.isFile && next.size == 4L)
+            Selection.decode(tar.readBytes().toString(Charsets.UTF_8))
+        }
+        Profile(json, parts)
+    }
+    private fun readVersion(entry: TarArchiveEntry, tar: TarArchiveInputStream): Int {
+        require(entry.name == "aessvm.version" && entry.isFile && entry.size == 2L)
+        return when (tar.readBytes().toString(Charsets.UTF_8)) {
+            "1\n" -> 1
+            "2\n" -> 2
+            else -> throw IllegalArgumentException("Unsupported VM archive")
+        }
     }
 }

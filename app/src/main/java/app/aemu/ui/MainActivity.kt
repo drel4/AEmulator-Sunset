@@ -148,6 +148,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Library(model: LibraryModel) {
+    SocCompatibilityNotice()
     val images by model.images.collectAsState()
     val imp by model.import.collectAsState()
     val ctx = LocalContext.current

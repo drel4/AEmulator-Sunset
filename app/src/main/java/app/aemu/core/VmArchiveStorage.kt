@@ -9,7 +9,7 @@ import java.util.Locale
 import org.json.JSONObject
 
 internal object VmArchiveStorage {
-    fun export(ctx: Context, img: GuestImage, data: Boolean, uri: Uri, progress: (String) -> Unit) {
+    fun export(ctx: Context, img: GuestImage, selection: VmArchive.Selection, uri: Uri, progress: (String) -> Unit) {
         VmStorageLease(ctx.filesDir).use { lease ->
             lease.acquire()
             GuestStorageWriters.requireIdle(ctx)
@@ -21,9 +21,13 @@ internal object VmArchiveStorage {
                     owners[fields.take(2).joinToString(" ")] = fields[2].toLong(16) to fields[3].toLong(16)
                 }
             }
-            val json = img.copy(baseId = "").toJson().put("aessvmIncludesData", data).toString(2)
+            val profile = img.copy(baseId = "").toJson().put("aessvmIncludesData", selection.data)
+                .put("aessvmIncludesConfig", selection.config)
+                .put("aessvmRomFingerprint", fingerprint(paths))
+            if (!selection.config) profile.remove("settings")
+            val json = profile.toString(2)
             (ctx.contentResolver.openOutputStream(uri, "wt") ?: error("Cannot open export file")).use { out ->
-                VmArchive.export(paths.dir, json, data, out, { file ->
+                VmArchive.export(paths.dir, json, selection, out, { file ->
                     val st = Os.lstat(file.path)
                     val key = String.format(Locale.ROOT, "%016x %016x", st.st_dev, st.st_ino)
                     val pair = owners[key] ?: (0L to 0L)
@@ -31,6 +35,25 @@ internal object VmArchiveStorage {
                 }, progress)
             }
         }
+    }
+
+    data class SettingsImport(val image: GuestImage, val fingerprint: String) {
+        fun differs(ctx: Context, target: GuestImage): Boolean =
+            image.brand != target.brand || image.model != target.model || image.api != target.api ||
+            image.release != target.release || image.skin != target.skin ||
+            fingerprint.isBlank() || fingerprint != VmArchiveStorage.fingerprint(VmPaths(ctx, target.id))
+    }
+
+    private fun fingerprint(paths: VmPaths): String = runCatching {
+        PropArea.parseProps(File(paths.root, "system/build.prop").readText())["ro.build.fingerprint"].orEmpty()
+    }.getOrDefault("")
+
+    fun readSettings(ctx: Context, uri: Uri): SettingsImport {
+        val profile = (ctx.contentResolver.openInputStream(uri) ?: error("Cannot open archive")).use { VmArchive.profile(it) }
+        require(profile.selection.config) { "Archive does not include settings" }
+        val json = JSONObject(profile.json)
+        require(json.has("settings")) { "Archive does not include settings" }
+        return SettingsImport(GuestImage.fromJson(json), json.optString("aessvmRomFingerprint"))
     }
 
     fun restore(ctx: Context, uri: Uri, progress: (String) -> Unit): GuestImage {
