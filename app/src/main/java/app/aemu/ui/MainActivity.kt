@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -234,14 +235,15 @@ fun Library(model: LibraryModel) {
         Box(Modifier.fillMaxSize().padding(pad)) {
             if (images.isEmpty() && !imp.active) EmptyState(onHelp = { help = true })
             LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 120.dp),
             ) {
                 item { StorageAccessCard() }
                 item { if (!imp.active) FirmwareFolderCard(onImport = { f -> model.import(android.net.Uri.fromFile(f)) }) }
                 item {
                     AnimatedVisibility(imp.active || imp.error != null || imp.done != null) {
-                        ImportCard(imp, onCancel = model::cancelImport, onDismiss = model::dismissImport)
+                        Box(Modifier.padding(bottom = 12.dp)) {
+                            ImportCard(imp, onCancel = model::cancelImport, onDismiss = model::dismissImport)
+                        }
                     }
                 }
                 // two sections: imported firmwares ("systems") and the containers made from them
@@ -251,9 +253,10 @@ fun Library(model: LibraryModel) {
                     if (list.isEmpty()) continue
                     item(key = "h$title") {
                         Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+                            modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
                     }
                     items(list, key = { it.id }) { img ->
+                        Box(Modifier.padding(bottom = 12.dp)) {
                         ImageCard(
                             img,
                             onStart = { VmActivity.start(ctx, img.id) },
@@ -263,6 +266,7 @@ fun Library(model: LibraryModel) {
                             baseName = images.firstOrNull { it.id == img.baseId }?.name,
                             active = activeVmId == img.id,
                         )
+                        }
                     }
                 }
             }
@@ -374,7 +378,7 @@ private fun FirmwareFolderCard(onImport: (java.io.File) -> Unit) {
         onDispose { life.lifecycle.removeObserver(obs) }
     }
     if (files.isEmpty()) return
-    Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+    Card(modifier = Modifier.padding(bottom = 12.dp), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
         Column(Modifier.padding(20.dp)) {
             Text(stringResource(R.string.fw_folder_title), style = MaterialTheme.typography.titleMedium)
             Text("aemulator/firmware", style = MaterialTheme.typography.bodySmall)
@@ -408,7 +412,7 @@ private fun StorageAccessCard() {
         onDispose { life.lifecycle.removeObserver(obs) }
     }
     if (granted) return
-    Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+    Card(modifier = Modifier.padding(bottom = 12.dp), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
         Column(Modifier.padding(20.dp)) {
             Text(stringResource(R.string.storage_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
@@ -500,11 +504,11 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
                 }
             }
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(onClick = {}, label = { Text(img.skin) })
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChip(onClick = {}, label = { Text(LibraryLabels.compactSkin(img.skin), maxLines = 1, overflow = TextOverflow.Ellipsis) })
 
-                AssistChip(onClick = {}, label = { Text("${img.settings.width}×${img.settings.height}") })
-                AssistChip(onClick = {}, label = { Text(Formatter.formatShortFileSize(ctx, img.sizeBytes)) })
+                AssistChip(onClick = {}, label = { Text("${img.settings.width}×${img.settings.height}", maxLines = 1, overflow = TextOverflow.Ellipsis) })
+                AssistChip(onClick = {}, label = { Text(Formatter.formatShortFileSize(ctx, img.sizeBytes), maxLines = 1, overflow = TextOverflow.Ellipsis) })
             }
             if (baseName != null) Text(stringResource(R.string.container_of, baseName), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)

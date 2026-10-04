@@ -10,13 +10,17 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-04 for sunset.30.** This work has been
+**Modification notice updated 2026-10-04 for sunset.31.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
-Changes made by drel4 and contributors to this fork are recorded in Git. The
-initial AEmulator Sunset release was prepared on 2026-09-30 and includes:
+Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.31 library cards wrap badges with single-line labels, abbreviate
+CyanogenMod labels for display only, and omit spacing for hidden header cards.
+These UI changes are dated 2026-10-04.
+
+The initial AEmulator Sunset release was prepared on 2026-09-30 and includes:
 
 - AEmulator Sunset naming, repository links, versioning, and orange visual
   identity;
