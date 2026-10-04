@@ -41,6 +41,11 @@ ifeq ($(TARGET_PREBUILT_KERNEL),)
 endif
 ''')
         (self.base / 'tools').mkdir()
+        ime = self.base / 'src/frameworks/base/services/java/com/android/server/InputMethodManagerService.java'
+        ime.parent.mkdir(parents=True)
+        ime.write_text('''            defIm = InputMethodUtils.getMostApplicableDefaultIME(
+                    mSettings.getEnabledInputMethodListLocked());
+            Slog.i(TAG, "No default found, using " + defIm.getId());''')
         shutil.copyfile(APK, self.base / 'tools/Term.apk')
 
     def run_prepare(self):
@@ -64,6 +69,9 @@ endif
                 self.assertEqual(installed.read_bytes(), archive.read('lib/armeabi/' + lib))
         self.assertEqual(self.run_prepare().returncode, 0)
         self.assertEqual(self.common.read_bytes(), first)
+        ime = self.base / 'src/frameworks/base/services/java/com/android/server/InputMethodManagerService.java'
+        self.assertIn('setInputMethodEnabledLocked(defIm.getId(), true)', ime.read_text())
+        self.assertEqual(ime.read_text().count('// AESS: first boot'), 1)
         product = self.base / 'src/device/aemulator/aess/cm.mk'
         self.assertIn('PRODUCT_NAME := cm_aess', product.read_text())
         overlay = product.parent / 'overlay/frameworks/base/core/res/res/values/config.xml'

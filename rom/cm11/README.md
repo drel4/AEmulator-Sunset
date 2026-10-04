@@ -1,6 +1,10 @@
 # CM11 Android 4.4.2 for AEmulator Sunset
 
-**Experimental: compiled and packaged successfully; not boot-tested yet.**
+**Experimental: original build boots after a restart; first-boot fix needs testing.**
+The user reports AESS442-1 boots after a restart. Its first boot crashes in
+CM11's default-keyboard selection with an empty enabled-IME list. AESS442-2 adds
+a guarded fallback to the most applicable discovered keyboard and enables it.
+This fix still requires a fresh-data boot test.
 Added 2026-10-04.
 
 This is an unofficial ARMv7 CM11 guest, not firmware for a physical phone.
@@ -56,7 +60,7 @@ in AEmulator. Planned distribution name remains `Android442forAESS.aessvm`.
 ## Packaging
 
 Compile `guest-fs-config.c` against the pinned `system/core/include` headers into
-`packaged/guest-fs-config`, then run `python3 recipe/pack.py /path/to/cm11-aess`.
+`packaged-AESS442-2/guest-fs-config`, then run `python3 recipe/pack.py /path/to/cm11-aess`.
 It packages system files using CM's filesystem ownership/mode rules and root
 files using ramdisk CPIO metadata. Absolute guest links become relative links
 inside the archive. Settings are included; data and runtime files are omitted.
@@ -73,3 +77,8 @@ Distribution includes `Android442forAESS-source.tar.gz`: the actual patched
 source tree and checked-in prebuilts, recipe, resolved manifest, and terminal
 APK. Git/repo metadata and build outputs are excluded. Upstream source licenses
 remain in their directories and Android's generated NOTICE is retained in the VM.
+
+For AESS442-2, additionally apply `Android442forAESS-source-update-AESS442-2.tar.gz`
+over the original source bundle: it supplies the updated recipe and full modified
+InputMethodManagerService source. Rebuild using the documented container, then
+package. The original complete source bundle is retained unchanged.

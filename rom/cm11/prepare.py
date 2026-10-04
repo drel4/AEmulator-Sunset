@@ -57,4 +57,30 @@ if new_kernel not in content:
     if old_kernel not in content:
         raise SystemExit('Unexpected CM minui kernel-header rule')
     minui.write_text(content.replace(old_kernel, new_kernel))
-print('AESS device target and checked terminal packaging installed.')
+# AESS 2026-10-04: CM11 can discover keyboards before the initial enabled-IME
+# settings are populated. Avoid dereferencing a null default and enable the
+# normal most-applicable keyboard, rather than leaving IMMS unregistered.
+ime = src / 'frameworks/base/services/java/com/android/server/InputMethodManagerService.java'
+old_ime = '''            defIm = InputMethodUtils.getMostApplicableDefaultIME(
+                    mSettings.getEnabledInputMethodListLocked());
+            Slog.i(TAG, "No default found, using " + defIm.getId());'''
+new_ime = '''            defIm = InputMethodUtils.getMostApplicableDefaultIME(
+                    mSettings.getEnabledInputMethodListLocked());
+            // AESS: first boot may have discovered IMEs but no enabled default yet.
+            if (defIm == null) {
+                defIm = InputMethodUtils.getMostApplicableDefaultIME(mMethodList);
+                if (defIm != null) {
+                    setInputMethodEnabledLocked(defIm.getId(), true);
+                }
+            }
+            if (defIm != null) {
+                Slog.i(TAG, "No default found, using " + defIm.getId());
+            } else {
+                Slog.w(TAG, "No applicable default input method available yet");
+            }'''
+content = ime.read_text()
+if new_ime not in content:
+    if old_ime not in content:
+        raise SystemExit('Unexpected CM11 default input-method selection')
+    ime.write_text(content.replace(old_ime, new_ime))
+print('AESS target, terminal packaging and CM11 first-boot IME fix installed.')

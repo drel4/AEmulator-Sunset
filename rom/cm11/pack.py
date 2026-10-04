@@ -38,7 +38,7 @@ def cpio_entries(blob):
 
 def package(base):
     out = base / 'src/out/target/product/aess'
-    dest = base / 'packaged'
+    dest = base / 'packaged-AESS442-2'
     dest.mkdir(exist_ok=True)
     archive = dest / 'Android442forAESS.aessvm'
     assert not archive.exists(), 'Refusing to replace an existing package'
@@ -67,12 +67,12 @@ def package(base):
         path, uid, gid, mode = line.split()
         config[path] = int(uid), int(gid), int(mode, 8)
     assert len(config) == len(paths)
-    profile = dict(id='aess-cm11-442-1', name='AEmulator Sunset CM11', release='4.4.2', api=19,
+    profile = dict(id='aess-cm11-442-2', name='AEmulator Sunset CM11', release='4.4.2', api=19,
                    brand=props['ro.product.brand'].capitalize(), model=props['ro.product.model'],
                    skin='CyanogenMod 11', engine='kk', abi='armeabi-v7a', profileVersion=0,
                    runtime='dalvik', sourceName=archive.name, baseId='',
                    settings=dict(width=540, height=960, density=240),
-                   warnings=['Experimental CM11 build. Not boot-tested in AEmulator.'],
+                   warnings=['Experimental CM11 build with first-boot IME fix. Needs testing.'],
                    aessvmIncludesData=False, aessvmIncludesConfig=True,
                    aessvmRomFingerprint=props.get('ro.build.fingerprint', ''))
     entries = set()
