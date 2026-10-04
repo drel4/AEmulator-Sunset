@@ -1,6 +1,6 @@
 # CM11 Android 4.4.2 for AEmulator Sunset
 
-**Work in progress: compilation started; no completed or boot-tested image yet.**
+**Experimental: compiled and packaged successfully; not boot-tested yet.**
 Added 2026-10-04.
 
 This is an unofficial ARMv7 CM11 guest, not firmware for a physical phone.
@@ -52,3 +52,24 @@ This obsolete, rooted system is intended for trusted testing, not a secure daily
 
 Do not publish the first-start ROM download prompt until an image has been tested
 in AEmulator. Planned distribution name remains `Android442forAESS.aessvm`.
+
+## Packaging
+
+Compile `guest-fs-config.c` against the pinned `system/core/include` headers into
+`packaged/guest-fs-config`, then run `python3 recipe/pack.py /path/to/cm11-aess`.
+It packages system files using CM's filesystem ownership/mode rules and root
+files using ramdisk CPIO metadata. Absolute guest links become relative links
+inside the archive. Settings are included; data and runtime files are omitted.
+The initial profile has version zero so Sunset analyzes init scripts before boot.
+
+`boot.img` is an Android v0 ramdisk-only container with **no kernel**. It is for
+AEmulator's host-kernel userspace model only, not for flashing a physical device.
+Packaging verifies headers, archive contents, paths, required applications and
+libraries, and reads every payload back. This does not establish a successful
+on-device import or guest boot. Root access is CM's userdebug implementation;
+its behavior in the guest still needs testing.
+
+Distribution includes `Android442forAESS-source.tar.gz`: the actual patched
+source tree and checked-in prebuilts, recipe, resolved manifest, and terminal
+APK. Git/repo metadata and build outputs are excluded. Upstream source licenses
+remain in their directories and Android's generated NOTICE is retained in the VM.
