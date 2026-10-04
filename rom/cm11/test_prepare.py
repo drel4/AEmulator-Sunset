@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 import zipfile
 
 RECIPE = pathlib.Path(__file__).resolve().parent
@@ -65,6 +66,10 @@ endif
         self.assertEqual(self.common.read_bytes(), first)
         product = self.base / 'src/device/aemulator/aess/cm.mk'
         self.assertIn('PRODUCT_NAME := cm_aess', product.read_text())
+        overlay = product.parent / 'overlay/frameworks/base/core/res/res/values/config.xml'
+        resources = ET.parse(overlay).getroot()
+        self.assertEqual([(item.tag, item.get('name'), item.text) for item in resources],
+                         [('bool', 'config_showNavigationBar', 'true')])
 
     def test_checksum_failure_precedes_changes(self):
         (self.base / 'tools/Term.apk').write_bytes(b'wrong APK')

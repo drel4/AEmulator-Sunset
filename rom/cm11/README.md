@@ -31,6 +31,9 @@ make 4.2.1 produce legacy compatibility warnings. Further old-build-system
 adaptations may be required.
 `prepare.py` also gates CM minui's generated kernel-header dependency when
 `TARGET_NO_KERNEL=true`; generic userspace uses the platform Linux headers.
+The framework overlay enables the navigation bar only. Rotation uses CM11's
+existing sensor/policy defaults; this snapshot has no `config_supportAutoRotation`
+resource (removed from our overlay on 2026-10-04).
 
 Downloaded inputs:
 
