@@ -29,6 +29,8 @@ failure under modern Docker defaults. Do not inject JVM option banner variables:
 the legacy version checker reads only the first output line. OpenJDK and GNU
 make 4.2.1 produce legacy compatibility warnings. Further old-build-system
 adaptations may be required.
+The container uses `C.UTF-8`, checked at startup, so JDK7's javadoc reads UTF-8
+framework sources rather than failing on non-ASCII comments with `LC_ALL=C`.
 `prepare.py` also gates CM minui's generated kernel-header dependency when
 `TARGET_NO_KERNEL=true`; generic userspace uses the platform Linux headers.
 The framework overlay enables the navigation bar only. Rotation uses CM11's

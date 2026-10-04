@@ -4,7 +4,13 @@ set -eo pipefail
 ulimit -n 4096
 export JAVA_HOME=/tools/jdk7
 export PATH="$JAVA_HOME/bin:$PATH"
-export LC_ALL=C
+# JDK7 javadoc defaults to the locale's encoding; Android sources contain UTF-8.
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+if [[ "$(locale charmap)" != "UTF-8" ]]; then
+    echo "The CM11 build requires an installed UTF-8 locale." >&2
+    exit 1
+fi
 export BUILD_NUMBER=AESS442-1
 export BUILD_USERNAME=aess
 export BUILD_HOSTNAME=aess-builder
