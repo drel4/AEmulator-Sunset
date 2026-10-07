@@ -14,6 +14,7 @@ import struct
 import subprocess
 import sys
 import tarfile
+import xml.etree.ElementTree as ET
 
 def cpio_entries(blob):
     offset = 0
@@ -38,7 +39,7 @@ def cpio_entries(blob):
 
 def package(base):
     out = base / 'src/out/target/product/aess'
-    dest = base / 'packaged-AESS442-2'
+    dest = base / 'packaged-AESS442-3'
     dest.mkdir(exist_ok=True)
     archive = dest / 'Android442forAESS.aessvm'
     assert not archive.exists(), 'Refusing to replace an existing package'
@@ -67,12 +68,18 @@ def package(base):
         path, uid, gid, mode = line.split()
         config[path] = int(uid), int(gid), int(mode, 8)
     assert len(config) == len(paths)
-    profile = dict(id='aess-cm11-442-2', name='AEmulator Sunset CM11', release='4.4.2', api=19,
+    codecs = out / 'system/etc/media_codecs.xml'
+    assert codecs.read_bytes() == (base / 'src/device/generic/goldfish/camera/media_codecs.xml').read_bytes()
+    assert any(c.get('name') == 'OMX.google.vorbis.decoder' and c.get('type') == 'audio/vorbis'
+               for c in ET.parse(codecs).findall('./Decoders/MediaCodec'))
+    assert (out / 'system/lib/libstagefright_soft_vorbisdec.so').is_file()
+    profile = dict(id='aess-cm11-442-3', name='AEmulator Sunset CM11', release='4.4.2', api=19,
                    brand=props['ro.product.brand'].capitalize(), model=props['ro.product.model'],
                    skin='CyanogenMod 11', engine='kk', abi='armeabi-v7a', profileVersion=0,
                    runtime='dalvik', sourceName=archive.name, baseId='',
                    settings=dict(width=540, height=960, density=240),
-                   warnings=['Experimental CM11 build with first-boot IME fix. Needs testing.'],
+                   warnings=['Experimental CM11 guest; not firmware for a physical device.'],
+                   oneTimeNote='CM11 includes root, CM File Manager and Terminal. No Google Apps. This old Android version is for trusted testing, not a secure daily-use system.',
                    aessvmIncludesData=False, aessvmIncludesConfig=True,
                    aessvmRomFingerprint=props.get('ro.build.fingerprint', ''))
     entries = set()
@@ -127,9 +134,12 @@ def package(base):
         assert [m.name for m in members[:3]] == ['aessvm.version', 'image.json', 'aessvm.parts']
         assert tar.extractfile('aessvm.parts').read() == b'110\n'
         assert tar.extractfile('root/system/build.prop').read() == (out / 'system/build.prop').read_bytes()
+        assert tar.extractfile('root/system/etc/media_codecs.xml').read() == codecs.read_bytes()
         for required in ('root/init.rc', 'root/system/app/CMFileManager.apk', 'root/system/app/Term.apk',
                          'root/system/xbin/su', 'root/system/lib/libjackpal-androidterm5.so',
-                         'root/system/lib/libjackpal-termexec2.so'):
+                         'root/system/lib/libjackpal-termexec2.so',
+                         'root/system/lib/libstagefright_soft_vorbisdec.so',
+                         'root/system/media/audio/ui/Effect_Tick.ogg'):
             tar.getmember(required)
         for m in members:
             assert not m.name.startswith('/') and '..' not in m.name.split('/')

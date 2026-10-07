@@ -10,6 +10,13 @@ import java.util.zip.GZIPOutputStream
 import org.apache.commons.compress.archivers.tar.*
 
 class VmArchiveTest {
+    @Test fun optionalNoteSurvivesArchiveWithoutConfig() = fixture { src, dest ->
+        val json = "{\"oneTimeNote\":\"Remember to set language\\nThen reboot\"}"
+        val out = ByteArrayOutputStream()
+        VmArchive.export(src, json, VmArchive.Selection(true, false, false), out, { VmArchive.Metadata(0x1ed) })
+        assertEquals(json, VmArchive.profile(ByteArrayInputStream(out.toByteArray())).json)
+        assertEquals(json, restore(out.toByteArray(), dest))
+    }
     @Test fun partialArchivesKeepOnlySelectedComponents() = fixture { src, dest ->
         val out = ByteArrayOutputStream()
         VmArchive.export(src, "profile", VmArchive.Selection(false, true, true), out, { VmArchive.Metadata(0x1ed) })

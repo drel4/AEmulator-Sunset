@@ -37,6 +37,9 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     @Volatile var bootAt = 0L
         private set
     @Volatile var bootDoneAt = 0L
+    private val noteBoot = OneTimeVmNote()
+    @Volatile var pendingNote = img.oneTimeNote
+        private set
     /** Guest reported boot completion; this does not prove that its launcher rendered. */
     @Volatile private var everBooted = false
     private var zygoteRestarts = 0
@@ -406,6 +409,8 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         bootAt = System.currentTimeMillis()
         bootDoneAt = 0
         everBooted = false; zygoteRestarts = 0
+        noteBoot.interrupted()
+        pendingNote = ImageStore.get(ctx, img.id)?.oneTimeNote ?: img.oneTimeNote
         setState(State.BOOTING)
 
         // 4. binder
@@ -604,6 +609,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
             if (v == "1") onCtl(false, "bootanim")
         }
         if ((k == "sys.boot_completed" || k == "dev.bootcomplete") && v == "1" && bootDoneAt == 0L) {
+            if (!recoveryMode && !lowPowerBoot) noteBoot.reported(SystemClock.elapsedRealtime())
             bootDoneAt = System.currentTimeMillis()
             everBooted = true
             log("★ guest reported boot completion in ${(bootDoneAt - bootAt) / 1000} s (UI not verified)")
@@ -645,8 +651,9 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         r.run(listOf("/system/bin/sh", "-c", "export PATH=/system/bin:/system/xbin:\$PATH; svc power stayon true"), 60_000)
         TreeFixer(ctx, paths, img, ::log).noScreenSleep()
         disableBrokenComponents()
-        val img2 = img.copy(lastBootMs = bootDoneAt - bootAt, bootCount = img.bootCount + 1)
-        ImageStore.save(ctx, img2)
+        runCatching {
+            ImageStore.update(ctx, img.id) { it.copy(lastBootMs = bootDoneAt - bootAt, bootCount = it.bootCount + 1) }
+        }.onFailure { log("boot statistics: could not save: ${it.message}") }
     }
 
     /**
@@ -687,6 +694,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
                     // by name after restartZygote() erased the newly started zygote from supervision.
                     if (!synchronized(procs) { procs.remove(name, p) }) continue
                     val code = runCatching { p.exitValue() }.getOrDefault(-1)
+                    if (name in setOf("zygote", "surfaceflinger", "mediaserver")) noteBoot.interrupted()
                     if (name == "zygote") {
                         if (state != State.FAILED && (!everBooted || zygoteRestarts >= 6)) {
                             failure = "zygote exited (code $code)" + if (code == 137) " — SIGKILL (cause not established)" else ""
@@ -717,6 +725,17 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
                         restarts[name] = n + 1
                         log("service $name crashed (code $code), restarting (${n + 1}/12)")
                         runCatching { startService(svc) }
+                    }
+                }
+                if (pendingNote.isNotBlank() && !recoveryMode && !lowPowerBoot && !stopping) {
+                    val healthy = synchronized(procs) {
+                        listOf("zygote", "surfaceflinger").all { procs[it]?.isAlive == true }
+                    }
+                    if (noteBoot.ready(SystemClock.elapsedRealtime(), state == State.RUNNING, healthy)) {
+                        runCatching {
+                            val saved = ImageStore.update(ctx, img.id) { it.copy(oneTimeNote = "") }
+                            if (saved != null) pendingNote = ""
+                        }.onFailure { log("ROM note: could not save completion: ${it.message}") }
                     }
                 }
             }

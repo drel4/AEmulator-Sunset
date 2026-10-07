@@ -299,6 +299,7 @@ AlertDialog(
     }
     if (help) HelpDialog(onDismiss = { help = false })
     if (addMenu) AddSheet(images, onDismiss = { addMenu = false },
+        onCatalog = { addMenu = false; ctx.startActivity(Intent(ctx, RomCatalogActivity::class.java)) },
         onImport = { addMenu = false; pick.launch(arrayOf("*/*")) },
         onContainer = { addMenu = false; containerFrom = it })
     containerFrom?.let { src -> ContainerDialog(src, images, onDismiss = { containerFrom = null },
@@ -320,7 +321,7 @@ AlertDialog(
 /** The "+" menu: a firmware file, or a new container of a firmware already here. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddSheet(images: List<GuestImage>, onDismiss: () -> Unit, onImport: () -> Unit, onContainer: (GuestImage) -> Unit) {
+private fun AddSheet(images: List<GuestImage>, onDismiss: () -> Unit, onImport: () -> Unit, onCatalog: () -> Unit, onContainer: (GuestImage) -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ListItem(headlineContent = { Text(stringResource(R.string.add_import)) },
@@ -331,6 +332,9 @@ private fun AddSheet(images: List<GuestImage>, onDismiss: () -> Unit, onImport: 
                 supportingContent = { Text(stringResource(R.string.add_container_sub)) },
                 leadingContent = { Icon(Icons.Rounded.ContentCopy, null) },
                 modifier = Modifier.clip(MaterialTheme.shapes.large).clickable { images.firstOrNull()?.let(onContainer) })
+            ListItem(headlineContent = { Text(stringResource(R.string.add_visit_catalog)) },
+                leadingContent = { Icon(Icons.Rounded.List, null) },
+                modifier = Modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onCatalog))
         }
     }
 }

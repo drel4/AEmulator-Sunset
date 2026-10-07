@@ -74,6 +74,8 @@ endif
         self.assertEqual(ime.read_text().count('// AESS: first boot'), 1)
         product = self.base / 'src/device/aemulator/aess/cm.mk'
         self.assertIn('PRODUCT_NAME := cm_aess', product.read_text())
+        codec_rule = 'device/generic/goldfish/camera/media_codecs.xml:system/etc/media_codecs.xml'
+        self.assertEqual(product.read_text().count(codec_rule), 1)
         overlay = product.parent / 'overlay/frameworks/base/core/res/res/values/config.xml'
         resources = ET.parse(overlay).getroot()
         self.assertEqual([(item.tag, item.get('name'), item.text) for item in resources],

@@ -10,12 +10,16 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-07 for sunset.32.** This work has been
+**Modification notice updated 2026-10-07 for sunset.33.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
 Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.33 adds optional export notes retained until a reported stable boot,
+the add-firmware catalog shortcut, English/Russian wording changes and an
+AGENTS.md contributor guide. The separate CM11 recipe now packages its pinned
+software media-codec configuration for Ogg UI sounds. Dated 2026-10-07.
 sunset.32 waits for the host's legacy property-service completion ACK instead
 of treating a 250ms timeout as success. It includes delayed-service and timeout
 ARM smoke tests. This emulator-side first-boot crash mitigation is dated

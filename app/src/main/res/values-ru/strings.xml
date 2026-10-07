@@ -30,7 +30,7 @@
     <string name="start">Запустить</string>
     <string name="rename">Переименовать</string>
     <string name="help_title">Какие прошивки подходят</string>
-    <string name="help_text">• Android 2.3, 4.0–4.4 — основная поддержка; 5.x–6.x — экспериментально.\n• Только 32-битные ARM-прошивки (armeabi / armeabi-v7a).\n\nФорматы:\n• ZIP для CWM/TWRP (MIUI, CyanogenMod, порты, большинство кастомных прошивок);\n• Samsung: .tar / .tar.md5 из Odin или ZIP с AP_*.tar.md5;\n• factory-образы Google (.tgz / .zip);\n• system.img (ext4, sparse), TWRP-бэкап system.ext4.win;\n• OTA с system.new.dat(.br) + system.transfer.list.\n\nЛучше всего, если в архиве есть boot.img — из него берётся порядок загрузки служб.</string>
+    <string name="help_text">• Android 2.3, 4.0–4.4 — основная поддержка; 5.x–6.x — экспериментально.\n• Только 32-битные ARM-прошивки (armeabi / armeabi-v7a).\n\nФорматы:\n• ZIP для CWM/TWRP (MIUI, CyanogenMod, порты, большинство кастомных прошивок);\n• Samsung: .tar / .tar.md5 из Odin или ZIP с AP_*.tar.md5;\n• factory-образы Google (.tgz / .zip);\n• system.img (ext4, sparse, YAFFS2), TWRP-бэкап system.ext4.win;\n• OTA с system.new.dat(.br) + system.transfer.list.\n\nЛучше всего, если в архиве есть boot.img — из него берётся порядок загрузки служб.</string>
     <string name="vs_screen">Экран гостя</string>
     <string name="vs_fixed_2x">Для Android 2.x экран фиксирован: 480×800, 240 dpi.</string>
     <string name="vs_screen_hint">Чем меньше экран — тем быстрее работает система.</string>
@@ -219,8 +219,12 @@
     <string name="vm_storage_busy">Хранилище ВМ занято. Дождитесь завершения сброса данных и повторите попытку.</string>
     <string name="lpm_start">Запуск в режиме зарядки без загрузки Android</string>
     <string name="vm_reset_data">Сбросить данные ВМ</string>
-    <string name="vm_reset_warning">Сначала выключите ВМ. Безвозвратно удалить приложения, аккаунты, настройки и внутренние данные гостевой системы (/data и /cache)? Резервная копия не создаётся. Прошивка, настройки ВМ, рекавери и общая папка SD-карты сохраняются.</string>
-    <string name="vm_reset_done">Данные ВМ безвозвратно сброшены. Резервная копия не создана.</string>
+    <string name="vm_reset_warning">Сначала выключите ВМ. Безвозвратно удалить приложения, аккаунты, настройки и внутренние данные гостевой системы (/data и /cache)? Прошивка, настройки ВМ, рекавери и общая папка SD-карты сохраняются.</string>
+    <string name="vm_reset_done">Данные ВМ безвозвратно сброшены.</string>
+    <string name="add_visit_catalog">Открыть каталог прошивок</string>
+    <string name="vm_export_note">Одноразовая заметка (необязательно)</string>
+    <string name="vm_export_note_info">Показывается до загрузки Android и 10 секунд работы без сбоя.</string>
+    <string name="vm_rom_note">Заметка к прошивке</string>
     <string name="vm_reset_failed">Не удалось завершить сброс. Полностью выключите все ВМ и проверьте файлы образа. Если удаление началось, часть данных уже могла быть безвозвратно удалена.</string>
     <string name="vm_export">Экспорт ВМ (.aessvm)</string>
     <string name="vm_export_info">Сначала остановите все ВМ. Выберите, что сохранить. Файлы общей SD-карты не включаются.</string>

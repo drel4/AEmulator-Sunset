@@ -11,6 +11,7 @@ PRODUCT_PACKAGES += \
     lights.goldfish gps.goldfish sensors.goldfish
 
 PRODUCT_COPY_FILES += \
+    device/generic/goldfish/camera/media_codecs.xml:system/etc/media_codecs.xml \
     device/generic/goldfish/fstab.goldfish:root/fstab.goldfish \
     device/generic/goldfish/init.goldfish.rc:root/init.goldfish.rc \
     device/generic/goldfish/init.goldfish.sh:system/etc/init.goldfish.sh \

@@ -197,6 +197,8 @@ data class GuestImage(
     val profileVersion: Int = 0,
     /** container: id of the image whose /system this one shares (its own /data, card and settings) */
     val baseId: String = "",
+    /** Export-author note: consumed only after a reported, stable normal boot. */
+    val oneTimeNote: String = "",
 ) {
     val displayVersion: String get() = "Android $release (API $api)"
 
@@ -220,6 +222,7 @@ data class GuestImage(
         .put("lastBootMs", lastBootMs).put("bootCount", bootCount)
         .put("profileVersion", profileVersion)
         .put("baseId", baseId)
+        .put("oneTimeNote", OneTimeVmNote.normalize(oneTimeNote))
 
     companion object {
         fun fromJson(o: JSONObject): GuestImage {
@@ -254,6 +257,7 @@ data class GuestImage(
                 bootCount = o.optInt("bootCount", 0),
                 profileVersion = o.optInt("profileVersion", 0),
                 baseId = o.optString("baseId", ""),
+                oneTimeNote = OneTimeVmNote.normalize(o.optString("oneTimeNote", "")),
             )
         }
     }

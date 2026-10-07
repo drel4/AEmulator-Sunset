@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +33,7 @@ internal fun VmExportSection(img: GuestImage, settings: VmSettings, busy: Boolea
     var includeData by remember { mutableStateOf(false) }
     var includeSystem by remember { mutableStateOf(true) }
     var includeConfig by remember { mutableStateOf(true) }
+    var note by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<GuestImage?>(null) }
     var pendingParts by remember { mutableStateOf(VmArchive.Selection()) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -56,17 +60,22 @@ internal fun VmExportSection(img: GuestImage, settings: VmSettings, busy: Boolea
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },
         title = { Text(stringResource(R.string.vm_export)) },
-        text = { Column {
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) {
             Text(stringResource(R.string.vm_export_info))
             Toggle(stringResource(if (app.aemu.core.BootPartitionImport.present(app.aemu.core.VmPaths(ctx, img.id).dir))
                 R.string.vm_export_system_boot else R.string.vm_export_system), stringResource(R.string.vm_export_system_info), includeSystem) { includeSystem = it }
             Toggle(stringResource(R.string.vm_export_config), stringResource(R.string.vm_export_config_info), includeConfig) { includeConfig = it }
             Toggle(stringResource(R.string.vm_export_data), stringResource(R.string.vm_export_data_info), includeData) { includeData = it }
+            OutlinedTextField(value = note, onValueChange = { note = it.take(app.aemu.core.OneTimeVmNote.MAX_LENGTH) },
+                label = { Text(stringResource(R.string.vm_export_note)) },
+                supportingText = { Text(stringResource(R.string.vm_export_note_info)) },
+                minLines = 2, maxLines = 4, modifier = Modifier.fillMaxWidth())
         } },
         dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
         confirmButton = { TextButton(enabled = includeSystem || includeConfig || includeData, onClick = {
             confirm = false
-            pending = (app.aemu.core.ImageStore.get(ctx, img.id) ?: img).copy(settings = settings)
+            pending = (app.aemu.core.ImageStore.get(ctx, img.id) ?: img).copy(settings = settings,
+                oneTimeNote = app.aemu.core.OneTimeVmNote.normalize(note))
             pendingParts = VmArchive.Selection(includeSystem, includeConfig, includeData)
             pick.launch(img.name.replace(Regex("[^\\p{L}\\p{N}._-]"), "_").take(80).ifEmpty { "VM" } + ".aessvm")
         }) { Text(stringResource(R.string.vm_export)) } },

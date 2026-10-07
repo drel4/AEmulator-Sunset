@@ -11,6 +11,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.viewinterop.AndroidView
@@ -622,10 +623,23 @@ class VmActivity : ComponentActivity() {
         val running = state == GuestVm.State.RUNNING
         var seconds by remember { mutableStateOf(0L) }
         var frames by remember { mutableStateOf(0L) }
+        var romNote by remember { mutableStateOf(vm.pendingNote) }
+        LaunchedEffect(vm) { while (true) { romNote = vm.pendingNote; delay(500) } }
         LaunchedEffect(Unit) { while (true) { if (vm.recoveryMode) guest.format = vm.recoveryFormat; seconds = vm.bootSeconds(); frames = if (vm.glInApp) dev.lk.m7sense.GlBridge.frames() else guest.rings; delay(500) } }
         // как только гость начал рисовать — карточку убираем, остаётся маленький индикатор
         val drawing = frames > 30
         Box(Modifier.fillMaxSize()) {
+            if (romNote.isNotBlank() && !vm.recoveryMode && !vm.lowPowerBoot && !showLog && !menu) {
+                Surface(shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+                    modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 56.dp, start = 16.dp, end = 16.dp)
+                        .widthIn(max = 360.dp).heightIn(max = 200.dp)) {
+                    Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
+                        Text(stringResource(R.string.vm_rom_note), style = MaterialTheme.typography.titleSmall)
+                        Text(romNote, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
             // карточка загрузки
             AnimatedVisibility(
                 visible = state != GuestVm.State.RUNNING && !showLog && !(drawing && state == GuestVm.State.BOOTING),

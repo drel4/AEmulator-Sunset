@@ -31,7 +31,7 @@
     <string name="start">Start</string>
     <string name="rename">Rename</string>
     <string name="help_title">Supported firmware</string>
-    <string name="help_text">• Android 2.3 and 4.0–4.4: main support; 5.x–6.x: experimental.\n• 32-bit ARM firmware only (armeabi / armeabi-v7a).\n\nFormats:\n• CWM/TWRP recovery ZIP (MIUI, CyanogenMod, ports, most custom ROMs);\n• Samsung: Odin .tar / .tar.md5 or a ZIP with AP_*.tar.md5;\n• Google factory images (.tgz / .zip);\n• system.img (ext4, sparse), TWRP backup system.ext4.win;\n• OTA with system.new.dat(.br) + system.transfer.list.\n\nBest if the archive contains boot.img: the service start order is taken from it.</string>
+    <string name="help_text">• Android 2.3 and 4.0–4.4: main support; 5.x–6.x: experimental.\n• 32-bit ARM firmware only (armeabi / armeabi-v7a).\n\nFormats:\n• CWM/TWRP recovery ZIP (MIUI, CyanogenMod, ports, most custom ROMs);\n• Samsung: Odin .tar / .tar.md5 or a ZIP with AP_*.tar.md5;\n• Google factory images (.tgz / .zip);\n• system.img (ext4, sparse, YAFFS2), TWRP backup system.ext4.win;\n• OTA with system.new.dat(.br) + system.transfer.list.\n\nBest if the archive contains boot.img: the service start order is taken from it.</string>
     <string name="vs_screen">Guest screen</string>
     <string name="vs_fixed_2x">Android 2.x uses a fixed 480×800 screen at 240 dpi.</string>
     <string name="vs_screen_hint">A smaller screen makes the system faster.</string>
@@ -218,8 +218,12 @@
     <string name="vm_storage_busy">VM storage is busy. Wait for data reset to finish, then try again.</string>
     <string name="lpm_start">Start in charging-only mode</string>
     <string name="vm_reset_data">Reset VM data</string>
-    <string name="vm_reset_warning">Shut down the VM first. Permanently delete guest apps, accounts, settings and internal data (/data and /cache)? No backup is created. Firmware, VM settings, recovery and the shared SD-card folder are kept.</string>
-    <string name="vm_reset_done">VM data permanently reset. No backup was created.</string>
+    <string name="vm_reset_warning">Shut down the VM first. Permanently delete guest apps, accounts, settings and internal data (/data and /cache)? Firmware, VM settings, recovery and the shared SD-card folder are kept.</string>
+    <string name="vm_reset_done">VM data permanently reset.</string>
+    <string name="add_visit_catalog">Visit ROM catalog</string>
+    <string name="vm_export_note">One-time note (optional)</string>
+    <string name="vm_export_note_info">Shown until Android boots and stays running for 10 seconds.</string>
+    <string name="vm_rom_note">ROM note</string>
     <string name="vm_reset_failed">Cannot complete reset. Fully shut down all VMs and check the image files. If deletion started, some data may already be permanently erased.</string>
     <string name="vm_export">Export VM (.aessvm)</string>
     <string name="vm_export_info">Stop all VMs first. Choose what to include. Shared SD-card files are not included.</string>

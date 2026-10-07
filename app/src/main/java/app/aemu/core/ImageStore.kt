@@ -43,13 +43,16 @@ object ImageStore {
         return if (f.isFile) runCatching { GuestImage.fromJson(JSONObject(f.readText())) }.getOrNull() else null
     }
 
-    fun save(ctx: Context, img: GuestImage) {
+    @Synchronized fun save(ctx: Context, img: GuestImage) {
         val p = VmPaths(ctx, img.id)
         p.dir.mkdirs()
         val tmp = File(p.dir, "image.json.tmp")
         tmp.writeText(img.toJson().toString(2))
-        tmp.renameTo(p.meta)
+        check(tmp.renameTo(p.meta)) { "Cannot save VM metadata" }
     }
+
+    @Synchronized internal fun update(ctx: Context, id: String, change: (GuestImage) -> GuestImage): GuestImage? =
+        get(ctx, id)?.let { change(it).also { updated -> save(ctx, updated) } }
 
     fun newId(ctx: Context): String {
         val abc = "abcdefghijkmnpqrstuvwxyz23456789"
