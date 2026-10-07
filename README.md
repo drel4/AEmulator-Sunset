@@ -57,6 +57,8 @@ cd AEmulator-Sunset
 
 ## 🙏 Credits
 
+Contributor and coding-agent workflow: [AGENTS.md](AGENTS.md).
+
 AEmulator Sunset grew out of the HTC Desire HD and HTC One M7 emulators by [the original author](https://t.me/istratiit_ech) — their engine made this project possible.
 
 This is a modified fork of [uxazu/AEmulator](https://github.com/uxazu/AEmulator). Fork changes are documented in [NOTICE](NOTICE.md).
