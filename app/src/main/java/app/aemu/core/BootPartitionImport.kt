@@ -68,6 +68,7 @@ internal object BootPartitionImport {
                 val analyzed = Analyzer(ctx, paths, entries).analyze(id, old.name, persistBuildProp = false)
                 File(paths.dir, "boot.img").also { created += it }.writeBytes(bytes)
                 val refreshed = analyzed.copy(name = old.name, settings = old.settings, baseId = old.baseId,
+                    oneTimeNote = old.oneTimeNote, romCardNote = old.romCardNote,
                     createdAt = old.createdAt, lastBootMs = old.lastBootMs, bootCount = old.bootCount,
                     sizeBytes = ImageStore.du(paths.dir))
                 val record = android.util.AtomicFile(paths.meta)

@@ -136,6 +136,7 @@ class Analyzer(private val ctx: Context, private val paths: VmPaths, private val
                 name = img.name, settings = img.settings, createdAt = img.createdAt, sizeBytes = img.sizeBytes,
                 lastBootMs = img.lastBootMs, bootCount = img.bootCount,
                 oneTimeNote = img.oneTimeNote,
+                romCardNote = img.romCardNote,
             )
             app.aemu.core.ImageStore.save(ctx, out)
             return out

@@ -222,6 +222,9 @@
     <string name="vm_reset_done">VM data permanently reset.</string>
     <string name="add_visit_catalog">Visit ROM catalog</string>
     <string name="vm_export_note">One-time note (optional)</string>
+    <string name="vm_export_card_note">ROM card note (optional)</string>
+    <string name="vm_export_card_note_info">Shown in the VM list after import. Add required boot settings or other instructions.</string>
+    <string name="vm_card_note_open">Read full ROM note</string>
     <string name="vm_export_note_info">Shown until Android boots and stays running for 10 seconds.</string>
     <string name="vm_rom_note">ROM note</string>
     <string name="vm_reset_failed">Cannot complete reset. Fully shut down all VMs and check the image files. If deletion started, some data may already be permanently erased.</string>

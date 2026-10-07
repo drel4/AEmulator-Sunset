@@ -483,7 +483,7 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
                 }
                 s.done != null -> {
                     Text("${s.done.name} · ${s.done.displayVersion} · ${s.done.skin}", style = MaterialTheme.typography.bodyMedium)
-                    s.done.warnings.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                    s.done.cardWarnings.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -526,7 +526,8 @@ private fun ImageCard(img: GuestImage, onStart: () -> Unit, onSettings: () -> Un
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (img.lastBootMs > 0) Text(stringResource(R.string.last_boot, (img.lastBootMs / 1000).toInt()), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            img.warnings.firstOrNull()?.let { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
+            RomCardNoteView(img.romCardNote)
+            img.cardWarnings.firstOrNull()?.let { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = ButtonDefaults.shape, color = MaterialTheme.colorScheme.primary,

@@ -78,7 +78,7 @@ def package(base):
                    skin='CyanogenMod 11', engine='kk', abi='armeabi-v7a', profileVersion=0,
                    runtime='dalvik', sourceName=archive.name, baseId='',
                    settings=dict(width=540, height=960, density=240),
-                   warnings=['Experimental CM11 guest; not firmware for a physical device.'],
+                   warnings=[],
                    oneTimeNote='CM11 includes root, CM File Manager and Terminal. No Google Apps. This old Android version is for trusted testing, not a secure daily-use system.',
                    aessvmIncludesData=False, aessvmIncludesConfig=True,
                    aessvmRomFingerprint=props.get('ro.build.fingerprint', ''))

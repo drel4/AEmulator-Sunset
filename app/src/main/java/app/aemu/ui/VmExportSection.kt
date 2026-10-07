@@ -21,6 +21,7 @@ import app.aemu.core.GuestImage
 import app.aemu.core.VmArchiveStorage
 import app.aemu.core.VmSettings
 import app.aemu.core.VmArchive
+import app.aemu.core.RomCardNote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +35,7 @@ internal fun VmExportSection(img: GuestImage, settings: VmSettings, busy: Boolea
     var includeSystem by remember { mutableStateOf(true) }
     var includeConfig by remember { mutableStateOf(true) }
     var note by remember { mutableStateOf("") }
+    var cardNote by remember(img.id, img.romCardNote) { mutableStateOf(img.romCardNote) }
     var pending by remember { mutableStateOf<GuestImage?>(null) }
     var pendingParts by remember { mutableStateOf(VmArchive.Selection()) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -66,6 +68,10 @@ internal fun VmExportSection(img: GuestImage, settings: VmSettings, busy: Boolea
                 R.string.vm_export_system_boot else R.string.vm_export_system), stringResource(R.string.vm_export_system_info), includeSystem) { includeSystem = it }
             Toggle(stringResource(R.string.vm_export_config), stringResource(R.string.vm_export_config_info), includeConfig) { includeConfig = it }
             Toggle(stringResource(R.string.vm_export_data), stringResource(R.string.vm_export_data_info), includeData) { includeData = it }
+            OutlinedTextField(value = cardNote, onValueChange = { cardNote = it.take(RomCardNote.MAX_LENGTH) },
+                label = { Text(stringResource(R.string.vm_export_card_note)) },
+                supportingText = { Text(stringResource(R.string.vm_export_card_note_info)) },
+                minLines = 2, maxLines = 4, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = note, onValueChange = { note = it.take(app.aemu.core.OneTimeVmNote.MAX_LENGTH) },
                 label = { Text(stringResource(R.string.vm_export_note)) },
                 supportingText = { Text(stringResource(R.string.vm_export_note_info)) },
@@ -74,8 +80,7 @@ internal fun VmExportSection(img: GuestImage, settings: VmSettings, busy: Boolea
         dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } },
         confirmButton = { TextButton(enabled = includeSystem || includeConfig || includeData, onClick = {
             confirm = false
-            pending = (app.aemu.core.ImageStore.get(ctx, img.id) ?: img).copy(settings = settings,
-                oneTimeNote = app.aemu.core.OneTimeVmNote.normalize(note))
+            pending = RomCardNote.exportImage(app.aemu.core.ImageStore.get(ctx, img.id) ?: img, settings, cardNote, note)
             pendingParts = VmArchive.Selection(includeSystem, includeConfig, includeData)
             pick.launch(img.name.replace(Regex("[^\\p{L}\\p{N}._-]"), "_").take(80).ifEmpty { "VM" } + ".aessvm")
         }) { Text(stringResource(R.string.vm_export)) } },

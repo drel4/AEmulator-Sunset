@@ -223,6 +223,9 @@
     <string name="vm_reset_done">Данные ВМ безвозвратно сброшены.</string>
     <string name="add_visit_catalog">Открыть каталог прошивок</string>
     <string name="vm_export_note">Одноразовая заметка (необязательно)</string>
+    <string name="vm_export_card_note">Заметка на карточке прошивки (необязательно)</string>
+    <string name="vm_export_card_note_info">Показывается в списке ВМ после импорта. Укажите нужные настройки загрузки или другие инструкции.</string>
+    <string name="vm_card_note_open">Прочитать заметку полностью</string>
     <string name="vm_export_note_info">Показывается до загрузки Android и 10 секунд работы без сбоя.</string>
     <string name="vm_rom_note">Заметка к прошивке</string>
     <string name="vm_reset_failed">Не удалось завершить сброс. Полностью выключите все ВМ и проверьте файлы образа. Если удаление началось, часть данных уже могла быть безвозвратно удалена.</string>

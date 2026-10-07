@@ -202,7 +202,10 @@ data class GuestImage(
     val baseId: String = "",
     /** Export-author note: consumed only after a reported, stable normal boot. */
     val oneTimeNote: String = "",
+    /** Export-author requirements shown on the ROM card; not consumed by a successful boot. */
+    val romCardNote: String = "",
 ) {
+    val cardWarnings get() = RomCardNote.warnings(model, api, warnings)
     val displayVersion: String get() = "Android $release (API $api)"
 
     /** Движок с учётом выбора пользователя. */
@@ -221,11 +224,12 @@ data class GuestImage(
         .put("settings", settings.toJson())
         .put("createdAt", createdAt).put("sizeBytes", sizeBytes)
         .put("sourceName", sourceName).put("runtime", runtime)
-        .put("warnings", JSONArray(warnings))
+        .put("warnings", JSONArray(cardWarnings))
         .put("lastBootMs", lastBootMs).put("bootCount", bootCount)
         .put("profileVersion", profileVersion)
         .put("baseId", baseId)
         .put("oneTimeNote", OneTimeVmNote.normalize(oneTimeNote))
+        .put("romCardNote", RomCardNote.normalize(romCardNote))
 
     companion object {
         fun fromJson(o: JSONObject): GuestImage {
@@ -261,6 +265,7 @@ data class GuestImage(
                 profileVersion = o.optInt("profileVersion", 0),
                 baseId = o.optString("baseId", ""),
                 oneTimeNote = OneTimeVmNote.normalize(o.optString("oneTimeNote", "")),
+                romCardNote = RomCardNote.normalize(o.optString("romCardNote", "")),
             )
         }
     }
