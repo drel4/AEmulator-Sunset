@@ -10,12 +10,16 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-04 for sunset.31.** This work has been
+**Modification notice updated 2026-10-07 for sunset.32.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
 Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.32 waits for the host's legacy property-service completion ACK instead
+of treating a 250ms timeout as success. It includes delayed-service and timeout
+ARM smoke tests. This emulator-side first-boot crash mitigation is dated
+2026-10-07; fresh-ROM boot verification remains pending.
 sunset.31 library cards wrap badges with single-line labels, abbreviate
 CyanogenMod labels for display only, and omit spacing for hidden header cards.
 These UI changes are dated 2026-10-04.

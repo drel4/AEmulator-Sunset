@@ -476,6 +476,7 @@ __attribute__((naked, noinline)) static long sys4(long n, long a, long b, long c
 }
 #define SYS_nanosleep 162
 #include "vibration.h"
+#include "property-client.h"
 EXPORT int openat(int dirfd, const char *path, int flags, ...) {
     int mode = 0;
     if (flags & 0100) {

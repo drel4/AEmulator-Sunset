@@ -25,3 +25,7 @@ qemu-arm ./netmgr-smoke
     -nostdlib -static -ffreestanding -fno-builtin -fno-stack-protector \
     -Wl,-e,_start -o "$TEST_DIR/vibration-smoke" "$TEST_SRC/vibration-smoke.c"
 qemu-arm ./vibration-smoke
+"$BIN/clang" --target=armv7a-linux-androideabi21 -march=armv7-a -mthumb -Os \
+    -nostdlib -static -ffreestanding -fno-builtin -fno-stack-protector \
+    -Wl,-e,_start -o "$TEST_DIR/property-smoke" "$TEST_SRC/property-smoke.c"
+qemu-arm ./property-smoke
