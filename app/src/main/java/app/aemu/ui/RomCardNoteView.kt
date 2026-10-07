@@ -22,6 +22,7 @@ internal fun RomCardNoteView(text: String) {
     if (note.isEmpty()) return
     var expanded by remember(note) { mutableStateOf(false) }
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable(
             onClickLabel = stringResource(R.string.vm_card_note_open)) { expanded = true }) {
         Column(Modifier.padding(12.dp)) {

@@ -632,6 +632,7 @@ class VmActivity : ComponentActivity() {
             if (romNote.isNotBlank() && !vm.recoveryMode && !vm.lowPowerBoot && !showLog && !menu) {
                 Surface(shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 56.dp, start = 16.dp, end = 16.dp)
                         .widthIn(max = 360.dp).heightIn(max = 200.dp)) {
                     Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -649,6 +650,7 @@ class VmActivity : ComponentActivity() {
 
             if (drawing && state == GuestVm.State.BOOTING && !showLog) {
                 Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp)) {
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         LoadingIndicator(Modifier.size(24.dp))
