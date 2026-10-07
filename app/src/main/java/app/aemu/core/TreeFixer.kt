@@ -123,6 +123,9 @@ class TreeFixer(
         swapMtkAudioHal()
         eglConfig(img.settings.gpu)
         makeDataDirs()
+        runCatching {
+            if (GuestRootAliases.ensureEtc(root)) log("init: restored /etc -> /system/etc alias")
+        }.onFailure { log("init: could not prepare /etc alias: ${it.message}") }
         makeUserZeroLink()
         makeDevNodes()
         makeSysNodes()

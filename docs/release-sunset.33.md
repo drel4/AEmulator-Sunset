@@ -15,24 +15,34 @@
 - English/Russian strings and a scrollable export dialog.
 - Root AGENTS.md documents contributor/agent workflow without credentials.
 
-Separate ROM recipe: AESS442-3 adds the missing media-codec XML that logs identify
-as preventing SoundPool from decoding Ogg UI sounds. Existing app updates cannot
-add that file to an already imported CM11 system. Import the new ROM as a new VM
-to test it; preserve working data. CM11's first-attempt boot is user-reported;
-playback and note overlay still require on-device verification.
+Audio: CM11 reads `/etc/media_codecs.xml`, while its existing XML lives under
+`/system/etc`. Both prior archives lack the `/etc` symlink normally created by
+init.rc. The earlier missing-XML hypothesis was disproved by archive comparison.
+Sunset.33 restores missing aliases before boot, preserving vendor directories
+and custom links; it converts only the known absolute `/system/etc` link into
+a relative guest-tree link. Existing VMs receive this fix without reimporting.
+The AESS442-3 recipe explicitly includes the codec XML and portable root alias.
+CM11's first-attempt boot is user-reported; playback and the note overlay still
+require on-device verification.
 
 Standard `app.aemu`, clone `app.aemu.clone`; version code 35.
 Sources: tag `v0.0.0.3-sunset.33`. See build-source.md and license-audit.md for
 toolchains and inherited source-provenance limitations.
 
-Verification: 145 JVM tests passed (zero failures/errors/skips), all six ARM
-guest-shim smoke tests passed, and both CM11 recipe fixture tests passed.
-Both APKs built successfully, have version code 35 and the existing publisher
-certificate, with v2 signatures verified. Packaged legal assets and guest shim
-match the build checkout. On-device overlay and sound playback testing remains
-pending.
+Final verification: 150 JVM tests passed with zero failures/errors/skips,
+including five filesystem-alias tests, plus all six ARM smoke tests and both
+CM11 recipe fixture tests. Both APKs built successfully with version code 35,
+expected package IDs and the existing publisher certificate; v2 signatures,
+packaged legal assets and guest shim verified. On-device playback/note testing
+remains pending.
 
 SHA-256:
 
-- Standard: `ce9191a658c92269cb51ad71e1ccd6f27152c688de1eff33221c039e6e468553`
-- Clone: `ac594c3ea38e2f8c356ca4a33136d8f605140e21efd0cf3e65af5a53e4642e85`
+- Standard: `7e3692394276327270a4ebc169f521cd05c84a3fbec692972b4e80b0076d3008`
+- Clone: `a154fdeff16245003877153a710bee351ee5630470c706d347f605433d20bc8a`
+
+The public CM11 package and catalog were updated to AESS442-3. The entry is
+under Official (Sunset), status 1 (boots with issues), with user-reported
+first-attempt boot and playback verification pending. Previous ROM/catalog
+files are preserved in the deployment history. See
+`rom/cm11/BUILD-AESS442-3.md` for ROM/source hashes and the corrected diagnosis.

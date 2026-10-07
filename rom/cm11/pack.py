@@ -128,6 +128,9 @@ def package(base):
                 add(name, mode, uid, gid, data=data)
             else:
                 raise ValueError('Special ramdisk file: ' + rel)
+        # init.rc creates this at runtime; AEmulator does not execute init.
+        if 'root/etc' not in entries:
+            add('root/etc', 0o777, kind=tarfile.SYMTYPE, link='system/etc')
         add('boot.img', 0o644, data=blob)
     with tarfile.open(archive.with_suffix('.partial'), 'r:gz') as tar:
         members = tar.getmembers()
@@ -135,6 +138,8 @@ def package(base):
         assert tar.extractfile('aessvm.parts').read() == b'110\n'
         assert tar.extractfile('root/system/build.prop').read() == (out / 'system/build.prop').read_bytes()
         assert tar.extractfile('root/system/etc/media_codecs.xml').read() == codecs.read_bytes()
+        etc_alias = tar.getmember('root/etc')
+        assert etc_alias.issym() and etc_alias.linkname == 'system/etc'
         for required in ('root/init.rc', 'root/system/app/CMFileManager.apk', 'root/system/app/Term.apk',
                          'root/system/xbin/su', 'root/system/lib/libjackpal-androidterm5.so',
                          'root/system/lib/libjackpal-termexec2.so',

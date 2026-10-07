@@ -106,8 +106,9 @@ sh gradlew --no-daemon '-Dorg.gradle.jvmargs=-Xmx1536m -Dfile.encoding=UTF-8' \
 - Catalog status: `-1` unknown, `0` does not boot, `1` boots with issues,
   `2` works. Statuses are supplied by catalog authors, not checked by the app.
 - As of 2026-10-07 the user reports CM11 boots on the first attempt. UI sounds
-  were reported missing except volume-key feedback. Logs identify a missing
-  media-codec XML; the AESS442-3 recipe packages it, with playback testing pending.
+  were reported missing except volume-key feedback. The codec XML is present in
+  `/system/etc`, but CM11 reads it through a missing init-created `/etc` alias.
+  Sunset.33 and AESS442-3 restore that alias, with playback testing pending.
   Do not infer that Xperia's first-boot issue or every CM11 feature is verified.
 - Build/source recipes and release records are authoritative for artifacts;
   check current Git state and logs instead of treating this dated context as

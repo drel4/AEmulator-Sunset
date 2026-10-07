@@ -2,10 +2,13 @@
 
 **Experimental: user reports CM11 boots on the first attempt (2026-10-07).**
 AESS442-2 adds a guarded fallback for default-keyboard selection. AESS442-3
-includes the pinned Goldfish software media-codec configuration: the previous
-package omitted `/system/etc/media_codecs.xml`, and logs show SoundPool failing
-to decode the included Ogg UI sounds. The Vorbis decoder library was already
-present. UI sound playback in the new package still needs on-device testing.
+explicitly packages the pinned Goldfish software media-codec configuration and
+the init-created `/etc -> /system/etc` alias. Both older archives already contain
+the XML under `/system/etc`, but lack `/etc`; CM11's MediaCodecList opens
+`/etc/media_codecs.xml` and logs show SoundPool unable to decode Ogg UI sounds.
+The earlier missing-XML hypothesis was superseded by archive comparison.
+Sunset.33 also restores missing aliases for existing VMs. Sound playback still
+needs on-device testing.
 Added 2026-10-04.
 
 This is an unofficial ARMv7 CM11 guest, not firmware for a physical phone.
