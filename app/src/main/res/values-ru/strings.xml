@@ -288,4 +288,9 @@
     <string name="rom_notification_channel">Загрузка и импорт прошивок</string>
     <string name="rom_notification_downloading">Загрузка прошивки</string>
     <string name="rom_downloading_total">Загрузка: %1$s / %2$s</string>
+    <string name="vs_engine">Движок</string>
+    <string name="vs_engine_selected">Движок: %1$s</string>
+    <string name="vs_engine_sunset">Universal Sunset</string>
+    <string name="vs_engine_extended">Universal Sunset Extended (экспериментальный)</string>
+    <string name="vs_engine_sub">Изменения применятся после остановки и запуска ВМ. Extended добавляет общие исправления совместимости и может помочь некоторым прошивкам.</string>
 </resources>

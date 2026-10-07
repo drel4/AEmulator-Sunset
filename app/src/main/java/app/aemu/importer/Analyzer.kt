@@ -105,7 +105,7 @@ class Analyzer(private val ctx: Context, private val paths: VmPaths, private val
     }
 
     companion object {
-        const val VERSION = 13
+        const val VERSION = 14
 
         private val LMK_DEFAULTS = listOf(
             "ro.FOREGROUND_APP_ADJ" to "0", "ro.VISIBLE_APP_ADJ" to "1", "ro.PERCEPTIBLE_APP_ADJ" to "2",
@@ -135,6 +135,7 @@ class Analyzer(private val ctx: Context, private val paths: VmPaths, private val
             val out = fresh.copy(
                 name = img.name, settings = img.settings, createdAt = img.createdAt, sizeBytes = img.sizeBytes,
                 lastBootMs = img.lastBootMs, bootCount = img.bootCount,
+                baseId = img.baseId,
                 oneTimeNote = img.oneTimeNote,
                 romCardNote = img.romCardNote,
             )

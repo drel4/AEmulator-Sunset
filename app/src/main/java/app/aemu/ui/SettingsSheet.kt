@@ -42,6 +42,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.aemu.core.Engine
+import app.aemu.core.UniversalProfile
 import app.aemu.core.GuestImage
 import app.aemu.core.VmSettings
 import app.aemu.core.VmStorageLease
@@ -67,6 +68,7 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
     var resetConfirm by remember { mutableStateOf(false) }
     var resetting by remember { mutableStateOf(false) }
     var resetMessage by remember { mutableStateOf<String?>(null) }
+    var enginePicker by remember { mutableStateOf(false) }
     val experimental = experimentalFeaturesEnabled()
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = { if (!resetting) onDismiss() }, sheetState = state) {
@@ -115,7 +117,12 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             if (img.api >= 14) Toggle(stringResource(R.string.vs_hwui), stringResource(R.string.vs_hwui_sub), s.hwui) { s = s.copy(hwui = it) }
             Toggle(stringResource(R.string.vs_jit), stringResource(R.string.vs_jit_sub), s.jit) { s = s.copy(jit = it) }
             if (img.api >= 21) Toggle(stringResource(R.string.vs_fulldex), stringResource(R.string.vs_fulldex_sub), s.fullDexopt) { s = s.copy(fullDexopt = it) }
-            if (img.api < 14) Toggle(stringResource(R.string.vs_legacy), stringResource(R.string.vs_legacy_sub), s.legacyEngine) { s = s.copy(legacyEngine = it) }
+            val engineName = when {
+                s.legacyEngine && img.api < 14 -> stringResource(R.string.vs_legacy)
+                s.universalProfile == UniversalProfile.EXTENDED -> stringResource(R.string.vs_engine_extended)
+                else -> stringResource(R.string.vs_engine_sunset)
+            }
+            TextButton(onClick = { enginePicker = true }) { Text(stringResource(R.string.vs_engine_selected, engineName)) }
             val ramIdx = RAM_STEPS.indexOf(s.ramMb).coerceAtLeast(0)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.vs_ram)) },
@@ -205,6 +212,9 @@ fun SettingsSheet(img: GuestImage, onDismiss: () -> Unit, onSave: (VmSettings) -
             }
         }) { Text(stringResource(R.string.vm_reset_data)) } },
     )
+    if (enginePicker) EnginePicker(img.api, s, experimental, { enginePicker = false }) {
+        s = it; enginePicker = false
+    }
 }
 
 @Composable
@@ -273,4 +283,26 @@ private fun recoveryStatus(paths: app.aemu.core.VmPaths): String? {
         prop.contains("cwm", true) || java.io.File(dir, "res/images/icon_clockwork.png").exists() -> "ClockworkMod"
         else -> "Stock recovery"
     }
+}
+
+@Composable
+private fun EnginePicker(api: Int, s: VmSettings, experimental: Boolean, dismiss: () -> Unit, select: (VmSettings) -> Unit) {
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text(stringResource(R.string.vs_engine)) },
+        text = { Column {
+            Text(stringResource(R.string.vs_engine_sub))
+            TextButton(onClick = {
+                select(s.copy(legacyEngine = false, universalProfile = UniversalProfile.SUNSET))
+            }) { Text(stringResource(R.string.vs_engine_sunset)) }
+            if (experimental || s.universalProfile == UniversalProfile.EXTENDED) TextButton(onClick = {
+                select(s.copy(legacyEngine = false, universalProfile = UniversalProfile.EXTENDED))
+            }) { Text(stringResource(R.string.vs_engine_extended)) }
+            else Text(stringResource(R.string.experimental_locked), style = MaterialTheme.typography.bodySmall)
+            if (api < 14) TextButton(onClick = {
+                select(s.copy(legacyEngine = true, universalProfile = UniversalProfile.SUNSET))
+            }) { Text(stringResource(R.string.vs_legacy)) }
+        } },
+        confirmButton = { TextButton(onClick = dismiss) { Text(stringResource(android.R.string.cancel)) } },
+    )
 }

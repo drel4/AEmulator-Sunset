@@ -44,6 +44,7 @@ data class VmSettings(
     val mtMode: Int = 0,
     /** старый движок для 2.x (GL через pbuffer, только GLES 1.x) — запасной вариант */
     val legacyEngine: Boolean = false,
+    val universalProfile: UniversalProfile = UniversalProfile.SUNSET,
     /** guest RAM budget in MB, 0 = automatic */
     val ramMb: Int = 0,
     /** emulate the radio (RIL); off = tablet-like firmware without telephony */
@@ -63,6 +64,7 @@ data class VmSettings(
         .put("trackball", trackball).put("trackballDpad", trackballDpad)
         .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
+        .put("universalProfile", universalProfile.id)
         .put("vibration", vibration)
         .put("hostBattery", hostBattery)
         .put("camera", camera)
@@ -115,6 +117,7 @@ data class VmSettings(
                 disableGoogleApps = o.optBoolean("disableGoogleApps", false),
                 mtMode = o.optInt("mtMode", d.mtMode),
                 legacyEngine = o.optBoolean("legacyEngine", false),
+                universalProfile = UniversalProfile.byId(o.optString("universalProfile", "")),
                 ramMb = o.optInt("ramMb", 0),
                 radio = o.optBoolean("radio", true),
                 imei = o.optString("imei", ""),
@@ -138,12 +141,14 @@ data class GuestService(
     val restart: Boolean = false,
     /** вендорский демон: если упадёт — не страшно */
     val optional: Boolean = false,
+    val environment: Map<String, String> = emptyMap(),
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("optional", optional)
         .put("name", name)
         .put("argv", JSONArray(argv))
         .put("sockets", JSONObject(sockets as Map<*, *>))
+        .put("environment", JSONObject(environment as Map<*, *>))
         .put("uid", uid).put("gid", gid)
         .put("waitSocket", waitSocket ?: JSONObject.NULL)
         .put("delayMs", delayMs).put("restart", restart)
@@ -156,6 +161,9 @@ data class GuestService(
                 name = o.getString("name"),
                 argv = argv,
                 sockets = socks,
+                environment = o.optJSONObject("environment")?.let { e ->
+                    e.keys().asSequence().associateWith { e.getString(it) }
+                } ?: emptyMap(),
                 uid = o.optInt("uid", 0),
                 gid = o.optInt("gid", 0),
                 waitSocket = if (o.isNull("waitSocket")) null else o.optString("waitSocket"),

@@ -15,6 +15,7 @@ object InitPlan {
         val name: String,
         val argv: List<String>,
         val sockets: MutableMap<String, String> = LinkedHashMap(),
+        val environment: MutableMap<String, String> = LinkedHashMap(),
         var user: String = "root",
         var group: String = "root",
         var oneshot: Boolean = false,
@@ -76,6 +77,7 @@ object InitPlan {
                     }
                     "mkdir" -> if (t.size >= 2) dirs.add(t[1])
                     "socket" -> cur?.let { if (t.size >= 4) it.sockets[t[1]] = t[3] }
+                    "setenv" -> cur?.let { sv -> ExtendedEnvironment.setenv(ln)?.let { (k, v) -> sv.environment[k] = v } }
                     "user" -> cur?.let { if (t.size >= 2) it.user = t[1] }
                     "group" -> cur?.let { if (t.size >= 2) it.group = t[1] }
                     "oneshot" -> cur?.oneshot = true
@@ -138,7 +140,8 @@ object InitPlan {
                 SKIP_BIN.none { base == it || ((it.endsWith("_") || it.length >= 5) && base.startsWith(it)) } && !base.endsWith(".sh") &&
                 (bin.startsWith("/system/bin/") || bin.startsWith("/system/xbin/") || bin.startsWith("/vendor/bin/")) &&
                 File(root, bin.removePrefix("/")).isFile
-        }.map { sv -> GuestService(sv.name, sv.argv, sv.sockets.toMap(), delayMs = 200, optional = true) }
+        }.map { sv -> GuestService(sv.name, sv.argv, sv.sockets.toMap(), delayMs = 200, optional = true,
+            environment = sv.environment.toMap()) }
         val z = out.indexOfFirst { it.name == "zygote" }.let { if (it < 0) out.size else it }
         out.addAll(z, extras)
         return out
@@ -169,6 +172,7 @@ object InitPlan {
             name = name,
             argv = s.argv,
             sockets = s.sockets.toMap(),
+            environment = s.environment.toMap(),
             // службы идут от «root» гостя, как в эталонном стенде: qemu подделывает uid только по запросу
             uid = 0,
             gid = 0,

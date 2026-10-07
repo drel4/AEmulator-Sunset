@@ -55,13 +55,18 @@ class GuestRunner(
         return cmd
     }
 
-    fun env(extra: Map<String, String> = emptyMap()): Map<String, String> {
+    fun env(extra: Map<String, String> = emptyMap(), serviceEnvironment: Map<String, String> = emptyMap()): Map<String, String> {
         val s = img.settings
         val e = LinkedHashMap<String, String>()
         // переменные из init.rc прошивки (export …), кроме тех, что задаём сами
         for ((k, v) in img.exports) if (k !in EXPORTS_SKIP) e[k] = v
         e["PATH"] = img.exports["PATH"] ?: "/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin"
         e["DHD_ENV_LD_LIBRARY_PATH"] = img.exports["LD_LIBRARY_PATH"] ?: "/vendor/lib:/system/lib"
+        if (ExtendedEnvironment.active(engine, s.universalProfile)) {
+            e["PATH"] = ExtendedEnvironment.searchPath(paths.root, e.getValue("PATH"), ExtendedEnvironment.commandDirs)
+            e["DHD_ENV_LD_LIBRARY_PATH"] = ExtendedEnvironment.searchPath(paths.root,
+                e.getValue("DHD_ENV_LD_LIBRARY_PATH"), ExtendedEnvironment.libraryDirs)
+        }
         // ashmem через memfd (движок) + наша прослойка от запрещённых в песочнице вызовов (mount, reboot…)
         e["DHD_ENV_LD_PRELOAD"] = "/system/lib/libashmemshim.so:/system/lib/libaemushim.so"
         e["ANDROID_ROOT"] = img.exports["ANDROID_ROOT"] ?: "/system"
@@ -110,6 +115,8 @@ class GuestRunner(
         if (tbFlush > 0) e["DHD_TBFLUSH"] = tbFlush.toString()
         if (noSmc) e["DHD_NO_SMC"] = "1"
         if (noTcgOpt) e["DHD_NO_TCGOPT"] = "1"
+        if (ExtendedEnvironment.active(engine, s.universalProfile))
+            e.putAll(ExtendedEnvironment.service(paths.root, serviceEnvironment))
         for (t in userTokens.filter(::isEnvToken)) e[t.substringBefore('=')] = t.substringAfter('=')
         e.putAll(extra)
         return e

@@ -24,7 +24,8 @@ internal object BootMediaServices {
         val binary = File(root, argv[0].trimStart('/'))
         if (!binary.isFile || !binary.canonicalPath.startsWith(root.canonicalPath + File.separator)) return null
         return GuestService(if (name == "playsound") name else "bootanim", argv,
-            service?.sockets?.toMap() ?: emptyMap(), optional = true)
+            service?.sockets?.toMap() ?: emptyMap(), optional = true,
+            environment = service?.environment?.toMap() ?: emptyMap())
     }
     fun triggers(root: File, property: String, value: String): List<Pair<Boolean, String>> {
         // Deliberately not a general init trigger interpreter.

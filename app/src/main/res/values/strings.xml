@@ -287,4 +287,9 @@
     <string name="rom_notification_channel">ROM downloads and imports</string>
     <string name="rom_notification_downloading">Downloading ROM</string>
     <string name="rom_downloading_total">Downloading: %1$s / %2$s</string>
+    <string name="vs_engine">Engine</string>
+    <string name="vs_engine_selected">Engine: %1$s</string>
+    <string name="vs_engine_sunset">Universal Sunset</string>
+    <string name="vs_engine_extended">Universal Sunset Extended (experimental)</string>
+    <string name="vs_engine_sub">Changes apply after stopping and starting the VM. Extended adds common compatibility fixes and may help some ROMs.</string>
 </resources>

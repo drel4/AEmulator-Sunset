@@ -10,12 +10,17 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-07 for sunset.37.** This work has been
+**Modification notice updated 2026-10-07 for sunset.38.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
 Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.38 adds the experimental Universal Sunset Extended compatibility profile,
+guest-contained search-path fallbacks and safe service-local init environment
+transport. Existing Sunset and Gingerbread behavior remains the default.
+VM engine selection, portable metadata, English/Russian UI and regression tests
+are included. Native backend binaries are unchanged. Dated 2026-10-07.
 sunset.37 explicitly pairs the in-VM note and compact boot indicator with the
 theme's on-surface foreground, and the library ROM-card note with its secondary
 container foreground. This avoids inherited black text on dark overlays.

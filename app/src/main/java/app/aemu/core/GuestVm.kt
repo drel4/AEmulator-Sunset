@@ -278,6 +278,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         paths.bin.mkdirs()
         runCatching { logFile.writeText("") }
         log("image \"${img.name}\": ${img.displayVersion}, ${img.skin}, engine ${engine.title}")
+        if (engine == Engine.KK) log("universal compatibility profile: ${settings.universalProfile.id}")
         if (!File(paths.root, "system/framework").isDirectory) error("firmware tree missing")
         val qemu = paths.nativeBin(engine.qemu)
         if (!qemu.canExecute()) error("translator ${engine.qemu} is not executable")
@@ -556,7 +557,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
             svc.argv.take(1) + "-Xint:fast" + svc.argv.drop(1) else svc.argv
         // отладка: файл run/strace.<служба> включает трассировку системных вызовов qemu
         if (File(paths.bin, "strace.${svc.name}").exists()) extra["QEMU_STRACE"] = "1"
-        spawn(svc.name, guestRunner.cmdline(argv, props), guestRunner.env(extra))
+        spawn(svc.name, guestRunner.cmdline(argv, props), guestRunner.env(extra, svc.environment))
     }
 
     private fun spawn(name: String, cmd: List<String>, env: Map<String, String>) {
