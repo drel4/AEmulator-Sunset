@@ -186,7 +186,12 @@ private fun CatalogRomCard(rom: CatalogRom) {
                 if (rom.url == null) Text(stringResource(R.string.catalog_no_url), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            rom.url?.let { url -> IconButton(onClick = { openBrowser(ctx, url) }) {
+            rom.url?.let { url -> IconButton(onClick = {
+                ctx.startActivity(android.content.Intent(ctx, MainActivity::class.java)
+                    .setAction(ACTION_DOWNLOAD_ROM).putExtra("url", url).putExtra("title", rom.device)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                (ctx as? android.app.Activity)?.finish()
+            }) {
                 Icon(Icons.Rounded.Download, stringResource(R.string.catalog_download_rom, rom.device))
             } }
         }

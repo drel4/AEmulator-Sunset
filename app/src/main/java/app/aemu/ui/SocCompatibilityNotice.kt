@@ -13,7 +13,7 @@ import app.aemu.R
 import app.aemu.core.SocCompatibility
 
 @Composable
-internal fun SocCompatibilityNotice() {
+internal fun SocCompatibilityNotice(): Boolean {
     val ctx = LocalContext.current
     val prefs = remember { AppPrefs.prefs(ctx) }
     val chip = remember { if (Build.VERSION.SDK_INT >= 31) Build.SOC_MODEL else "" }
@@ -32,4 +32,5 @@ internal fun SocCompatibilityNotice() {
                 .ifBlank { ctx.getString(R.string.soc_unknown) })) },
         confirmButton = { TextButton(onClick = ::close) { Text(stringResource(R.string.soc_warning_ok)) } },
     )
+    return show
 }

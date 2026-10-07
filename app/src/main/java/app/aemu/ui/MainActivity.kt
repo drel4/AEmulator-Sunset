@@ -108,6 +108,7 @@ import androidx.compose.material.icons.rounded.List
 import android.content.Context
 
 const val ACTION_BOOT = "app.aemu.BOOT"
+internal const val ACTION_DOWNLOAD_ROM = "app.aemu.DOWNLOAD_ROM"
 
 class MainActivity : ComponentActivity() {
     private val model: LibraryModel by viewModels()
@@ -118,7 +119,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         askPermissions()
-        handleView(intent)
+        if (savedInstanceState == null) handleView(intent)
         setContent { AemuTheme { Library(model) } }
     }
 
@@ -133,6 +134,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleView(i: Intent?) {
+        if (i?.action == ACTION_DOWNLOAD_ROM) {
+            val url = app.aemu.catalog.CatalogUrls.valid(i.getStringExtra("url").orEmpty())
+            if (url != null) model.requestDownload(app.aemu.catalog.RomDownloadRequest(i.getStringExtra("title") ?: "ROM", url))
+        }
         if (i?.action == Intent.ACTION_VIEW) i.data?.let { model.import(it) }
         // ярлыки и автоматизация: am start -a app.aemu.BOOT --es id <образ>
         if (i?.action == ACTION_BOOT) i.getStringExtra("id")?.let { VmActivity.start(this, it, i.getBooleanExtra("recovery", false)) }
@@ -149,10 +154,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Library(model: LibraryModel) {
-    SocCompatibilityNotice()
+    val socNoticeVisible = SocCompatibilityNotice()
     val images by model.images.collectAsState()
     val imp by model.import.collectAsState()
     val ctx = LocalContext.current
+    RomImportWelcome(model, socNoticeVisible)
     val lifecycleOwner = LocalLifecycleOwner.current
     var activeVmId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(lifecycleOwner) {
@@ -451,6 +457,7 @@ private fun EmptyState(onHelp: () -> Unit) {
 
 @Composable
 private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Unit) {
+    val ctx = LocalContext.current
     Card(
         colors = CardDefaults.cardColors(containerColor = if (s.error != null) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer),
         shape = MaterialTheme.shapes.large,
@@ -481,6 +488,7 @@ private fun ImportCard(s: ImportState, onCancel: () -> Unit, onDismiss: () -> Un
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                s.browserUrl?.let { url -> TextButton(onClick = { openBrowser(ctx, url) }) { Text(stringResource(R.string.rom_open_browser)) } }
                 if (s.active) TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) } else TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
             }
         }

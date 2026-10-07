@@ -267,4 +267,20 @@
     <string name="soc_unknown">Неизвестный чипсет</string>
     <string name="soc_warning_ok">Понятно</string>
     <string name="soc_warning">Определённый чипсет: %1$s\n\nСовместимость вашего чипсета не проверена. Если ВМ не загружается, перед отправкой отчёта попробуйте отключить JIT и/или мост GPU в настройках ВМ. Сам по себе сбой загрузки на непроверенном чипсете не означает ошибку эмулятора.\n\nОпределение чипсета может быть неполным, особенно на старых версиях Android. Распознавание Snapdragon, Dimensity или Google Tensor не гарантирует загрузку любой прошивки. Если проблема сохраняется, приложите к отчёту название чипсета, сведения о прошивке и журналы ВМ.</string>
+    <string name="starter_title">Впервые в AEmulator Sunset?</string>
+    <string name="starter_text">Скачать CM11 (Android 4.4.2) и добавить в библиотеку? В прошивке есть root, CM File Manager и Терминал, без приложений Google.\n\nРазмер загрузки — около 193 МБ. Используется текущее подключение, в том числе мобильный интернет. Для импорта понадобится дополнительное свободное место. Эта устаревшая версия Android предназначена для тестирования, а не для безопасного повседневного использования.</string>
+    <string name="starter_skip">Не сейчас</string>
+    <string name="rom_download_import">Скачать и импортировать</string>
+    <string name="rom_import_title">Скачать %1$s?</string>
+    <string name="rom_import_consent">Прошивка будет скачана и автоматически добавлена в библиотеку, но не запущена. Загрузка может быть большой и использовать мобильный интернет. Убедитесь, что достаточно свободного места. Импортируйте прошивки только из надёжных источников.\n\n%1$s</string>
+    <string name="rom_downloading">Загрузка: %1$s</string>
+    <string name="rom_web_page">По ссылке открывается веб-страница, а не файл прошивки. Откройте её в браузере, скачайте прошивку и импортируйте файл.</string>
+    <string name="rom_open_browser">Открыть в браузере</string>
+    <string name="rom_no_space">Недостаточно свободного места для загрузки.</string>
+    <string name="rom_incomplete">Загруженный файл пуст или загрузка не завершена. Попробуйте ещё раз.</string>
+    <string name="rom_checksum">Загруженная прошивка не прошла проверку. Попробуйте ещё раз.</string>
+    <string name="rom_cancelled">Загрузка или импорт отменены.</string>
+    <string name="rom_notification_channel">Загрузка и импорт прошивок</string>
+    <string name="rom_notification_downloading">Загрузка прошивки</string>
+    <string name="rom_downloading_total">Загрузка: %1$s / %2$s</string>
 </resources>

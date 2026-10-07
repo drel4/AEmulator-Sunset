@@ -10,12 +10,17 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-07 for sunset.33.** This work has been
+**Modification notice updated 2026-10-07 for sunset.34.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
 Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.34 adds consent-based first-use CM11 download/import, streaming catalog
+downloads with a background foreground-service/progress notification,
+cancellation and browser fallback, and content-first nested
+TAR/TGZ factory archive handling. English/Russian UI and regression tests are
+included. Dated 2026-10-07.
 sunset.33 adds optional export notes retained until a reported stable boot,
 the add-firmware catalog shortcut, English/Russian wording changes and an
 AGENTS.md contributor guide. The separate CM11 recipe now packages its pinned

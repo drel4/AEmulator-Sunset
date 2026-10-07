@@ -102,12 +102,41 @@ class Importer(
     // ------------------------------------------------------------------ разбор контейнеров
 
     private fun handle(src: RandomSource, ch: FileChannel?, name: String, depth: Int) {
-        if (depth > 4) return
+        FirmwareContainers.checkDepth(depth)
+        if (cancelled) throw IOException("cancelled")
         val head = ByteBuffer.allocate(1100)
         src.read(0, head); head.flip()
         val h = ByteArray(head.remaining()).also { head.get(it) }
         if (h.size < 2) throw IOException("empty or truncated firmware file")
         when {
+            FirmwareContainers.compression(h) != null -> {
+                val input = when (FirmwareContainers.compression(h)!!) {
+                    FirmwareContainers.Compression.GZIP -> GZIPInputStream(streamOf(src), 1 shl 16)
+                    FirmwareContainers.Compression.XZ -> XZInputStream(streamOf(src))
+                    FirmwareContainers.Compression.BZIP2 -> BZip2CompressorInputStream(streamOf(src))
+                }
+                val buffered = input.buffered(65536)
+                buffered.mark(512)
+                val innerHead = ByteArray(512)
+                var read = 0
+                while (read < innerHead.size) {
+                    val n = buffered.read(innerHead, read, innerHead.size - read)
+                    if (n < 0) break
+                    read += n
+                }
+                buffered.reset()
+                if (isTar(innerHead.copyOf(read))) {
+                    buffered.use { importTarStream(it, name, depth + 1) }
+                    return
+                }
+                val t = buffered.use { spill(it, "uncompressed") }
+                try {
+                    FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c ->
+                        // The inner payload is identified by content, not the outer .tar suffix.
+                        handle(ChannelSource(c), c, name.substringBeforeLast('.', name), depth + 1)
+                    }
+                } finally { t.delete() }
+            }
             h.size > 4 && h[0] == 'P'.code.toByte() && h[1] == 'K'.code.toByte() && h[2].toInt() == 3 && h[3].toInt() == 4 -> {
                 if (ch != null) importZip(ch, name, depth) else throw IOException("zip without random access")
             }
@@ -119,9 +148,6 @@ class Importer(
             Yaffs2Reader.probe(src) -> importImage(src, "system")
             isTar(h) || name.endsWith(".tar", true) || name.endsWith(".md5", true) || name.endsWith(".win", true) ->
                 importTarStream(streamOf(src), name, depth)
-            h[0] == 0x1f.toByte() && h[1] == 0x8b.toByte() -> importTarStream(GZIPInputStream(streamOf(src), 1 shl 16), name, depth)
-            h[0] == 0xfd.toByte() && h[1] == '7'.code.toByte() -> importTarStream(XZInputStream(streamOf(src)), name, depth)
-            h[0] == 'B'.code.toByte() && h[1] == 'Z'.code.toByte() && h[2] == 'h'.code.toByte() -> importTarStream(BZip2CompressorInputStream(streamOf(src)), name, depth)
             h.size >= 8 && String(h, 0, 8, Charsets.ISO_8859_1) == "ANDROID!" -> takeBoot(readAllFrom(src))
             else -> throw IOException("unknown file format \"$name\"")
         }
@@ -142,6 +168,7 @@ class Importer(
     }.let { BufferedInputStream(it, 1 shl 20) }
 
     private fun readAllFrom(src: RandomSource): ByteArray {
+        if (src.size > 64L * 1024 * 1024) throw IOException("Boot image exceeds 64 MiB")
         val b = ByteBuffer.allocate(src.size.toInt()); src.read(0, b); return b.array()
     }
 
@@ -184,22 +211,21 @@ class Importer(
                     zip.getInputStream(e).use { writeFile(n, it, e.unixMode.takeIf { m -> m != 0 }) }
                     gotSystem = true
                 }
-                base.equals("boot.img", true) -> zip.getInputStream(e).use { takeBoot(it.readBytes()) }
+                base.equals("boot.img", true) -> zip.getInputStream(e).use { takeBoot(readBoot(it)) }
                 base.equals("recovery.img", true) && e.size < 64_000_000 -> zip.getInputStream(e).use { recovery = it.readBytes() }
                 base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
                     withEntrySource(zip, e) { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "system") }
                 base.matches(Regex("(?i)vendor(\\.ext4)?\\.img")) ->
                     withEntrySource(zip, e) { runCatching { importImage(if (SparseSource.probe(it)) SparseSource(listOf(it)) else it, "vendor") } }
-                base.lowercase().endsWith(".zip") && (base.startsWith("image-") || depth == 0 && e.size > 50_000_000) -> {
+                base.lowercase().endsWith(".zip") && FirmwareContainers.nested(base) -> {
                     handleNestedZip(spillEntry(zip, e), base, depth)
                 }
-                base.matches(Regex("(?i).*\\.(tar|tar\\.md5|md5|tgz|tar\\.gz)")) 
+                FirmwareContainers.nested(base)
                     // Odin: AP/PDA/CODE — система, BL/KERNEL/HOME — ядро с рамдиском; модем и CSC не нужны
                     && !base.startsWith("MODEM") && !base.startsWith("CP_") && !base.contains("CSC") -> {
-                    zip.getInputStream(e).use { s ->
-                        val st = if (base.endsWith("gz")) GZIPInputStream(s, 1 shl 16) else s
-                        importTarStream(st, base, depth + 1)
-                    }
+                    val t = spillEntry(zip, e)
+                    try { FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) } }
+                    finally { t.delete() }
                 }
             }
             done += maxOf(0L, e.size)
@@ -242,11 +268,11 @@ class Importer(
                     base.endsWith(".yaffs2.img", true) -> {}
                     n.contains("__MACOSX/") || base.startsWith("._") -> {}
                     n.startsWith("system/") -> { writeFile(n, stream, null); gotSystem = true }
-                    base.equals("boot.img", true) -> takeBoot(stream.readBytes())
+                    base.equals("boot.img", true) -> takeBoot(readBoot(stream))
                     base.equals("recovery.img", true) && e.size < 64_000_000 -> recovery = stream.readBytes()
                     base.matches(Regex("(?i)system(\\.ext4)?\\.img(\\.ext4)?|system_image\\.img|system\\.raw\\.img|factoryfs\\.img")) ->
                         nested.add(spill(stream, base) to "system")
-                    base.matches(Regex("(?i).*\\.(zip|tar|tar\\.md5|md5|tgz|tar\\.gz)")) && e.size > 20_000_000 &&
+                    FirmwareContainers.nested(base) &&
                         !base.startsWith("MODEM") && !base.startsWith("CP_") && !base.contains("CSC") ->
                         nested.add(spill(stream, base) to "archive")
                 }
@@ -302,12 +328,28 @@ class Importer(
     private fun spillEntry(zip: ZipFile, e: ZipArchiveEntry): File = zip.getInputStream(e).use { spill(it, e.name.substringAfterLast('/')) }
 
     private fun spill(i: InputStream, name: String): File {
-        val t = File(tmp, "${System.nanoTime()}-$name")
-        t.outputStream().use { o -> i.copyTo(o, 1 shl 20) }
-        return t
+        val suffix = name.replace('\\', '/').substringAfterLast('/').replace(Regex("[^a-zA-Z0-9._-]"), "_").takeLast(120)
+        val t = File.createTempFile("payload-", "-$suffix", tmp)
+        try {
+            t.outputStream().use { o ->
+                val buffer = ByteArray(1 shl 20)
+                var count = 0L
+                while (true) {
+                    if (cancelled) throw IOException("cancelled")
+                    val n = i.read(buffer)
+                    if (n < 0) break
+                    count += n
+                    if (count > 16L * 1024 * 1024 * 1024 || tmp.usableSpace < n + 32L * 1024 * 1024)
+                        throw IOException("Not enough space to unpack firmware")
+                    o.write(buffer, 0, n)
+                }
+            }
+            return t
+        } catch (toss: Throwable) { t.delete(); throw toss }
     }
 
     private fun importTarStream(s: InputStream, name: String, depth: Int) {
+        FirmwareContainers.checkDepth(depth)
         val tar = TarArchiveInputStream(s, "UTF-8")
         var fullRoot: Boolean? = null
         while (true) {
@@ -333,18 +375,22 @@ class Importer(
                     }
                     t.delete()
                 }
-                base.matches(Regex("(?i)(boot\\.img|zImage|kernel)(\\.lz4)?")) && e.isFile -> takeBoot(maybeLz4(tar, base).readBytes())
+                base.matches(Regex("(?i)(boot\\.img|zImage|kernel)(\\.lz4)?")) && e.isFile -> takeBoot(readBoot(maybeLz4(tar, base)))
                 base.matches(Regex("(?i)recovery\\.img(\\.lz4)?")) && e.isFile && e.size < 64_000_000 -> recovery = maybeLz4(tar, base).readBytes()
-                base.matches(Regex("(?i).*\\.(tar|tar\\.md5)")) && e.isFile && e.size > 20_000_000 -> importTarStream(tar.nonClosing(), base, depth + 1)
                 // factory-образы Google: tgz → image-*.zip → system.img/boot.img; Samsung: zip внутри tar
-                base.lowercase().endsWith(".zip") && e.isFile && e.size > 20_000_000 -> {
+                base.lowercase().endsWith(".zip") && e.isFile && FirmwareContainers.nested(base) -> {
                     handleNestedZip(spill(tar.nonClosing(), base), base, depth)
+                }
+                FirmwareContainers.nested(base) && e.isFile -> {
+                    val t = spill(tar.nonClosing(), base)
+                    try { FileChannel.open(t.toPath(), StandardOpenOption.READ).use { c -> handle(ChannelSource(c), c, base, depth + 1) } }
+                    finally { t.delete() }
                 }
                 n.matches(Regex("^(system|data|dev|sbin|vendor|etc)(/.*)?$")) || n.matches(Regex("^[^/]+\\.rc$")) || n == "default.prop" || n.startsWith("dhd.") -> {
                     // файлы корня (рамдиск, dhd.*) берём, только если архив — целое дерево rootfs
                     if (fullRoot != true && !n.startsWith("system") && !(n.startsWith("dhd.") || n.endsWith(".rc") || n == "default.prop" || n.startsWith("sbin"))) continue
                     when {
-                        e.isDirectory -> File(root, n).mkdirs()
+                        e.isDirectory -> FirmwareContainers.destination(root, n).mkdirs()
                         e.isSymbolicLink -> symlinks.add(e.linkName to "/$n")
                         e.isLink -> hardlink(n, e.linkName)
                         e.isFile -> {
@@ -357,7 +403,7 @@ class Importer(
                 name.contains("system", true) && name.endsWith(".win", true) -> {
                     val p = "system/$n"
                     when {
-                        e.isDirectory -> File(root, p).mkdirs()
+                        e.isDirectory -> FirmwareContainers.destination(root, p).mkdirs()
                         e.isSymbolicLink -> symlinks.add(e.linkName to "/$p")
                         e.isFile -> { writeFile(p, tar.nonClosing(), e.mode); gotSystem = true }
                     }
@@ -373,8 +419,8 @@ class Importer(
         if (name.endsWith(".lz4", true)) org.apache.commons.compress.compressors.lz4.FramedLZ4CompressorInputStream(s.nonClosing()) else s.nonClosing()
 
     private fun hardlink(n: String, target: String) {
-        val src = File(root, target.removePrefix("./").trimStart('/'))
-        val dst = File(root, n)
+        val src = FirmwareContainers.destination(root, target.removePrefix("./").trimStart('/'))
+        val dst = FirmwareContainers.destination(root, n)
         if (src.isFile) { dst.parentFile?.mkdirs(); src.copyTo(dst, overwrite = true) }
     }
 
@@ -388,7 +434,7 @@ class Importer(
         fs.walk { path, node ->
             if (cancelled) throw IOException("cancelled")
             val rel = "$mount/$path"
-            val f = File(root, rel)
+            val f = FirmwareContainers.destination(root, rel)
             when {
                 node.isDir -> f.mkdirs()
                 node.isLink -> symlinks.add(fs.linkTarget(node) to "/$rel")
@@ -411,7 +457,7 @@ class Importer(
         var n = 0
         fs.walk { path, node ->
             val rel = "$mount/$path"
-            val f = File(root, rel)
+            val f = FirmwareContainers.destination(root, rel)
             if (!f.canonicalPath.startsWith(root.canonicalPath + File.separator)) throw IOException("unsafe YAFFS2 path")
             when (node.type) {
                 3 -> { if (!f.isDirectory && !f.mkdirs()) throw IOException("cannot create $rel") }
@@ -448,14 +494,37 @@ class Importer(
         log("boot: ramdisk, ${rd.size} files")
     }
 
+    private fun readBoot(input: InputStream): ByteArray {
+        val output = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(65536)
+        while (true) {
+            if (cancelled) throw IOException("cancelled")
+            val n = input.read(buffer)
+            if (n < 0) break
+            if (output.size().toLong() + n > 64L * 1024 * 1024) throw IOException("Boot image exceeds 64 MiB")
+            output.write(buffer, 0, n)
+        }
+        return output.toByteArray()
+    }
+
     // ------------------------------------------------------------------ файлы, ссылки, права
 
     private fun writeFile(rel: String, i: InputStream, mode: Int?) {
-        val f = File(root, rel)
-        if (!f.canonicalPath.startsWith(root.canonicalPath)) return // защита от ../ в архиве
+        val f = FirmwareContainers.destination(root, rel)
         f.parentFile?.mkdirs()
         if (runCatching { android.system.OsConstants.S_ISLNK(Os.lstat(f.path).st_mode) }.getOrDefault(false)) f.delete()
-        f.outputStream().buffered(1 shl 20).use { o -> bytes += i.copyTo(o, 1 shl 16) }
+        f.outputStream().buffered(1 shl 20).use { o ->
+            val buffer = ByteArray(1 shl 16)
+            while (true) {
+                if (cancelled) throw IOException("cancelled")
+                val n = i.read(buffer)
+                if (n < 0) break
+                bytes += n
+                if (bytes > 16L * 1024 * 1024 * 1024 || root.usableSpace < n + 32L * 1024 * 1024)
+                    throw IOException("Not enough space to unpack firmware")
+                o.write(buffer, 0, n)
+            }
+        }
         if (mode != null) applyMode(f, mode and 0xfff)
         files++
     }
@@ -496,7 +565,7 @@ class Importer(
             val type = e.mode and 0xF000
             val n = e.name
             if (n.isEmpty() || n == "." || n.startsWith("system/") || n.startsWith("data/") || n.startsWith("dev/") || n.startsWith("proc") || n.startsWith("sys/")) return@forEach
-            val f = File(root, n)
+            val f = FirmwareContainers.destination(root, n)
             when (type) {
                 0x4000 -> f.mkdirs()
                 0xA000 -> symlinks.add(String(e.data) to "/$n")
@@ -510,8 +579,8 @@ class Importer(
         var made = 0
         for ((target, link) in symlinks) {
             val rel = link.trimStart('/')
-            val f = File(root, rel)
-            if (!f.canonicalPath.startsWith(root.canonicalPath)) continue
+            val f = FirmwareContainers.destination(root, rel)
+            FirmwareContainers.checkLink(rel, target)
             f.parentFile?.mkdirs()
             val t = relTarget(link, target)
             runCatching {
@@ -520,7 +589,7 @@ class Importer(
             }
         }
         for ((p, mode, rec) in perms) {
-            val f = File(root, p.trimStart('/'))
+            val f = FirmwareContainers.destination(root, p.trimStart('/'))
             if (rec) f.walkTopDown().filter { it.isFile }.forEach { applyMode(it, mode) } else if (f.isFile) applyMode(f, mode)
         }
         // исполняемые — всё в bin/xbin/sbin
