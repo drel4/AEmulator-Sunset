@@ -87,4 +87,28 @@ class RomDownloadTest {
         assertEquals("rom.aessvm", RomDownload.fileName("https://example.org/download", "attachment; filename*=UTF-8''rom.aessvm"))
         assertEquals("factory.tgz.tar", RomDownload.fileName("https://example.org/factory.tgz.tar?token=secret", null))
     }
+    @Test fun shareHostsGoToBrowserWithoutNetworking() {
+        for (url in listOf("https://drive.google.com/file/d/id/view", "https://mega.nz/file/id#key",
+            "https://www.mediafire.com/file/id/rom.zip/file", "https://disk.yandex.ru/d/id",
+            "https://www.dropbox.com/s/id/rom.zip?dl=0", "https://1drv.ms/u/id")) {
+            assertTrue(url, RomLink.browserOnly(url)); assertFalse(url, RomLink.isDirect(url))
+        }
+    }
+    @Test fun hostMatchingCannotBeSpoofedBySuffixOrQuery() {
+        assertFalse(RomLink.browserOnly("https://mega.nz.example.org/rom.zip"))
+        assertFalse(RomLink.browserOnly("https://example.org/rom.zip?next=drive.google.com"))
+        assertFalse(RomLink.browserOnly("https://download123.mediafire.com/id/rom.zip"))
+        assertFalse(RomLink.browserOnly("https://www.dropbox.com/s/id/rom.zip?dl=1"))
+    }
+    @Test fun genericWebPagesAndDisguisedHtmlOpenBrowser() = fixture { base, _ ->
+        assertFalse(RomLink.isDirect("$base/html"))
+        assertFalse(RomLink.isDirect("$base/hidden-html"))
+    }
+    @Test fun binaryAndExtensionlessRedirectsStayInApp() = fixture { base, _ ->
+        assertTrue(RomLink.isDirect("$base/rom.aessvm"))
+        assertTrue(RomLink.isDirect("$base/redirect"))
+    }
+    @Test fun routingRejectsRedirectLoops() = fixture { base, _ ->
+        assertFalse(RomLink.isDirect("$base/loop"))
+    }
 }

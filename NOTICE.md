@@ -10,12 +10,17 @@ upstream Git history are intentionally preserved.
 
 ## Fork changes
 
-**Modification notice updated 2026-10-07 for sunset.34.** This work has been
+**Modification notice updated 2026-10-07 for sunset.35.** This work has been
 modified by drel4 and contributors to AEmulator Sunset. Original copyright,
 license notices, credits and Git history are retained; no upstream authorship
 is claimed for Sunset's additions.
 
 Changes made by drel4 and contributors to this fork are recorded in Git.
+sunset.35 adds default-enabled host battery forwarding, per-VM opt-out and
+session-only manual battery overrides. Catalog share/web-page links open in
+the browser, direct-link confirmation includes a browser option, and the CM11
+welcome text drops the daily-use advisory and reports about 203 MB. English
+and Russian wording and regression tests are included. Dated 2026-10-07.
 sunset.34 adds consent-based first-use CM11 download/import, streaming catalog
 downloads with a background foreground-service/progress notification,
 cancellation and browser fallback, and content-first nested

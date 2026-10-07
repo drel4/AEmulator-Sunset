@@ -267,7 +267,9 @@
     <string name="soc_warning_ok">Understood</string>
     <string name="soc_warning">Reported chipset: %1$s\n\nYour chipset’s compatibility is unverified. If a VM won’t boot, try disabling JIT and/or the GPU bridge in VM settings before reporting it. A boot failure alone on an unverified chipset does not establish an emulator bug.\n\nChipset detection can be incomplete, especially on older Android versions. Recognizing Snapdragon, Dimensity or Google Tensor does not guarantee that every ROM will boot. If you still report an issue, include the chipset, ROM details and VM logs.</string>
     <string name="starter_title">First time in AEmulator Sunset?</string>
-    <string name="starter_text">Download CM11 (Android 4.4.2) and add it to your library? It includes root, CM File Manager and Terminal, without Google Apps.\n\nThe download is about 193 MB and uses your current connection, including mobile data. More free space is needed to import it. This old Android version is for trusted testing, not secure daily use.</string>
+    <string name="starter_text">Download CM11 (Android 4.4.2) and add it to your library? It includes root, CM File Manager and Terminal, without Google Apps.\n\nThe download is about 203 MB and uses your current connection, including mobile data. More free space is needed to import it.</string>
+    <string name="vs_host_battery">Use host battery</string>
+    <string name="vs_host_battery_sub">Match your device’s battery level and charging state.</string>
     <string name="starter_skip">Not now</string>
     <string name="rom_download_import">Download and import</string>
     <string name="rom_import_title">Download %1$s?</string>

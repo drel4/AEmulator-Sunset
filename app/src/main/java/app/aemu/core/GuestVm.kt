@@ -42,7 +42,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         private set
     /** Guest reported boot completion; this does not prove that its launcher rendered. */
     @Volatile private var everBooted = false
-    private var zygoteRestarts = 0
+    @Volatile private var zygoteRestarts = 0
         private set
     @Volatile var failure: String? = null
         private set
@@ -77,6 +77,16 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
     val adb = AdbServer(this)
     val input = InputService(paths, ::log)
     private val vibration = VibrationBridge(ctx, paths, { settings.vibration }, ::log)
+    private val battery = HostBatteryBridge(ctx, paths.root, img.api, settings.hostBattery,
+        { everBooted && state == State.RUNNING && !stopping && !recoveryMode && !lowPowerBoot },
+        { zygoteRestarts }, { command ->
+            val result = guestRunner.run(listOf("/system/bin/sh", "-c", command), 4_000)
+            check(result.first == 0) { "Guest battery update failed: ${result.first}" }
+        }, ::log)
+    fun setManualBattery(percent: Int, charging: Boolean) = battery.applyManual(percent, charging)
+    fun resetBattery() = battery.reset(settings.hostBattery)
+    val hostBatteryLevel get() = battery.latest?.percent ?: 80
+    val hostBatteryCharging get() = battery.latest?.status in listOf(2, 5)
     private val motion = MotionBridge(ctx, paths, { img.api in 9..25 && !recoveryMode && !lowPowerBoot }, { settings.motionSensors }, ::log)
     fun motionVisible(visible: Boolean) { motion.visible(visible) }
     fun simulateRotation() = motion.simulateRotation()
@@ -119,6 +129,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
             if (recoveryMode) doRecovery() else if (lowPowerBoot) doCharging() else doBoot()
         } catch (t: Throwable) {
             vibration.stop()
+            battery.stop()
             camera.stop()
             motion.stop()
             failure = t.message ?: t.toString()
@@ -141,6 +152,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         killLeftovers()
         HostNative.limitStackSafe()
         TreeFixer(ctx, paths, img, ::log).fixup()
+        battery.start()
         File(paths.root, "dev/tty0").delete() // minui cannot use host VT ioctls
         val sysLink = File(paths.bin, "sys")
         if (!java.nio.file.Files.exists(sysLink.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS))
@@ -191,6 +203,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         killLeftovers()
         HostNative.limitStackSafe()
         TreeFixer(ctx, paths, img, ::log).fixup()   // framebuffer, input node
+        battery.start()
         val sd = Sdcard.setup(ctx, paths, img, ::log)
         RecoveryImage.prepare(paths, sd)
         input.rateHz = settings.touchHz
@@ -274,6 +287,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         // 1. дерево
         val fixer = TreeFixer(ctx, paths, img, ::log)
         fixer.fixup()
+        battery.start()
         // политика звука уже подменялась раньше — обновить её файлы (обёртка/AOSP) до текущей версии
         if (File(paths.root, "system/.aemu-parked/system#lib#hw#audio_policy.default.so").isFile) swapAudioPolicy()
         GuestLog.clear(paths.root)
@@ -834,6 +848,7 @@ class GuestVm(val ctx: Context, val img: GuestImage, val lowPowerBoot: Boolean =
         setState(State.STOPPING)
         log("stopping system")
         vibration.stop()
+        battery.stop()
         camera.stop()
         motion.stop()
         runCatching { guestRunner.run(listOf("/system/bin/sync"), 5_000) }

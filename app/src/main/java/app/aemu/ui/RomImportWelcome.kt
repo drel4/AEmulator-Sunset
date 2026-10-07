@@ -4,6 +4,7 @@ package app.aemu.ui
 import androidx.compose.material3.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
@@ -37,7 +38,10 @@ internal fun RomImportWelcome(model: LibraryModel, otherNoticeVisible: Boolean) 
         confirmButton = { TextButton(onClick = { dismissWelcome(); model.download(StarterRom.request) }) {
             Text(stringResource(R.string.rom_download_import))
         } },
-        dismissButton = { TextButton(onClick = ::dismissWelcome) { Text(stringResource(R.string.starter_skip)) } })
+        dismissButton = { Column {
+            TextButton(onClick = { dismissWelcome(); openBrowser(ctx, StarterRom.request.url) }) { Text(stringResource(R.string.rom_open_browser)) }
+            TextButton(onClick = ::dismissWelcome) { Text(stringResource(R.string.starter_skip)) }
+        } })
     if (!otherNoticeVisible && !state.active) request?.let { rom -> AlertDialog(
         onDismissRequest = { model.downloadRequest.value = null },
         title = { Text(stringResource(R.string.rom_import_title, rom.title)) },
@@ -47,5 +51,8 @@ internal fun RomImportWelcome(model: LibraryModel, otherNoticeVisible: Boolean) 
             dismissWelcome()
             model.download(rom)
         }) { Text(stringResource(R.string.rom_download_import)) } },
-        dismissButton = { TextButton(onClick = { model.downloadRequest.value = null }) { Text(stringResource(R.string.cancel)) } }) }
+        dismissButton = { Column {
+            TextButton(onClick = { model.downloadRequest.value = null; openBrowser(ctx, rom.url) }) { Text(stringResource(R.string.rom_open_browser)) }
+            TextButton(onClick = { model.downloadRequest.value = null }) { Text(stringResource(R.string.cancel)) }
+        } }) }
 }

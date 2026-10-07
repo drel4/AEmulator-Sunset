@@ -30,6 +30,9 @@ import app.aemu.AppPrefs
 import app.aemu.R
 import app.aemu.catalog.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class RomCatalogActivity : ComponentActivity() {
     override fun attachBaseContext(base: Context) = super.attachBaseContext(AppPrefs.wrap(base))
@@ -163,6 +166,8 @@ private fun CatalogScreen(onBack: () -> Unit) {
 @Composable
 private fun CatalogRomCard(rom: CatalogRom) {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var checking by remember(rom.url) { mutableStateOf(false) }
     val status = when (rom.status) {
         0 -> R.string.catalog_status_no_boot
         1 -> R.string.catalog_status_issues
@@ -186,13 +191,23 @@ private fun CatalogRomCard(rom: CatalogRom) {
                 if (rom.url == null) Text(stringResource(R.string.catalog_no_url), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            rom.url?.let { url -> IconButton(onClick = {
-                ctx.startActivity(android.content.Intent(ctx, MainActivity::class.java)
-                    .setAction(ACTION_DOWNLOAD_ROM).putExtra("url", url).putExtra("title", rom.device)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                (ctx as? android.app.Activity)?.finish()
+            rom.url?.let { url -> IconButton(enabled = !checking, onClick = {
+                checking = true
+                scope.launch {
+                    try {
+                        val direct = withContext(Dispatchers.IO) { RomLink.isDirect(url) }
+                        if (!direct) openBrowser(ctx, url)
+                        else {
+                            ctx.startActivity(android.content.Intent(ctx, MainActivity::class.java)
+                                .setAction(ACTION_DOWNLOAD_ROM).putExtra("url", url).putExtra("title", rom.device)
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                            (ctx as? android.app.Activity)?.finish()
+                        }
+                    } finally { checking = false }
+                }
             }) {
-                Icon(Icons.Rounded.Download, stringResource(R.string.catalog_download_rom, rom.device))
+                if (checking) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                else Icon(Icons.Rounded.Download, stringResource(R.string.catalog_download_rom, rom.device))
             } }
         }
     }

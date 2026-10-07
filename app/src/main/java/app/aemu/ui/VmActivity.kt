@@ -573,8 +573,8 @@ class VmActivity : ComponentActivity() {
 
     @Composable
     private fun BatteryDialog(onDone: () -> Unit) {
-        var level by remember { mutableStateOf(80f) }
-        var charging by remember { mutableStateOf(true) }
+        var level by remember { mutableStateOf(vm.hostBatteryLevel.toFloat()) }
+        var charging by remember { mutableStateOf(vm.hostBatteryCharging) }
         AlertDialog(onDismissRequest = onDone,
             title = { Text(stringResource(R.string.m_battery)) },
             text = {
@@ -587,10 +587,10 @@ class VmActivity : ComponentActivity() {
                 }
             },
             confirmButton = { Button(onClick = {
-                guestAsync("dumpsys battery set level ${level.toInt()}; dumpsys battery set ac ${if (charging) 1 else 0}; dumpsys battery set usb 0")
+                vm.setManualBattery(level.toInt(), charging)
                 onDone()
             }) { Text(stringResource(R.string.m_apply)) } },
-            dismissButton = { OutlinedButton(onClick = { guestAsync("dumpsys battery reset"); onDone() }) { Text(stringResource(R.string.m_reset)) } })
+            dismissButton = { OutlinedButton(onClick = { vm.resetBattery(); onDone() }) { Text(stringResource(R.string.m_reset)) } })
     }
 
     private fun rebootVm(recovery: Boolean = false) {

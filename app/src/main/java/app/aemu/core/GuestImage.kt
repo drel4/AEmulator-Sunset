@@ -34,6 +34,7 @@ data class VmSettings(
     val trackballStepDp: Int = 18,
     val keepScreenOn: Boolean = true,
     val vibration: Boolean = true,
+    val hostBattery: Boolean = true,
     /** Explicit host-camera opt-in; applies at the next full VM boot. */
     val camera: Boolean = false,
     val motionSensors: Boolean = false,
@@ -63,6 +64,7 @@ data class VmSettings(
         .put("trackballStepDp", trackballStepDp.coerceIn(4, 48))
         .put("keepScreenOn", keepScreenOn).put("mtMode", mtMode).put("legacyEngine", legacyEngine)
         .put("vibration", vibration)
+        .put("hostBattery", hostBattery)
         .put("camera", camera)
         .put("motionSensors", motionSensors).put("hostResolution", hostResolution)
         .put("skipSetupWizard", skipSetupWizard)
@@ -105,6 +107,7 @@ data class VmSettings(
                 trackballStepDp = o.optInt("trackballStepDp", 18).coerceIn(4, 48),
                 keepScreenOn = o.optBoolean("keepScreenOn", d.keepScreenOn),
                 vibration = o.optBoolean("vibration", d.vibration),
+                hostBattery = o.optBoolean("hostBattery", d.hostBattery),
                 camera = o.optBoolean("camera", d.camera),
                 motionSensors = o.optBoolean("motionSensors", false),
                 hostResolution = o.optBoolean("hostResolution", false),
